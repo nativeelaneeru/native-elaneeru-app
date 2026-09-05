@@ -16,7 +16,7 @@
  *******************************************************************************/
 
 const V8 = Object.freeze({
-  VERSION: '8.2.0',
+  VERSION: '8.3.0',
   BRAND: 'Native Elaneeru',
   COMPANY: 'Sri Govindadri Ventures',
   SPREADSHEET_ID: '1t42vRvte6Y9E0Eh8MACET8_ZC7x3eio5RLlhIeVGB-8',
@@ -370,6 +370,19 @@ function generateRouteForDay(email,pin,date,routeType,driverId){
 }
 function findNextStop_(routeId){ return rows_(V8.SHEETS.STOPS).filter(x=>s_(x['Route ID'])===routeId&&!['COMPLETED','CANCELLED'].includes(s_(x.Status).toUpperCase())).sort((a,b)=>n_(a['Stop Sequence'])-n_(b['Stop Sequence']))[0]||null; }
 
+function getRoutePlannerDataV83(email,pin,date,routeType){
+  requireAdmin_(email,pin); routeType=s_(routeType||'B2C').toUpperCase(); if(!['B2C','B2B'].includes(routeType))routeType='B2C';
+  const drivers=rows_(V8.SHEETS.DRIVERS).filter(d=>active_(d.Status)&&['BOTH',routeType].includes(s_(d['Delivery Type']).toUpperCase())).map(d=>({driverId:s_(d['Driver ID']),name:s_(d['Driver Name']),mobile:digits_(d.Mobile),vehicle:s_(d['Vehicle Number']),deliveryType:s_(d['Delivery Type']),currentRouteId:s_(d['Current Route ID'])}));
+  const candidates=routeCandidates_(date,routeType).map(p=>({orderId:p.orderId,name:p.name,address:p.address,qty:p.requiredQty,priority:p.priority,timeSlot:p.slot,lat:p.lat,lng:p.lng}));
+  const routes=rows_(V8.SHEETS.ROUTES).filter(r=>(!date||s_(r['Route Date'])===date)&&s_(r['Route Type'])===routeType).sort((a,b)=>new Date(b['Created At'])-new Date(a['Created At'])).slice(0,20).map(r=>({routeId:s_(r['Route ID']),driverId:s_(r['Driver ID']),vehicle:s_(r['Vehicle Number']),totalStops:n_(r['Total Stops']),completedStops:n_(r['Completed Stops']),roadKm:n_(r['Total Road KM']),estimatedMinutes:n_(r['Estimated Minutes']),source:s_(r['Optimization Source']),status:s_(r.Status),createdAt:fmtDT_(r['Created At'])}));
+  return {version:V8.VERSION,date,routeType,hub:V8.HUB,drivers,candidates,routes};
+}
+function getRouteStopsAdminV83(email,pin,routeId){
+  requireAdmin_(email,pin); const r=find_(V8.SHEETS.ROUTES,'Route ID',routeId); if(!r)throw new Error('Route not found.');
+  const stops=rows_(V8.SHEETS.STOPS).filter(x=>s_(x['Route ID'])===s_(routeId)).sort((a,b)=>n_(a['Stop Sequence'])-n_(b['Stop Sequence'])).map(x=>({sequence:n_(x['Stop Sequence']),stopId:s_(x['Stop ID']),orderId:s_(x['Order ID']),name:s_(x['Display Name']),address:s_(x.Address),qty:n_(x['Required Qty']),roadKm:n_(x['Road Distance From Previous KM']),travelMin:n_(x['Travel Time From Previous Min']),eta:fmtDT_(x['Planned ETA']),status:s_(x.Status),lat:n_(x.Latitude),lng:n_(x.Longitude)}));
+  return {route:{routeId:s_(r['Route ID']),date:s_(r['Route Date']),type:s_(r['Route Type']),driverId:s_(r['Driver ID']),roadKm:n_(r['Total Road KM']),estimatedMinutes:n_(r['Estimated Minutes']),source:s_(r['Optimization Source']),status:s_(r.Status)},stops};
+}
+
 /* ----------------------------- driver auth -------------------------------- */
 
 function driverAuth_(mobile,pin,type){
@@ -380,11 +393,33 @@ function driverAuth_(mobile,pin,type){
   updateObj_(V8.SHEETS.DRIVERS,d._row,{'Last Login':now_(),'Updated At':now_()}); return d;
 }
 function driverLoginV8(mobile,pin,type){ const d=driverAuth_(mobile,pin,type); return {success:true,driverId:s_(d['Driver ID']),name:s_(d['Driver Name']),deliveryType:s_(d['Delivery Type']),vehicle:s_(d['Vehicle Number'])}; }
+function routePickupState_(routeId){
+  const e=rows_(V8.SHEETS.DELIVERY_EVENTS).filter(x=>s_(x['Route ID'])===s_(routeId)&&s_(x['Event Type']).toUpperCase()==='HUB_PICKUP').sort((a,b)=>new Date(b['Event At'])-new Date(a['Event At']))[0];
+  return e?{picked:true,at:fmtDT_(e['Event At']),lat:n_(e.Latitude),lng:n_(e.Longitude)}:{picked:false,at:'',lat:0,lng:0};
+}
 function getDriverDayRouteV8(mobile,pin,type,date){
   const d=driverAuth_(mobile,pin,type), driverId=s_(d['Driver ID']), routes=rows_(V8.SHEETS.ROUTES).filter(r=>s_(r['Driver ID'])===driverId&&s_(r['Route Type'])===s_(type).toUpperCase()&&(!date||s_(r['Route Date'])===date)&&!['COMPLETED','CANCELLED'].includes(s_(r.Status).toUpperCase())).sort((a,b)=>new Date(b['Created At'])-new Date(a['Created At']));
-  if(!routes.length)return {driver:{driverId,name:s_(d['Driver Name']),vehicle:s_(d['Vehicle Number'])},route:null,stops:[]};
-  const r=routes[0], stops=rows_(V8.SHEETS.STOPS).filter(x=>s_(x['Route ID'])===s_(r['Route ID'])).sort((a,b)=>n_(a['Stop Sequence'])-n_(b['Stop Sequence'])).map(x=>({stopId:s_(x['Stop ID']),sequence:n_(x['Stop Sequence']),orderType:s_(x['Order Type']),orderId:s_(x['Order ID']),name:s_(x['Display Name']),mobile:digits_(x.Mobile),address:s_(x.Address),lat:n_(x.Latitude),lng:n_(x.Longitude),requiredQty:n_(x['Required Qty']),assignedQty:n_(x['Assigned Batch Qty']),deliveredQty:n_(x['Delivered Qty']),roadKm:n_(x['Road Distance From Previous KM']),travelMin:n_(x['Travel Time From Previous Min']),eta:fmtDT_(x['Planned ETA']),checkInAt:fmtDT_(x['Check In At']),deliveredAt:fmtDT_(x['Delivered At']),checkOutAt:fmtDT_(x['Check Out At']),trackingVisible:active_(x['Tracking Visible']),status:s_(x.Status),priority:s_(x.Priority),timeSlot:s_(x['Time Slot'])}));
-  return {driver:{driverId,name:s_(d['Driver Name']),vehicle:s_(d['Vehicle Number'])},route:{routeId:s_(r['Route ID']),date:s_(r['Route Date']),type:s_(r['Route Type']),status:s_(r.Status),totalStops:n_(r['Total Stops']),completedStops:n_(r['Completed Stops']),roadKm:n_(r['Total Road KM']),estimatedMinutes:n_(r['Estimated Minutes']),optimizationSource:s_(r['Optimization Source'])},stops};
+  if(!routes.length)return {version:V8.VERSION,driver:{driverId,name:s_(d['Driver Name']),vehicle:s_(d['Vehicle Number'])},route:null,stops:[],hub:V8.HUB};
+  const r=routes[0], pickup=routePickupState_(r['Route ID']), stops=rows_(V8.SHEETS.STOPS).filter(x=>s_(x['Route ID'])===s_(r['Route ID'])).sort((a,b)=>n_(a['Stop Sequence'])-n_(b['Stop Sequence'])).map(x=>({stopId:s_(x['Stop ID']),sequence:n_(x['Stop Sequence']),orderType:s_(x['Order Type']),orderId:s_(x['Order ID']),name:s_(x['Display Name']),mobile:digits_(x.Mobile),address:s_(x.Address),lat:n_(x.Latitude),lng:n_(x.Longitude),requiredQty:n_(x['Required Qty']),assignedQty:n_(x['Assigned Batch Qty']),deliveredQty:n_(x['Delivered Qty']),roadKm:n_(x['Road Distance From Previous KM']),travelMin:n_(x['Travel Time From Previous Min']),eta:fmtDT_(x['Planned ETA']),checkInAt:fmtDT_(x['Check In At']),deliveredAt:fmtDT_(x['Delivered At']),checkOutAt:fmtDT_(x['Check Out At']),trackingVisible:active_(x['Tracking Visible']),status:s_(x.Status),priority:s_(x.Priority),timeSlot:s_(x['Time Slot'])}));
+  return {version:V8.VERSION,driver:{driverId,name:s_(d['Driver Name']),vehicle:s_(d['Vehicle Number'])},hub:V8.HUB,route:{routeId:s_(r['Route ID']),date:s_(r['Route Date']),type:s_(r['Route Type']),status:s_(r.Status),totalStops:n_(r['Total Stops']),completedStops:n_(r['Completed Stops']),roadKm:n_(r['Total Road KM']),estimatedMinutes:n_(r['Estimated Minutes']),optimizationSource:s_(r['Optimization Source']),hubPickedUp:pickup.picked,hubPickedUpAt:pickup.at},stops};
+}
+function driverHubPickupV83(mobile,pin,type,routeId,lat,lng){
+  return lockRun_(()=>{
+    type=s_(type).toUpperCase(); if(type!=='B2C')throw new Error('Hub pickup is used for B2C delivery routes only.');
+    const d=driverAuth_(mobile,pin,type), r=find_(V8.SHEETS.ROUTES,'Route ID',routeId); if(!r||s_(r['Driver ID'])!==s_(d['Driver ID']))throw new Error('Route not assigned to this delivery partner.');
+    const existing=routePickupState_(routeId); if(existing.picked)return {success:true,duplicate:true,pickedAt:existing.at};
+    lat=Number(lat);lng=Number(lng); if(!isFinite(lat)||!isFinite(lng))throw new Error('Valid GPS is required at hub pickup.');
+    const km=haversine_(V8.HUB,{lat,lng}); if(km>2)throw new Error('You are '+safeRound_(km,1)+' KM from the hub. Reach the hub before confirming pickup.');
+    const stops=rows_(V8.SHEETS.STOPS).filter(x=>s_(x['Route ID'])===s_(routeId)); if(!stops.length)throw new Error('No delivery stops found on this route.');
+    stops.forEach(st=>{if(!['COMPLETED','CANCELLED'].includes(s_(st.Status).toUpperCase())){
+      updateObj_(V8.SHEETS.STOPS,st._row,{'Tracking Visible':'TRUE',Status:s_(st.Status)==='PENDING'?'READY':s_(st.Status)});
+      const os=s_(st['Order Type'])==='B2B'?V8.SHEETS.B2B_ORDERS:V8.SHEETS.ORDERS, o=find_(os,'Order ID',st['Order ID']); if(o)updateObj_(os,o._row,{Status:'Out for Delivery','Updated At':now_()});
+    }});
+    append_(V8.SHEETS.DELIVERY_EVENTS,{'Event ID':id_('EV-'),'Event At':now_(),'Route ID':s_(routeId),'Stop ID':'','Order Type':'B2C','Order ID':'','Driver ID':s_(d['Driver ID']),'Event Type':'HUB_PICKUP',Latitude:lat,Longitude:lng,Barcode:'',Quantity:stops.reduce((a,b)=>a+n_(b['Required Qty']),0),Remarks:'B2C packages picked up from hub','Created By':s_(d['Driver ID'])});
+    updateObj_(V8.SHEETS.ROUTES,r._row,{Status:'ACTIVE','Updated At':now_()});
+    const next=findNextStop_(routeId); updateObj_(V8.SHEETS.DRIVERS,d._row,{'Current Route ID':routeId,'Current Stop ID':next?s_(next['Stop ID']):'','Updated At':now_()});
+    return {success:true,routeId,pickedAt:fmtDT_(now_()),totalStops:stops.length,totalQty:stops.reduce((a,b)=>a+n_(b['Required Qty']),0),nextStopId:next?s_(next['Stop ID']):''};
+  });
 }
 function checkCurrentStop_(d,stopId){
   const st=find_(V8.SHEETS.STOPS,'Stop ID',stopId); if(!st)throw new Error('Stop not found.');
@@ -394,6 +429,7 @@ function checkCurrentStop_(d,stopId){
 }
 function driverCheckInV8(mobile,pin,type,stopId,lat,lng){
   const d=driverAuth_(mobile,pin,type), st=checkCurrentStop_(d,stopId);
+  if(s_(type).toUpperCase()==='B2C'&&!routePickupState_(st['Route ID']).picked)throw new Error('Confirm hub pickup before starting customer deliveries.');
   updateObj_(V8.SHEETS.STOPS,st._row,{'Check In At':now_(),'Tracking Visible':'TRUE',Status:'CHECKED_IN'});
   updateObj_(V8.SHEETS.DRIVERS,d._row,{'Current Route ID':s_(st['Route ID']),'Current Stop ID':stopId,'Updated At':now_()});
   event_(st,d,'CHECK_IN',lat,lng,'',0,'');
@@ -417,6 +453,7 @@ function driverScanBarcodeV8(mobile,pin,type,stopId,barcode){
 function driverDeliverV8(mobile,pin,type,stopId,otp,lat,lng,remarks){
   return lockRun_(()=>{
     const d=driverAuth_(mobile,pin,type), st=checkCurrentStop_(d,stopId); if(!st['Check In At'])throw new Error('Check in first.');
+    if(s_(type).toUpperCase()==='B2C'&&!routePickupState_(st['Route ID']).picked)throw new Error('Hub pickup is not confirmed for this route.');
     if(s_(type).toUpperCase()==='B2B'&&n_(st['Assigned Batch Qty'])<n_(st['Required Qty']))throw new Error('Barcode verification incomplete: '+n_(st['Assigned Batch Qty'])+'/'+n_(st['Required Qty'])+'.');
     const orderSheet=s_(st['Order Type'])==='B2B'?V8.SHEETS.B2B_ORDERS:V8.SHEETS.ORDERS, order=find_(orderSheet,'Order ID',st['Order ID']); if(!order)throw new Error('Order not found.');
     if(order['Delivery OTP Hash']&&s_(order['Delivery OTP Hash'])!==hashV8_(otp))throw new Error('Incorrect delivery OTP.');
@@ -621,7 +658,7 @@ function getAdminDashboard(email,pin,start,end){
 }
 function updateOrderStatus(email,pin,orderId,status){requireAdmin_(email,pin);const o=find_(V8.SHEETS.ORDERS,'Order ID',orderId);if(!o)throw new Error('Order not found.');updateObj_(V8.SHEETS.ORDERS,o._row,{Status:s_(status),'Updated At':now_()});return {success:true};}
 function updateSupportTicket(email,pin,ticketId,status,priority,resolution){requireAdmin_(email,pin);const t=find_(V8.SHEETS.SUPPORT,'Ticket ID',ticketId);if(!t)throw new Error('Ticket not found.');updateObj_(V8.SHEETS.SUPPORT,t._row,{Status:s_(status).toUpperCase(),Priority:s_(priority).toUpperCase(),Resolution:s_(resolution),'Resolved At':['RESOLVED','CLOSED'].includes(s_(status).toUpperCase())?now_():'','Updated At':now_()});return {success:true};}
-function createDeliveryPartnerAdmin(email,pin,name,mobile,driverPin,vehicle){requireAdmin_(email,pin);const id=id_('DRV-');append_(V8.SHEETS.DRIVERS,{'Driver ID':id,'Driver Name':s_(name),Mobile:digits_(mobile),'PIN Hash':hashV8_(driverPin),'Delivery Type':'B2C','Vehicle Number':s_(vehicle),'Vehicle Type':'Two/Three Wheeler','Capacity Qty':500,Status:'ACTIVE','Created At':now_(),'Updated At':now_()});return {success:true,partnerId:id};}
+function createDeliveryPartnerAdmin(email,pin,name,mobile,driverPin,vehicle){requireAdmin_(email,pin);if(name&&typeof name==='object'){const p=name;name=p.name;mobile=p.mobile;driverPin=p.pin;vehicle=p.vehicle;}if(!s_(name)||!/^\d{10}$/.test(digits_(mobile))||s_(driverPin).length<4)throw new Error('Name, valid mobile and minimum 4 digit PIN are required.');const id=id_('DRV-');append_(V8.SHEETS.DRIVERS,{'Driver ID':id,'Driver Name':s_(name),Mobile:digits_(mobile),'PIN Hash':hashV8_(driverPin),'Delivery Type':'B2C','Vehicle Number':s_(vehicle),'Vehicle Type':'Two/Three Wheeler','Capacity Qty':500,Status:'ACTIVE','Created At':now_(),'Updated At':now_()});return {success:true,partnerId:id};}
 function updateDeliveryPartnerAdmin(email,pin,id,status,availability,vehicle){requireAdmin_(email,pin);const d=find_(V8.SHEETS.DRIVERS,'Driver ID',id);if(!d)throw new Error('Driver not found.');updateObj_(V8.SHEETS.DRIVERS,d._row,{Status:s_(status),'Vehicle Number':s_(vehicle),'Updated At':now_()});return {success:true};}
 function setAutoAssignment(email,pin,on){requireAdmin_(email,pin);return {success:true,enabled:false,message:'V8 uses route generation instead of single-order auto assignment.'};}
 function assignDeliveryPartner(email,pin,orderId,driverId){requireAdmin_(email,pin);const o=find_(V8.SHEETS.ORDERS,'Order ID',orderId);if(!o)throw new Error('Order not found.');updateObj_(V8.SHEETS.ORDERS,o._row,{'Assigned Driver ID':driverId,'Updated At':now_()});return {success:true};}
