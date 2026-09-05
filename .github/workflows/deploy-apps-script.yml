@@ -11,6 +11,7 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,11 +47,8 @@ jobs:
         run: npx clasp push -f
 
       - name: Update existing web app deployment
-        if: ${{ secrets.APPS_SCRIPT_DEPLOYMENT_ID != '' }}
         shell: bash
+        env:
+          DEPLOYMENT_ID: ${{ secrets.APPS_SCRIPT_DEPLOYMENT_ID }}
         run: |
-          npx clasp deploy -i "${{ secrets.APPS_SCRIPT_DEPLOYMENT_ID }}" -d "GitHub auto deploy $GITHUB_SHA"
-
-      - name: Create first deployment if deployment id is not set
-        if: ${{ secrets.APPS_SCRIPT_DEPLOYMENT_ID == '' }}
-        run: npx clasp deploy -d "GitHub first deployment $GITHUB_SHA"
+          npx clasp deploy -i "$DEPLOYMENT_ID" -d "GitHub auto deploy $GITHUB_SHA"
