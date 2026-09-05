@@ -16,7 +16,7 @@
  *******************************************************************************/
 
 const V8 = Object.freeze({
-  VERSION: '8.3.0',
+  VERSION: '8.3.1',
   BRAND: 'Native Elaneeru',
   COMPANY: 'Sri Govindadri Ventures',
   SPREADSHEET_ID: '1t42vRvte6Y9E0Eh8MACET8_ZC7x3eio5RLlhIeVGB-8',
@@ -41,6 +41,10 @@ const V8 = Object.freeze({
 });
 
 function doGet(e){
+  const isBridge=String(e&&e.parameter&&e.parameter.bridge||'')==='1';
+  if(isBridge){
+    return bridgeHtml_({ok:false,error:'POST required.',requestId:''});
+  }
   const p=String(e&&e.parameter&&e.parameter.page||'').toLowerCase();
   const routes={
     '':'index','home':'index','b2c':'index','b2b':'B2B',
@@ -55,6 +59,43 @@ function doGet(e){
     .setTitle(V8.BRAND+' - '+(page==='index'?'B2C':page))
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport','width=device-width, initial-scale=1');
+}
+
+/**
+ * Public customer-web bridge.
+ * Lets the branded PWA live outside Apps Script while keeping Sheets/Drive as backend.
+ * Only customer-safe RPC methods are exposed here.
+ */
+function doPost(e){
+  const isBridge=String(e&&e.parameter&&e.parameter.bridge||'')==='1';
+  if(!isBridge) return bridgeHtml_({ok:false,error:'Unknown endpoint.',requestId:''});
+  let req={};
+  try{
+    req=JSON.parse(String(e&&e.parameter&&e.parameter.payload||'{}'));
+    const method=String(req.method||'');
+    const args=Array.isArray(req.args)?req.args:[];
+    const allowed={
+      getAppConfig:getAppConfig,
+      saveCustomerProfile:saveCustomerProfile,
+      checkDeliveryLocation:checkDeliveryLocation,
+      saveOrder:saveOrder,
+      getCustomerDashboard:getCustomerDashboard,
+      getCustomerLiveTracking:getCustomerLiveTracking
+    };
+    if(!allowed[method]) throw new Error('Method not allowed.');
+    const result=allowed[method].apply(null,args);
+    return bridgeHtml_({ok:true,result:result,requestId:String(req.requestId||'')});
+  }catch(err){
+    return bridgeHtml_({ok:false,error:String(err&&err.message||err),requestId:String(req&&req.requestId||'')});
+  }
+}
+
+function bridgeHtml_(payload){
+  let data=JSON.stringify({nelBridge:true,payload:payload})
+    .replace(/&/g,'\\u0026').replace(/</g,'\\u003c').replace(/>/g,'\\u003e')
+    .replace(/\\u2028/g,'\\\\u2028').replace(/\\u2029/g,'\\\\u2029');
+  return HtmlService.createHtmlOutput('<!doctype html><meta charset="utf-8"><script>parent.postMessage('+data+',"*");</script>')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 /* ---------------------------- setup / security ---------------------------- */
