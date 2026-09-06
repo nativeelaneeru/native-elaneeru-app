@@ -1,0 +1,23 @@
+:root{--nel-radius-lg:22px;--nel-radius-md:16px;--nel-soft:#f7fbf8}
+body{background:linear-gradient(180deg,#f6faf7 0,#f4f7f4 38%,#eef5f0 100%)}
+.top{padding-left:16px;padding-right:16px;background:linear-gradient(135deg,#064f2f,#087a43 55%,#0b8b4c)}
+.brand{font-size:23px;letter-spacing:-.55px}
+.search{height:48px;border:1px solid rgba(255,255,255,.35)}
+.content{padding-top:16px}
+.heroBanner{min-height:192px;border-radius:24px}
+.bannerText{padding:24px;width:78%}.bannerText h2{font-size:27px}
+.trust{gap:9px;margin-top:14px}.trust div{padding:11px 8px;background:#fffaf0}
+.quick{gap:10px}.quick button{min-height:78px;border:1px solid #e5eee7;transition:transform .16s ease,box-shadow .16s ease}.quick button:active{transform:scale(.98)}
+.sectionHead{margin-top:24px}.sectionHead h2{font-size:20px}
+.products{gap:12px}.product{border-radius:22px;padding:11px;box-shadow:0 8px 26px rgba(8,75,41,.07)}
+.product.tcFeatured{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:14px;padding:13px;border-color:#cfe7d7;background:linear-gradient(135deg,#ffffff,#f3fbf6)}
+.product.tcFeatured .visual{height:190px}.product.tcFeatured .pname{font-size:20px;margin-top:2px}.product.tcFeatured .price{font-size:22px}.product.tcFeatured .sub{font-size:12px}.product.tcFeatured .tag{background:#0b7a43;color:#fff}
+.visual{height:145px}.add,.qtyCtl{height:38px}.add{min-width:64px}.qtyCtl button{width:34px}
+.btn,.field{min-height:46px}.btn{box-shadow:0 6px 16px rgba(8,108,59,.14)}
+.card{border-radius:20px;padding:16px}.rewardCard{padding:16px;border-radius:20px;box-shadow:0 10px 28px rgba(8,108,59,.14)}
+.progress{height:9px}.cartBar{border-radius:18px;padding:12px 13px}.cartBar button{min-height:40px}
+.nav{min-height:58px;padding-top:8px}.nav b{font-size:21px}
+.nelLiveBadge{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:5px 9px;border-radius:999px;background:#eaf8ef;color:#08713d;font-size:10px;font-weight:900}.nelLiveBadge:before{content:"";width:7px;height:7px;border-radius:50%;background:#13a15b;box-shadow:0 0 0 4px #13a15b1f}
+.nelRewardMeta{display:flex;justify-content:space-between;gap:10px;margin-top:7px;font-size:11px;color:#fff;opacity:.9}
+@media(max-width:520px){.product.tcFeatured{grid-template-columns:1fr 1fr}.product.tcFeatured .visual{height:170px}}
+@media(max-width:390px){.heroBanner{min-height:184px}.bannerText h2{font-size:24px}.product.tcFeatured{grid-template-columns:1fr}.product.tcFeatured .visual{height:180px}.products{gap:9px}}
