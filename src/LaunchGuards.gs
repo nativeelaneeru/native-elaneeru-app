@@ -4,6 +4,22 @@
  * Keeps launch-only policy separate from the stable V8 order engine.
  *******************************************************************************/
 
+function getB2CAppDataV9() {
+  const data = getAppConfig();
+  const master = productRows_();
+  data.products = (data.products || []).map(p => {
+    const row = master.find(x => s_(x['Product ID']) === s_(p.productId)) || {};
+    return Object.assign({}, p, {
+      moq: Math.max(1, n_(row['B2C MOQ']) || 1),
+      qtyStep: Math.max(1, n_(row['Qty Step']) || 1)
+    });
+  });
+  data.softLaunch = getSoftLaunchConfigV9();
+  data.supportPhone = '7411807675';
+  data.supportWhatsApp = '917411807675';
+  return data;
+}
+
 function b2bLaunchProductsV9_(vendorId) {
   const all = productRows_().filter(p => active_(p['B2B Status']));
   const pricing = rows_(V8.SHEETS.VENDOR_PRICING);
