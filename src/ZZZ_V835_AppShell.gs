@@ -1,6 +1,6 @@
 /*******************************************************************************
  * NATIVE ELANEERU V9 — SHARED APP SHELL + ROUTER
- * One router, one app switcher, relative links that work on preview/live URLs.
+ * One router, one app switcher, absolute links that work on preview/live URLs.
  *******************************************************************************/
 
 function sharedUxV9_(page){
@@ -9,7 +9,8 @@ function sharedUxV9_(page){
     ['Delivery','delivery','🛵'],['Driver','driver','🚚'],['Sales','sales','📈'],
     ['Picker','picker','📦'],['Onboarding','vendor','🤝'],['Barcode','barcode','▦'],['Inventory','inventory','🏬']
   ];
-  const items=apps.map(a=>'<a class="nel9-app" href="?page='+a[1]+'"><span>'+a[2]+'</span><b>'+a[0]+'</b></a>').join('');
+  const base=ScriptApp.getService().getUrl()||'';
+  const items=apps.map(a=>'<a class="nel9-app" target="_top" href="'+base+'?page='+a[1]+'"><span>'+a[2]+'</span><b>'+a[0]+'</b></a>').join('');
   return `
   <style id="nel9-style">
     #nel9-launch{position:fixed;right:14px;bottom:16px;z-index:2147483000;border:0;background:#075b34;color:#fff;height:50px;padding:0 15px;border-radius:999px;box-shadow:0 12px 30px rgba(7,91,52,.28);font-weight:900;display:flex;align-items:center;gap:8px;cursor:pointer}
