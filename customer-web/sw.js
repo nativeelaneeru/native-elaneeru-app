@@ -1,5 +1,5 @@
-const CACHE='native-elaneeru-v10.3.0';
-const SHELL=['./','./index.html','./login/','./login/index.html','./config.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./i18n-v102.js','./i18n-v103.js'];
+const CACHE='native-elaneeru-v10.4.0';
+const SHELL=['./','./index.html','./login/','./login/index.html','./config.js','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./i18n-v102.js','./i18n-v104.js'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 async function injectUx(r){
@@ -7,7 +7,7 @@ async function injectUx(r){
   if(!type.includes('text/html'))return r;
   let text=await r.text();
   if(!text.includes('i18n-v102.js'))text=text.replace('</body>','<script src="./i18n-v102.js"></script></body>');
-  if(!text.includes('i18n-v103.js'))text=text.replace('</body>','<script src="./i18n-v103.js"></script></body>');
+  if(!text.includes('i18n-v104.js'))text=text.replace('</body>','<script src="./i18n-v104.js"></script></body>');
   const h=new Headers(r.headers);h.delete('content-length');
   return new Response(text,{status:r.status,statusText:r.statusText,headers:h});
 }
