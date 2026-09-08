@@ -34,12 +34,23 @@ function productUxV91_(page){
       .nav .on{color:#0f7280!important}.cartBar{background:linear-gradient(135deg,#0c2940,#123a5a)!important}.wa{color:#0f6770!important;background:#e9f5f5!important;border-color:#cde6e7!important}
       .badge,.status{background:#e9f2f6!important;color:#123a5a!important}
     </style>`;
-  return `${theme}<style id="nel-v91-brand-css">.nel-v91-brandmark{width:42px;height:42px;border-radius:12px;object-fit:cover;background:#fff;box-shadow:0 3px 12px rgba(0,0,0,.14);margin-right:9px;vertical-align:middle}.nel-v91-mini{width:34px;height:34px;border-radius:9px}</style>
+  return `${theme}<style id="nel-v91-brand-css">.nel-v91-brandmark{width:42px;height:42px;border-radius:12px;object-fit:cover;background:#fff;box-shadow:0 3px 12px rgba(0,0,0,.14);vertical-align:middle}.nel-v91-mini{width:34px;height:34px;border-radius:9px}.brandRow>.logo{margin-right:0}</style>
   <script>(function(){
     const LOGO='${NEL_V91_LOGO}';
-    document.querySelectorAll('img.logo,img.headLogo').forEach(function(i){i.src=LOGO;i.onerror=null;});
-    const brand=document.querySelector('header .brand, .top .brand');
-    if(brand && !brand.querySelector('.nel-v91-brandmark')){const i=document.createElement('img');i.src=LOGO;i.className='nel-v91-brandmark nel-v91-mini';i.alt='Native Elaneeru';brand.insertBefore(i,brand.firstChild);brand.style.display='flex';brand.style.alignItems='center';}
+    const existing=document.querySelector('img.logo,img.headLogo');
+    if(existing){
+      existing.src=LOGO;
+      existing.onerror=null;
+      existing.classList.add('nel-v91-brandmark');
+      document.querySelectorAll('.nel-v91-brandmark').forEach(function(x){if(x!==existing)x.remove();});
+      return;
+    }
+    const row=document.querySelector('header .brandRow, header .topline, header .headerTop, .top .brand');
+    if(row && !row.querySelector('.nel-v91-brandmark')){
+      const i=document.createElement('img');
+      i.src=LOGO;i.className='nel-v91-brandmark';i.alt='Native Elaneeru';
+      row.insertBefore(i,row.firstChild);
+    }
   })();</script>`;
 }
 
