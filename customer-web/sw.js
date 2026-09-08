@@ -1,4 +1,4 @@
-const CACHE='native-elaneeru-v10.4.1';
+const CACHE='native-elaneeru-v10.4.2';
 const SHELL=[
   './index.html',
   './login/index.html',
@@ -31,11 +31,13 @@ function injectUx(response){
   const type=String(response.headers.get('content-type')||'');
   if(!type.includes('text/html')) return Promise.resolve(response);
   return response.text().then(text=>{
-    if(!text.includes('i18n-v102.js')){
-      text=text.replace('</body>','<script src="./i18n-v102.js"></script></body>');
-    }
-    if(!text.includes('i18n-v104.js')){
-      text=text.replace('</body>','<script src="./i18n-v104.js"></script></body>');
+    const scripts=[];
+    if(!text.includes('i18n-v102.js')) scripts.push('<script src="./i18n-v102.js"></script>');
+    if(!text.includes('i18n-v104.js')) scripts.push('<script src="./i18n-v104.js"></script>');
+    if(scripts.length){
+      const bodyEnd=text.toLowerCase().lastIndexOf('</body>');
+      if(bodyEnd>=0) text=text.slice(0,bodyEnd)+scripts.join('')+text.slice(bodyEnd);
+      else text+=scripts.join('');
     }
     const headers=new Headers(response.headers);
     headers.delete('content-length');
@@ -56,9 +58,10 @@ self.addEventListener('fetch',event=>{
     event.respondWith(
       fetch(event.request,{cache:'no-store'})
         .then(networkResponse=>{
-          const rawCopy=networkResponse.clone();
-          const fallbackKey=navigationFallback(url);
-          caches.open(CACHE).then(cache=>cache.put(fallbackKey,rawCopy)).catch(()=>{});
+          if(networkResponse && networkResponse.ok){
+            const copy=networkResponse.clone();
+            caches.open(CACHE).then(cache=>cache.put(navigationFallback(url),copy)).catch(()=>{});
+          }
           return injectUx(networkResponse);
         })
         .catch(()=>caches.match(navigationFallback(url)).then(injectUx))
