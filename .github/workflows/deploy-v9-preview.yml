@@ -1,0 +1,82 @@
+name: Deploy Native Elaneeru V9 Preview
+
+on:
+  push:
+    branches:
+      - build/b2c-b2b-v9
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-elaneeru-v9-preview
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Configure clasp project
+        shell: bash
+        run: |
+          cat > .clasp.json <<JSON
+          {
+            "scriptId": "${{ secrets.APPS_SCRIPT_ID }}",
+            "rootDir": "src"
+          }
+          JSON
+
+      - name: Configure Google auth
+        shell: bash
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+
+      - name: Push V9 source to Apps Script
+        run: npx clasp push -f
+
+      - name: Update stable V9 preview deployment
+        id: deploy
+        shell: bash
+        run: |
+          set -o pipefail
+          PREVIEW_DEPLOYMENT_ID="AKfycby4tO2Y1xWbVv1XqzbIYjuTKOt4XRWPzB9MseMC1x-qc8gbNYPvqvG1z6PuCPGZi5O2"
+          npx clasp deploy -i "$PREVIEW_DEPLOYMENT_ID" -d "Native Elaneeru V9 Preview $GITHUB_SHA"
+          PREVIEW_URL="https://script.google.com/macros/s/${PREVIEW_DEPLOYMENT_ID}/exec"
+          echo "deployment_id=$PREVIEW_DEPLOYMENT_ID" >> "$GITHUB_OUTPUT"
+          echo "preview_url=$PREVIEW_URL" >> "$GITHUB_OUTPUT"
+          echo "## Native Elaneeru V9 Preview" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "$PREVIEW_URL?page=apps" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Stable preview deployment reused; production /exec is not updated." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Print preview links
+        shell: bash
+        run: |
+          BASE="${{ steps.deploy.outputs.preview_url }}"
+          echo "APP_HUB=${BASE}?page=apps"
+          echo "B2C=${BASE}?page=b2c"
+          echo "B2B=${BASE}?page=b2b"
+          echo "ADMIN=${BASE}?page=admin"
+          echo "DELIVERY=${BASE}?page=delivery"
+          echo "DRIVER=${BASE}?page=driver"
+          echo "PICKER=${BASE}?page=picker"
+          echo "BARCODE=${BASE}?page=barcode"
+          echo "INVENTORY=${BASE}?page=inventory"
+          echo "SALES=${BASE}?page=sales"
+          echo "ONBOARDING=${BASE}?page=vendor"
