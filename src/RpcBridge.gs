@@ -40,6 +40,7 @@ function rpcV9(method, args) {
     driverScanBarcodeV8: driverScanBarcodeV92,
     driverDeliverV8: driverDeliverV92,
     driverCheckOutV8: driverCheckOutV92,
+    driverUnableToDeliverV92: driverUnableToDeliverV92,
     updateDriverLiveV8: updateDriverLiveV8,
 
     // Picker
