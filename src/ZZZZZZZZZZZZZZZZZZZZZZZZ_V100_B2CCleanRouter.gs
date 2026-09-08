@@ -3,7 +3,7 @@
  ******************************************************************************/
 
 function b2cBrandLogoV100_(){
-  try { return NEL_V91_LOGO || ''; }
+  try { return NEL_V9_LOGO_DATA_ || ''; }
   catch(e) { return ''; }
 }
 
