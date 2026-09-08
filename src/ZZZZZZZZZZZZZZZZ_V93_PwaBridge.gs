@@ -1,10 +1,6 @@
 /*******************************************************************************
  * NATIVE ELANEERU V9.3 — EXTERNAL PWA BRIDGE
- *
- * Enables the installable PWAs hosted on GitHub Pages to call Apps Script using
- * the existing hidden-form/postMessage bridge. Only explicitly safe methods are
- * exposed. Authentication is still enforced inside each driver/vendor/staff API.
- *******************************************************************************/
+ ******************************************************************************/
 
 function doPostV93_(e){
   const isBridge=String(e&&e.parameter&&e.parameter.bridge||'')==='1';
@@ -17,6 +13,10 @@ function doPostV93_(e){
     const args=Array.isArray(req.args)?req.args:[];
 
     const allowed={
+      // Auth
+      customerLoginV95:customerLoginV95,
+      authLoginV95:authLoginV95,
+
       // B2C customer PWA
       getAppConfig:getAppConfig,
       getB2CAppDataV9:getB2CAppDataV9,
@@ -38,7 +38,7 @@ function doPostV93_(e){
       // Compliance
       getCompliancePublicV91:getCompliancePublicV91,
 
-      // Operations PWA — delivery partner / driver
+      // Operations PWA
       driverLoginV8:driverLoginV8,
       getDriverDayRouteV8:getDriverDayRouteV92,
       driverHubPickupV83:driverHubPickupV92,
@@ -49,7 +49,7 @@ function doPostV93_(e){
       driverUnableToDeliverV92:driverUnableToDeliverV92,
       updateDriverLiveV8:updateDriverLiveV8,
 
-      // Picker / inventory / sales operations PWA expansion
+      // Picker / inventory / sales
       getV7PickerDashboard:getV7PickerDashboard,
       updateV7PickerTask:updateV7PickerTask,
       getInventoryDashboardV81:getInventoryDashboardV81,
