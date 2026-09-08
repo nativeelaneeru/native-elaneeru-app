@@ -1,0 +1,7 @@
+window.NEL_OPS_CONFIG={
+  apiUrl:'https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec',
+  appVersion:'9.3.0',
+  supportPhone:'7411807675',
+  supportWhatsApp:'917411807675',
+  company:'Sri Govindadri Ventures'
+};
