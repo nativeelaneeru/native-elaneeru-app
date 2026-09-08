@@ -49,25 +49,21 @@ jobs:
       - name: Push V9 source to Apps Script
         run: npx clasp push -f
 
-      - name: Create isolated V9 preview deployment
+      - name: Update stable V9 preview deployment
         id: deploy
         shell: bash
         run: |
           set -o pipefail
-          OUT=$(npx clasp deploy -d "Native Elaneeru V9 Preview $GITHUB_SHA" 2>&1 | tee /dev/stderr)
-          DEPLOYMENT_ID=$(printf '%s\n' "$OUT" | sed -n 's/^Deployed \([^ ]*\) @.*/\1/p' | tail -1)
-          if [ -z "$DEPLOYMENT_ID" ]; then
-            echo "Could not parse deployment ID"
-            exit 1
-          fi
-          PREVIEW_URL="https://script.google.com/macros/s/${DEPLOYMENT_ID}/exec"
-          echo "deployment_id=$DEPLOYMENT_ID" >> "$GITHUB_OUTPUT"
+          PREVIEW_DEPLOYMENT_ID="AKfycby4tO2Y1xWbVv1XqzbIYjuTKOt4XRWPzB9MseMC1x-qc8gbNYPvqvG1z6PuCPGZi5O2"
+          npx clasp deploy -i "$PREVIEW_DEPLOYMENT_ID" -d "Native Elaneeru V9 Preview $GITHUB_SHA"
+          PREVIEW_URL="https://script.google.com/macros/s/${PREVIEW_DEPLOYMENT_ID}/exec"
+          echo "deployment_id=$PREVIEW_DEPLOYMENT_ID" >> "$GITHUB_OUTPUT"
           echo "preview_url=$PREVIEW_URL" >> "$GITHUB_OUTPUT"
           echo "## Native Elaneeru V9 Preview" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "$PREVIEW_URL?page=apps" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "This is an isolated deployment. Production /exec is not updated." >> "$GITHUB_STEP_SUMMARY"
+          echo "Stable preview deployment reused; production /exec is not updated." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Print preview links
         shell: bash
