@@ -13,6 +13,7 @@ function rpcV9(method, args) {
   const allowed = {
     // B2C customer
     getAppConfig: getAppConfig,
+    getB2CAppDataV9: getB2CAppDataV9,
     saveCustomerProfile: saveCustomerProfile,
     checkDeliveryLocation: checkDeliveryLocation,
     saveOrder: saveOrder,
