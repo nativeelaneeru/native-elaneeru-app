@@ -76,7 +76,8 @@ function b2cLoginUiV95_(){
       if(!/^[6-9]\\d{9}$/.test(m)){setMsg('Enter a valid 10 digit mobile number.');show();return false}
       if(input)input.value=m;if(btn){btn.disabled=true;btn.textContent='Checking account…'}setMsg('');
       try{
-        const r=await rpc('customerLoginV95',[m]);
+        if(typeof window.rpc!=='function') throw new Error('Customer connection is not ready. Refresh the app once.');
+        const r=await window.rpc('customerLoginV95',[m]);
         localStorage.setItem(SESSION,m);
         if(r.exists){hydrate(r.profile);hide();try{await loadCustomer(false)}catch(e){};try{toast('Welcome back'+(r.profile&&r.profile.name?' '+r.profile.name:'')+' ✓')}catch(e){};return true}
         hydrate({mobile:m,name:'',area:'',pincode:'',address:'',latitude:'',longitude:''});hide();try{go('account')}catch(e){};try{toast('New customer — complete your profile to continue.')}catch(e){};return true;
