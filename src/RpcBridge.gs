@@ -1,16 +1,16 @@
 /*******************************************************************************
  * NATIVE ELANEERU V9 — SAFE CLIENT RPC BRIDGE
- *
- * google.script.run does not reliably support dynamic method access like
- * google.script.run[functionName](...). Every UI calls this one fixed method
- * and the server dispatches only to an explicit allow-list.
- *******************************************************************************/
+ ******************************************************************************/
 
 function rpcV9(method, args) {
   method = String(method || '').trim();
   args = Array.isArray(args) ? args : [];
 
   const allowed = {
+    // Auth
+    customerLoginV95: customerLoginV95,
+    authLoginV95: authLoginV95,
+
     // B2C customer
     getAppConfig: getAppConfig,
     getB2CAppDataV9: getB2CAppDataV9,
@@ -32,7 +32,7 @@ function rpcV9(method, args) {
     // Public compliance
     getCompliancePublicV91: getCompliancePublicV91,
 
-    // Drivers / delivery — V9.2 wrappers auto-sync customer-facing status
+    // Drivers / delivery
     driverLoginV8: driverLoginV8,
     getDriverDayRouteV8: getDriverDayRouteV92,
     driverHubPickupV83: driverHubPickupV92,
@@ -84,6 +84,5 @@ function rpcV9(method, args) {
   if (!Object.prototype.hasOwnProperty.call(allowed, method)) {
     throw new Error('RPC method not allowed: ' + method);
   }
-
   return allowed[method].apply(null, args);
 }
