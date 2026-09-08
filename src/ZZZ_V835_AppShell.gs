@@ -35,8 +35,7 @@ function doGetV9_(e){
   const out=HtmlService.createTemplateFromFile(page).evaluate()
     .setTitle('Native Elaneeru - '+(page==='index'?'B2C':page))
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .addMetaTag('viewport','width=device-width, initial-scale=1, viewport-fit=cover')
-    .addMetaTag('theme-color','#075b34');
+    .addMetaTag('viewport','width=device-width, initial-scale=1, viewport-fit=cover');
   if(page!=='Apps') out.append(sharedUxV9_(page));
   return out;
 }
