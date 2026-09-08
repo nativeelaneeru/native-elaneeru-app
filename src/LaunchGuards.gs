@@ -96,3 +96,59 @@ function getSoftLaunchConfigV9() {
     supportWhatsApp: '917411807675'
   };
 }
+
+function runLaunchPreflightV9() {
+  const checks = [];
+  const pass = (name, ok, detail) => checks.push({name:name, ok:!!ok, detail:s_(detail)});
+  const ss = ss_();
+  const requiredSheets = [
+    V8.SHEETS.ORDERS, V8.SHEETS.ORDER_ITEMS, V8.SHEETS.CUSTOMERS,
+    V8.SHEETS.B2B_VENDORS, V8.SHEETS.B2B_ORDERS, V8.SHEETS.B2B_ORDER_ITEMS,
+    V8.SHEETS.PRODUCTS, V8.SHEETS.ROUTES, V8.SHEETS.STOPS,
+    V8.SHEETS.DRIVERS, V8.SHEETS.DRIVER_LIVE, V8.SHEETS.PICKER_TASKS,
+    V8.SHEETS.INVENTORY, V8.SHEETS.VENDOR_PRICING,
+    'Consolidated_Orders', 'Consolidated_Customers', 'Consolidated_Dashboard',
+    'Launch_Config', 'Launch_QA'
+  ];
+
+  const missing = requiredSheets.filter(name => !ss.getSheetByName(name));
+  pass('Required sheets', missing.length === 0, missing.length ? 'Missing: ' + missing.join(', ') : 'All launch sheets present.');
+
+  const tc = productRows_().find(p => s_(p['Product ID']).toUpperCase() === 'TC');
+  pass('Tender Coconut product', !!tc, tc ? 'TC found.' : 'Tender Coconut (TC) missing.');
+  if (tc) {
+    pass('Tender Coconut B2C LIVE', active_(tc['B2C Status']), 'Status: ' + s_(tc['B2C Status']));
+    pass('Tender Coconut B2B LIVE', active_(tc['B2B Status']), 'Status: ' + s_(tc['B2B Status']));
+    pass('Tender Coconut B2C price', n_(tc['B2C Price']) > 0, '₹' + n_(tc['B2C Price']) + ' | MOQ ' + n_(tc['B2C MOQ']));
+    pass('Tender Coconut B2B price', n_(tc['B2B Default Price']) > 0, '₹' + n_(tc['B2B Default Price']) + ' | MOQ ' + n_(tc['B2B MOQ']) + ' | Step ' + (n_(tc['B2B Qty Step']) || n_(tc['Qty Step']) || 1));
+  }
+
+  const launchSheet = ss.getSheetByName('Launch_Config');
+  if (launchSheet && launchSheet.getLastRow() > 1) {
+    const values = launchSheet.getRange(2, 1, launchSheet.getLastRow() - 1, 2).getValues();
+    const config = {};
+    values.forEach(r => { if (s_(r[0])) config[s_(r[0])] = r[1]; });
+    pass('Launch date', s_(config.Launch_Date) === '2026-09-12', 'Launch_Date: ' + s_(config.Launch_Date));
+    pass('Soft launch mode', s_(config.Launch_Mode).toUpperCase() === 'SOFT_LAUNCH', 'Mode: ' + s_(config.Launch_Mode));
+    pass('B2C login mode', s_(config.B2C_Login_Mode).toUpperCase() === 'MOBILE_DEVICE_SESSION', 'Mode: ' + s_(config.B2C_Login_Mode));
+    pass('B2C payment mode', s_(config.B2C_Payment_Mode).toUpperCase() === 'COD', 'Mode: ' + s_(config.B2C_Payment_Mode));
+    pass('Support phone', digits_(config.Support_Phone) === '7411807675', 'Phone: ' + s_(config.Support_Phone));
+    pass('Delivery radius', n_(config.Delivery_Radius_KM) > 0, n_(config.Delivery_Radius_KM) + ' KM');
+  } else {
+    pass('Launch config', false, 'Launch_Config is empty or missing.');
+  }
+
+  const vendors = rows_(V8.SHEETS.B2B_VENDORS).filter(v => active_(v.Status));
+  const invalidPayments = vendors.filter(v => !['COD', 'CREDIT'].includes(s_(v['Payment Type'] || 'COD').toUpperCase()));
+  pass('Active B2B payment setup', invalidPayments.length === 0, invalidPayments.length ? 'Unsupported payment type on ' + invalidPayments.length + ' active account(s).' : vendors.length + ' active B2B account(s) use COD/CREDIT only.');
+
+  const failed = checks.filter(c => !c.ok);
+  return {
+    ok: failed.length === 0,
+    checkedAt: fmtDT_(new Date()),
+    totalChecks: checks.length,
+    passedChecks: checks.length - failed.length,
+    failedChecks: failed.length,
+    checks: checks
+  };
+}
