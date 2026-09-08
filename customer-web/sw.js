@@ -1,4 +1,4 @@
-const CACHE='native-elaneeru-v10.5.0';
+const CACHE='native-elaneeru-v10.5.1';
 const SHELL=[
   './index.html',
   './login/index.html',
