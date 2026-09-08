@@ -1,2 +1,6 @@
-**/**
-!src/**
+# .clasp.json uses rootDir "src".
+# Therefore all paths seen by clasp are already relative to src/.
+# Do NOT ignore **/** here; that previously caused every Apps Script source
+# file to be skipped and produced false "Script is already up to date" deploys.
+**/node_modules/**
+.DS_Store
