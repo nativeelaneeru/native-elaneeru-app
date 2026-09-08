@@ -32,14 +32,14 @@ function rpcV9(method, args) {
     // Public compliance
     getCompliancePublicV91: getCompliancePublicV91,
 
-    // Drivers / delivery
+    // Drivers / delivery — V9.2 wrappers auto-sync customer-facing status
     driverLoginV8: driverLoginV8,
-    getDriverDayRouteV8: getDriverDayRouteV8,
-    driverHubPickupV83: driverHubPickupV83,
-    driverCheckInV8: driverCheckInV8,
-    driverScanBarcodeV8: driverScanBarcodeV8,
-    driverDeliverV8: driverDeliverV8,
-    driverCheckOutV8: driverCheckOutV8,
+    getDriverDayRouteV8: getDriverDayRouteV92,
+    driverHubPickupV83: driverHubPickupV92,
+    driverCheckInV8: driverCheckInV92,
+    driverScanBarcodeV8: driverScanBarcodeV92,
+    driverDeliverV8: driverDeliverV92,
+    driverCheckOutV8: driverCheckOutV92,
     updateDriverLiveV8: updateDriverLiveV8,
 
     // Picker
@@ -71,7 +71,7 @@ function rpcV9(method, args) {
     createDeliveryPartnerAdmin: createDeliveryPartnerAdmin,
     updateDeliveryPartnerAdmin: updateDeliveryPartnerAdmin,
     getRoutePlannerDataV83: getRoutePlannerDataV83,
-    generateRouteForDay: generateRouteForDay,
+    generateRouteForDay: generateRouteForDayV92,
     getRouteStopsAdminV83: getRouteStopsAdminV83,
     getAdminInvoiceV91: getAdminInvoiceV91,
 
