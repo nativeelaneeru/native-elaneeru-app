@@ -2,7 +2,7 @@
   "name": "Native Elaneeru",
   "short_name": "Elaneeru",
   "description": "Fresh tender coconuts delivered locally.",
-  "start_url": "./",
+  "start_url": "./login/",
   "scope": "./",
   "display": "standalone",
   "background_color": "#fff8e9",
