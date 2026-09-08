@@ -19,6 +19,7 @@ function rpcV9(method, args) {
     saveOrder: saveOrder,
     getCustomerDashboard: getCustomerDashboard,
     getCustomerLiveTracking: getCustomerLiveTracking,
+    getB2CInvoiceV91: getB2CInvoiceV91,
 
     // B2B customer
     vendorLogin: vendorLogin,
@@ -26,6 +27,10 @@ function rpcV9(method, args) {
     getB2BAppDataV9: getB2BAppDataV9,
     placeB2BOrderV9: placeB2BOrderV9,
     getVendorLiveTracking: getVendorLiveTracking,
+    getB2BInvoiceV91: getB2BInvoiceV91,
+
+    // Public compliance
+    getCompliancePublicV91: getCompliancePublicV91,
 
     // Drivers / delivery
     driverLoginV8: driverLoginV8,
@@ -68,6 +73,7 @@ function rpcV9(method, args) {
     getRoutePlannerDataV83: getRoutePlannerDataV83,
     generateRouteForDay: generateRouteForDay,
     getRouteStopsAdminV83: getRouteStopsAdminV83,
+    getAdminInvoiceV91: getAdminInvoiceV91,
 
     // Launch checks
     getSoftLaunchConfigV9: getSoftLaunchConfigV9,
