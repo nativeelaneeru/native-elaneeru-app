@@ -10,10 +10,14 @@ function rpcV9(method, args) {
     // Auth
     customerLoginV95: customerLoginV95,
     authLoginV95: authLoginV95,
+    getCustomerPinStatusV107: getCustomerPinStatusV107,
+    setCustomerPinV107: setCustomerPinV107,
+    customerLoginWithPinV107: customerLoginWithPinV107,
 
     // B2C customer
     getAppConfig: getAppConfig,
     getB2CAppDataV9: getB2CAppDataV9,
+    getB2CBootstrapV107: getB2CBootstrapV107,
     saveCustomerProfile: saveCustomerProfile,
     checkDeliveryLocation: checkDeliveryLocation,
     saveOrder: saveOrder,
