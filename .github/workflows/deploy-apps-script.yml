@@ -51,3 +51,38 @@ jobs:
           DEPLOYMENT_ID: ${{ secrets.APPS_SCRIPT_DEPLOYMENT_ID }}
         run: |
           npx clasp deploy -i "$DEPLOYMENT_ID" -d "GitHub auto deploy $GITHUB_SHA"
+
+      - name: Verify public B2C catalogue endpoint
+        env:
+          API_URL: https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec
+        run: |
+          node <<'NODE'
+          (async () => {
+            const api = process.env.API_URL;
+            const methods = ['getAppConfig', 'getB2CAppDataV9'];
+            let passed = false;
+            for (const method of methods) {
+              const request = {method, args: [], requestId: 'smoke-' + method + '-' + Date.now()};
+              const body = new URLSearchParams({payload: JSON.stringify(request)});
+              const response = await fetch(api + '?bridge=1', {
+                method: 'POST',
+                headers: {'content-type': 'application/x-www-form-urlencoded'},
+                body,
+                redirect: 'follow'
+              });
+              const text = await response.text();
+              const match = text.match(/parent\.postMessage\((\{[\s\S]*\}),"\*"\)/);
+              let payload = null;
+              if (match) {
+                try { payload = JSON.parse(match[1]).payload; } catch (error) {}
+              }
+              const products = payload && payload.ok && payload.result && Array.isArray(payload.result.products)
+                ? payload.result.products.length : 0;
+              const banners = payload && payload.ok && payload.result && Array.isArray(payload.result.banners)
+                ? payload.result.banners.length : 0;
+              console.log(JSON.stringify({transport: 'POST bridge', method, status: response.status, finalUrl: response.url, responseBytes: text.length, ok: !!(payload && payload.ok), error: payload && payload.error, products, banners}));
+              if (products > 0) passed = true;
+            }
+            if (!passed) throw new Error('Public B2C endpoint returned no products for all supported methods.');
+          })().catch(error => { console.error(error); process.exit(1); });
+          NODE
