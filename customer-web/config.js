@@ -10,5 +10,5 @@ window.NEL_CONFIG = {
   deliveryRadiusKm: 3
 };
 if (!window.NEL_RPC_V109) {
-  document.write('<script src="./rpc-v109.js?v=1090"><\\/script>');
+  document.write('<script src="./rpc-v109.js?v=1090"><\/script>');
 }
