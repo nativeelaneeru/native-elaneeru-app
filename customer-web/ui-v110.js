@@ -17,7 +17,7 @@
   function t(){return COPY[lang()]}
   function digits(v){return String(v||'').replace(/\D/g,'').slice(-10)}
   function sessionMobile(){try{return digits(localStorage.getItem('nel_b2c_session_mobile')||'')}catch(e){return ''}}
-  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})}
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[m]})}
   function money(v){return '₹'+Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:2})}
   function rpcSafe(method,args){var fn=window.NEL_RPC||window.rpc;return typeof fn==='function'?fn(method,args||[]):Promise.reject(new Error('Connection unavailable.'))}
   function products(){try{return S&&S.cfg&&Array.isArray(S.cfg.products)?S.cfg.products:[]}catch(e){return []}}
@@ -77,7 +77,7 @@
     var shop=document.getElementById('shopPage'),chip=document.getElementById('nel110Focus');if(!chip&&shop){chip=document.createElement('div');chip.id='nel110Focus';chip.className='nel110-focus';var section=shop.querySelector('.section');if(section)section.insertAdjacentElement('afterend',chip);else shop.insertBefore(chip,host)}
     if(chip){var c=t();chip.innerHTML='<div><small>'+esc(c.offer)+'</small><br><b>'+esc(p?p.productName:activeBannerProductId)+'</b></div><button type="button" id="nel110ShowAll">'+esc(c.showAll)+'</button>';var b=document.getElementById('nel110ShowAll');if(b)b.onclick=function(){clearProductFocus(true)}}
   }
-  function clearProductFocus(rerender){activeBannerProductId='';var chip=document.getElementById('nel110Focus');if(chip)chip.remove();if(rerender&&baseRenderProducts)baseRenderProducts()}
+  function clearProductFocus(rerender){activeBannerProductId='';var chip=document.getElementById('nel110Focus');if(chip)chip.remove();if(rerender&&baseRenderProducts){baseRenderProducts();renderReorder(dashboardCache)}}
   function focusBannerProduct(id){id=String(id||'').toUpperCase();if(!id)return;activeBannerProductId=id;try{if(typeof go==='function')go('shop')}catch(e){}setTimeout(applyProductFocus,0)}
 
   function patchRenderProducts(){
