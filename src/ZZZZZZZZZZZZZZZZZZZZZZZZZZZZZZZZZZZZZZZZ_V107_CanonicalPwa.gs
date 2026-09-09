@@ -1,8 +1,5 @@
 /*******************************************************************************
- * NATIVE ELANEERU V10.8 — CANONICAL PWA BRIDGE + OPTIONAL CUSTOMER PIN
- * Fix: Apps Script HtmlService runs inside Google's sandbox iframe. Responses
- * must post to window.top so the external GitHub Pages PWA actually receives
- * them; parent only reaches the Apps Script wrapper.
+ * NATIVE ELANEERU V10.8.1 — CANONICAL PWA BRIDGE + OPTIONAL CUSTOMER PIN
  ******************************************************************************/
 
 function ensureCustomerPinColumnsV107_(){
@@ -28,6 +25,7 @@ function customerByMobileV107_(mobile){
 }
 
 function customerProfileV107_(c,mobile){
+  c=c||{};
   return {
     mobile:mobile,
     name:s_(c.Name),
@@ -37,6 +35,20 @@ function customerProfileV107_(c,mobile){
     latitude:c.Latitude===''?'':n_(c.Latitude),
     longitude:c.Longitude===''?'':n_(c.Longitude)
   };
+}
+
+function createMinimalCustomerV1081_(mobile){
+  const now=now_();
+  append_(V8.SHEETS.CUSTOMERS,{
+    'Customer ID':'CUST-'+mobile,
+    'Mobile':mobile,
+    'WhatsApp':mobile,
+    'Status':'ACTIVE',
+    'Customer Status':'ACTIVE',
+    'Created At':now,
+    'Updated At':now
+  });
+  return customerByMobileV107_(mobile).customer;
 }
 
 function getCustomerPinStatusV107(mobile){
@@ -56,14 +68,18 @@ function setCustomerPinV107(mobile,newPin,currentPin){
   currentPin=s_(currentPin);
   if(!/^\d{4}$/.test(newPin)) throw new Error('PIN must be exactly 4 digits.');
   return lockRun_(function(){
-    const x=customerByMobileV107_(mobile);
-    if(!x.customer) throw new Error('Save your customer profile before creating a PIN.');
+    let x=customerByMobileV107_(mobile);
+    if(!x.customer){
+      createMinimalCustomerV1081_(x.mobile);
+      x=customerByMobileV107_(x.mobile);
+    }
     const existing=s_(x.customer['PIN Hash']);
     if(existing && existing!==hashV8_(currentPin)) throw new Error('Current PIN is incorrect.');
     const sh=sh_(V8.SHEETS.CUSTOMERS),m=ensureCustomerPinColumnsV107_();
     set_(sh,x.customer._row,m,'PIN Hash',hashV8_(newPin));
     set_(sh,x.customer._row,m,'PIN Updated At',now_());
-    return {success:true,mobile:x.mobile,hasPin:true,changed:!!existing};
+    set_(sh,x.customer._row,m,'Updated At',now_());
+    return {success:true,mobile:x.mobile,hasPin:true,changed:!!existing,createdAccount:!existing&&!s_(x.customer.Name)};
   });
 }
 
@@ -128,6 +144,5 @@ function doGetV108_(e){
   return doGetV104_(e);
 }
 
-// Final canonical handlers. Filename intentionally remains the last router layer.
 doPost=doPostV108_;
 doGet=doGetV108_;
