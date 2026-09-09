@@ -1,4 +1,4 @@
-const CACHE='native-elaneeru-v10.18.0';
+const CACHE='native-elaneeru-v10.19.0';
 const SHELL=[
   './index.html','./login/index.html','./config.js','./ui-v110.js','./ui-v111.js','./ui-v112.js','./manifest.webmanifest',
   './icons/native-elaneeru.svg','./icons/icon-192.png','./icons/icon-512.png',
@@ -16,7 +16,7 @@ function enhanceHtml(response,isLogin){
     if(!text.includes('i18n-v102.js'))add.push('<script src="./i18n-v102.js"></script>');
     if(!text.includes('i18n-v104.js'))add.push('<script src="./i18n-v104.js"></script>');
     if(!text.includes('ui-v108.js'))add.push('<script src="./ui-v108.js"></script>');
-    if(!text.includes('ui-v110.js'))add.push('<script src="./ui-v110.js?v=1010"></script>');
+    if(!text.includes('ui-v110.js'))add.push('<script src="./ui-v110.js?v=10150"></script>');
     if(!text.includes('ui-v111.js'))add.push('<script src="./ui-v111.js?v=1011"></script>');
     if(!text.includes('ui-v112.js'))add.push('<script src="./ui-v112.js?v=10130"></script>');
     add.push(`<script>document.addEventListener('DOMContentLoaded',function(){var brand='./icons/native-elaneeru.svg?v=1016';document.querySelectorAll('img.logo,img[src*="icon-192.png"]').forEach(function(img){img.src=brand;img.style.objectFit='contain'});setTimeout(function(){var s=document.querySelector('.nel-pwa-splash');if(s){s.style.pointerEvents='none';var i=s.querySelector('img');if(i){i.src=brand;i.style.objectFit='contain';i.style.animationDuration='.45s'}}},40);setTimeout(function(){var s=document.querySelector('.nel-pwa-splash');if(s){s.classList.add('out');setTimeout(function(){if(s&&s.remove)s.remove()},180)}},620)},{once:true});</script>`);

@@ -17,6 +17,7 @@
   function t(){return COPY[lang()]}
   function digits(v){return String(v||'').replace(/\D/g,'').slice(-10)}
   function sessionMobile(){try{return digits(localStorage.getItem('nel_b2c_session_mobile')||'')}catch(e){return ''}}
+  function cachedDashboard(){var m=sessionMobile();if(!m)return null;try{var x=JSON.parse(localStorage.getItem('nel_b2c_dashboard_v115_'+m)||'null');return x&&x.dashboard?x.dashboard:null}catch(e){return null}}
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[m]})}
   function money(v){return '₹'+Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:2})}
   function rpcSafe(method,args){var fn=window.NEL_RPC||window.rpc;return typeof fn==='function'?fn(method,args||[]):Promise.reject(new Error('Connection unavailable.'))}
@@ -89,12 +90,13 @@
   function patchLoadCustomer(){
     var fn=window.loadCustomer;try{if(typeof fn!=='function'&&typeof loadCustomer==='function')fn=loadCustomer}catch(e){}
     if(typeof fn!=='function'||fn.__nel110)return;baseLoadCustomer=fn;
-    var wrapped=function(){var r=baseLoadCustomer.apply(this,arguments);Promise.resolve(r).then(function(){refreshDashboard()}).catch(function(){});return r};wrapped.__nel110=true;window.loadCustomer=wrapped;try{loadCustomer=wrapped}catch(e){}
+    var wrapped=function(){return baseLoadCustomer.apply(this,arguments)};wrapped.__nel110=true;window.loadCustomer=wrapped;try{loadCustomer=wrapped}catch(e){}
   }
 
   function refreshDashboard(){var m=sessionMobile();if(!/^[6-9]\d{9}$/.test(m))return Promise.resolve(null);return rpcSafe('getCustomerDashboard',[m]).then(function(d){renderTargets(d);renderReorder(d);return d}).catch(function(){return null})}
 
   function wireClicks(){
+    window.addEventListener('nel:dashboard',function(e){var d=e&&e.detail&&e.detail.dashboard;if(d){renderTargets(d);renderReorder(d)}});
     document.addEventListener('click',function(e){
       var card=e.target&&e.target.closest?e.target.closest('.nel109-banner'):null;
       if(card){var list=Array.prototype.slice.call(document.querySelectorAll('#nel109Banners .nel109-banner')),ix=list.indexOf(card),bs=banners(),b=ix>=0?bs[ix]:null;if(b&&String(b.redirectType||'').toUpperCase()==='PRODUCT'){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();focusBannerProduct(b.productId||b.redirectValue);return}}
@@ -105,9 +107,8 @@
   }
 
   function install(){
-    if(location.pathname.indexOf('/login/')>=0)return;ensureStyle();patchRenderProducts();patchLoadCustomer();wireClicks();renderReorder(null);
-    window.addEventListener('load',function(){patchRenderProducts();patchLoadCustomer();setTimeout(refreshDashboard,350)},true);
-    if(document.readyState==='complete')setTimeout(refreshDashboard,350);
+    if(location.pathname.indexOf('/login/')>=0)return;ensureStyle();patchRenderProducts();patchLoadCustomer();wireClicks();var cached=cachedDashboard();renderReorder(cached);if(cached)renderTargets(cached);
+    window.addEventListener('load',function(){patchRenderProducts();patchLoadCustomer()},true);
     [500,1200,2500].forEach(function(ms){setTimeout(function(){patchRenderProducts();patchLoadCustomer();if(dashboardCache){renderTargets(dashboardCache);renderReorder(dashboardCache);applyProductFocus()}},ms)});
   }
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',install,{once:true}):install();
