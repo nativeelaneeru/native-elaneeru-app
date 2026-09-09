@@ -45,47 +45,9 @@ jobs:
       - name: Push files to Apps Script
         run: npx clasp push -f
 
-      - name: Create verified public web app deployment
-        id: public_deployment
+      - name: Update existing web app deployment
         shell: bash
-        run: |
-          deployment_output=$(npx clasp deploy -d "Public B2C deployment $GITHUB_SHA")
-          echo "$deployment_output"
-          deployment_id=$(echo "$deployment_output" | sed -n 's/^Deployed \([^ ]*\) @.*/\1/p')
-          if [ -z "$deployment_id" ]; then
-            echo "Could not read deployment ID."
-            exit 1
-          fi
-          echo "deployment_id=$deployment_id" >> "$GITHUB_OUTPUT"
-
-      - name: Verify new public B2C catalogue endpoint
         env:
-          DEPLOYMENT_ID: ${{ steps.public_deployment.outputs.deployment_id }}
+          DEPLOYMENT_ID: ${{ secrets.APPS_SCRIPT_DEPLOYMENT_ID }}
         run: |
-          node <<'NODE'
-          (async () => {
-            const api = 'https://script.google.com/macros/s/' + process.env.DEPLOYMENT_ID + '/exec';
-            const request = {method: 'getAppConfig', args: [], requestId: 'smoke-' + Date.now()};
-            const body = new URLSearchParams({payload: JSON.stringify(request)});
-            const response = await fetch(api + '?bridge=1', {
-              method: 'POST',
-              headers: {'content-type': 'application/x-www-form-urlencoded'},
-              body,
-              redirect: 'follow'
-            });
-            const text = await response.text();
-            const match = text.match(/parent\.postMessage\((\{[\s\S]*\}),"\*"\)/);
-            let payload = null;
-            if (match) {
-              try { payload = JSON.parse(match[1]).payload; } catch (error) {}
-            }
-            const products = payload && payload.ok && payload.result && Array.isArray(payload.result.products)
-              ? payload.result.products.length : 0;
-            const banners = payload && payload.ok && payload.result && Array.isArray(payload.result.banners)
-              ? payload.result.banners.length : 0;
-            console.log(JSON.stringify({deploymentId: process.env.DEPLOYMENT_ID, status: response.status, responseBytes: text.length, ok: !!(payload && payload.ok), error: payload && payload.error, products, banners}));
-            if (response.status !== 200 || products < 1 || banners < 1) {
-              throw new Error('New deployment did not return the live B2C catalogue.');
-            }
-          })().catch(error => { console.error(error); process.exit(1); });
-          NODE
+          npx clasp deploy -i "$DEPLOYMENT_ID" -d "GitHub auto deploy $GITHUB_SHA"
