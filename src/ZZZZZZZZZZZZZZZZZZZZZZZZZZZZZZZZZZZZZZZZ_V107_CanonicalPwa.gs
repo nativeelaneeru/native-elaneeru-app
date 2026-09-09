@@ -1,7 +1,8 @@
 /*******************************************************************************
- * NATIVE ELANEERU V10.7 — CANONICAL PWA BRIDGE + OPTIONAL CUSTOMER PIN
- * One deterministic external-PWA data path. This file sorts after older router
- * layers so its doGet/doPost assignments become the final Apps Script handlers.
+ * NATIVE ELANEERU V10.8 — CANONICAL PWA BRIDGE + OPTIONAL CUSTOMER PIN
+ * Fix: Apps Script HtmlService runs inside Google's sandbox iframe. Responses
+ * must post to window.top so the external GitHub Pages PWA actually receives
+ * them; parent only reaches the Apps Script wrapper.
  ******************************************************************************/
 
 function ensureCustomerPinColumnsV107_(){
@@ -98,26 +99,35 @@ function getB2CBootstrapV107(mobile){
   return {success:true,app:app,auth:auth,dashboard:dashboard,pin:pin,serverTime:fmtDT_(new Date())};
 }
 
-function doPostV107_(e){
+function pwaBridgeHtmlV108_(payload){
+  let data=JSON.stringify({nelBridge:true,payload:payload})
+    .replace(/&/g,'\\u0026').replace(/</g,'\\u003c').replace(/>/g,'\\u003e')
+    .replace(/\\u2028/g,'\\\\u2028').replace(/\\u2029/g,'\\\\u2029');
+  const js='(function(){var m='+data+';try{window.top.postMessage(m,"*");}catch(e){}try{window.parent.postMessage(m,"*");}catch(e){}})();';
+  return HtmlService.createHtmlOutput('<!doctype html><meta charset="utf-8"><script>'+js+'<\/script>')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function doPostV108_(e){
   const isBridge=String(e&&e.parameter&&e.parameter.bridge||'')==='1';
-  if(!isBridge) return bridgeHtml_({ok:false,error:'Unknown endpoint.',requestId:''});
+  if(!isBridge) return pwaBridgeHtmlV108_({ok:false,error:'Unknown endpoint.',requestId:''});
   let req={};
   try{
     req=JSON.parse(String(e&&e.parameter&&e.parameter.payload||'{}'));
     const method=s_(req.method),args=Array.isArray(req.args)?req.args:[];
     if(!method) throw new Error('RPC method is required.');
     const result=rpcV9(method,args);
-    return bridgeHtml_({ok:true,result:result,requestId:s_(req.requestId)});
+    return pwaBridgeHtmlV108_({ok:true,result:result,requestId:s_(req.requestId)});
   }catch(err){
-    return bridgeHtml_({ok:false,error:String(err&&err.message||err),requestId:s_(req&&req.requestId)});
+    return pwaBridgeHtmlV108_({ok:false,error:String(err&&err.message||err),requestId:s_(req&&req.requestId)});
   }
 }
 
-function doGetV107_(e){
+function doGetV108_(e){
   if(String(e&&e.parameter&&e.parameter.pwaBridge||'')==='1') return pwaBridgePageV106_();
   return doGetV104_(e);
 }
 
-// Final canonical handlers. Filename intentionally sorts after older Z-layers.
-doPost=doPostV107_;
-doGet=doGetV107_;
+// Final canonical handlers. Filename intentionally remains the last router layer.
+doPost=doPostV108_;
+doGet=doGetV108_;
