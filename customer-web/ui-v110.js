@@ -42,12 +42,21 @@
   }
 
   function pct(a,b){a=Number(a||0);b=Number(b||0);return b>0?Math.max(0,Math.min(100,Math.round(a*100/b))):0}
+  function defaultDashboard(){
+    var cfg;try{cfg=S&&S.cfg}catch(e){cfg=null}
+    if(!cfg)return null;
+    return {
+      weekly:{achieved:0,target:Number(cfg.weeklyTargetQty||0),reward:Number(cfg.weeklyReward||0),status:'In Progress'},
+      monthly:{achieved:0,target:Number(cfg.monthlyTargetQty||0),reward:Number(cfg.monthlyReward||0),status:'In Progress'},
+      orders:[]
+    };
+  }
   function targetItem(label,x){
     x=x||{};var c=t(),a=Number(x.achieved||0),goal=Number(x.target||0),left=Math.max(0,goal-a),complete=goal>0&&a>=goal;
     return '<div class="nel110-target-item"><small>'+esc(label)+'</small><strong>'+a+' / '+goal+'</strong><div class="nel110-progress"><i style="width:'+pct(a,goal)+'%"></i></div><small>'+(complete?esc(c.done):(a+' '+esc(c.delivered)+' · '+left+' '+esc(c.left)))+' · '+money(x.reward||0)+' '+esc(c.reward)+'</small></div>';
   }
   function renderTargets(d){
-    if(!d)return;dashboardCache=d;ensureStyle();var home=document.getElementById('homePage');if(!home)return;
+    d=d||defaultDashboard();if(!d)return;dashboardCache=d;ensureStyle();var home=document.getElementById('homePage');if(!home)return;
     var card=document.getElementById('nel110Target');if(!card){card=document.createElement('div');card.id='nel110Target';card.className='nel110-target';var rail=home.querySelector('.dealRail');if(rail)rail.insertAdjacentElement('afterend',card);else home.insertBefore(card,home.firstChild)}
     var c=t();card.innerHTML='<div class="nel110-target-head"><div><small>'+esc(c.targets)+'</small><br><b>🎯 '+esc((d.weekly&&d.weekly.title)||c.weekly)+'</b></div><span>🎁</span></div><div class="nel110-target-grid">'+targetItem(c.weekly,d.weekly)+targetItem(c.monthly,d.monthly)+'</div><div class="nel110-target-note">'+esc(c.note)+'</div>';
     var cashback=document.querySelector('.dealRail .d2');if(cashback&&!cashback.dataset.nel110){cashback.dataset.nel110='1';cashback.style.cursor='pointer';cashback.addEventListener('click',function(){var x=document.getElementById('nel110Target');if(x)x.scrollIntoView({behavior:'smooth',block:'center'})})}
@@ -80,6 +89,7 @@
   }
   function clearProductFocus(rerender){activeBannerProductId='';var chip=document.getElementById('nel110Focus');if(chip)chip.remove();if(rerender&&baseRenderProducts){baseRenderProducts();renderReorder(dashboardCache)}}
   function focusBannerProduct(id){id=String(id||'').toUpperCase();if(!id)return;activeBannerProductId=id;try{if(typeof go==='function')go('shop')}catch(e){}setTimeout(applyProductFocus,0)}
+  window.NEL_FOCUS_BANNER_PRODUCT=focusBannerProduct;
 
   function patchRenderProducts(){
     var fn=window.renderProducts;try{if(typeof fn!=='function'&&typeof renderProducts==='function')fn=renderProducts}catch(e){}
@@ -97,6 +107,7 @@
 
   function wireClicks(){
     window.addEventListener('nel:dashboard',function(e){var d=e&&e.detail&&e.detail.dashboard;if(d){renderTargets(d);renderReorder(d)}});
+    window.addEventListener('nel:catalog',function(){renderTargets(dashboardCache||defaultDashboard())});
     document.addEventListener('click',function(e){
       var card=e.target&&e.target.closest?e.target.closest('.nel109-banner'):null;
       if(card){var list=Array.prototype.slice.call(document.querySelectorAll('#nel109Banners .nel109-banner')),ix=list.indexOf(card),bs=banners(),b=ix>=0?bs[ix]:null;if(b&&String(b.redirectType||'').toUpperCase()==='PRODUCT'){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();focusBannerProduct(b.productId||b.redirectValue);return}}
@@ -107,7 +118,7 @@
   }
 
   function install(){
-    if(location.pathname.indexOf('/login/')>=0)return;ensureStyle();patchRenderProducts();patchLoadCustomer();wireClicks();var cached=cachedDashboard();renderReorder(cached);if(cached)renderTargets(cached);
+    if(location.pathname.indexOf('/login/')>=0)return;ensureStyle();patchRenderProducts();patchLoadCustomer();wireClicks();var cached=cachedDashboard();renderReorder(cached);renderTargets(cached||defaultDashboard());
     window.addEventListener('load',function(){patchRenderProducts();patchLoadCustomer()},true);
     [500,1200,2500].forEach(function(ms){setTimeout(function(){patchRenderProducts();patchLoadCustomer();if(dashboardCache){renderTargets(dashboardCache);renderReorder(dashboardCache);applyProductFocus()}},ms)});
   }
