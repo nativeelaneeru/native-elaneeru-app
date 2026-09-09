@@ -1,6 +1,6 @@
 window.NEL_CONFIG = {
   apiUrl: 'https://script.google.com/macros/s/AKfycby4tO2Y1xWbVv1XqzbIYjuTKOt4XRWPzB9MseMC1x-qc8gbNYPvqvG1z6PuCPGZi5O2/exec',
-  appVersion: '10.12.1-pwa',
+  appVersion: '10.12.2-pwa',
   supportPhone: '7411807675',
   supportWhatsApp: '917411807675',
   parentCompany: 'Sri Govindadri Ventures',
@@ -9,9 +9,13 @@ window.NEL_CONFIG = {
   paymentMode: 'COD',
   deliveryRadiusKm: 3
 };
-if (!window.NEL_RPC_V109) {
-  document.write('<script src="./rpc-v109.js?v=1012"><\/script>');
-}
+
+/* The current production Apps Script exposes the POST bridge, not the old JSONP
+ * transport. Prevent rpc-v109.js from taking over window.rpc at page load.
+ * The customer shell's built-in POST RPC remains the single transport.
+ */
+window.NEL_RPC_V109 = true;
+
 if (!window.NEL_UI_V110) {
   document.write('<script src="./ui-v110.js?v=1012"><\/script>');
 }
@@ -20,9 +24,9 @@ if (!window.NEL_UI_V111) {
 }
 
 /* B2C catalog compatibility hotfix.
- * Production main still exposes getAppConfig, while the current customer shell
- * asks for getB2CAppDataV9 during startup. Redirect only that one read call so
- * LIVE products load without changing login, cart, checkout, profile or orders.
+ * Production main exposes getAppConfig, while the current customer shell asks
+ * for getB2CAppDataV9 during startup. Redirect only that read call so LIVE
+ * products load without changing login, cart, checkout, profile or orders.
  */
 window.addEventListener('load', function () {
   var baseRpc = window.rpc;
