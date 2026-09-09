@@ -34,11 +34,22 @@ function b2bLaunchProductsV9_(vendorId) {
       (!x['Valid To'] || new Date(x['Valid To']) >= now)
     );
 
+    const standardPrice = n_(p['B2B Default Price']);
+    const yourPrice = override ? n_(override['Agreed Price']) : standardPrice;
+    const savingsPerUnit = Math.max(0, standardPrice - yourPrice);
+    const savingsPercent = standardPrice > 0
+      ? safeRound_(savingsPerUnit * 100 / standardPrice, 1)
+      : 0;
+
     return {
       productId: s_(p['Product ID']),
       productName: s_(p['Product Name']),
       unit: s_(p.Unit),
-      price: override ? n_(override['Agreed Price']) : n_(p['B2B Default Price']),
+      standardPrice: standardPrice,
+      price: yourPrice,
+      savingsPerUnit: savingsPerUnit,
+      savingsPercent: savingsPercent,
+      hasNegotiatedPrice: !!override,
       moq: override ? n_(override.MOQ) : n_(p['B2B MOQ']),
       qtyStep: override
         ? (n_(override['Qty Step']) || 1)
