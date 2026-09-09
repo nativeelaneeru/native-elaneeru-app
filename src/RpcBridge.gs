@@ -64,6 +64,12 @@ function rpcV9(method, args) {
     getV7SalesDashboard: getV7SalesDashboard,
     salesStaffLoginV81: salesStaffLoginV81,
     submitVendorOnboardingV82: submitVendorOnboardingV82,
+    submitVendorOnboardingV2: submitVendorOnboardingV2,
+
+    // Vendor onboarding admin approval
+    getPendingVendorOnboardingsV2: getPendingVendorOnboardingsV2,
+    approveVendorOnboardingV2: approveVendorOnboardingV2,
+    rejectVendorOnboardingV2: rejectVendorOnboardingV2,
 
     // Admin
     adminLogin: adminLogin,
