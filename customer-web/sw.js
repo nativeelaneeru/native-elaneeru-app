@@ -1,6 +1,6 @@
-const CACHE='native-elaneeru-v10.8.1';
+const CACHE='native-elaneeru-v10.9.0';
 const SHELL=[
-  './index.html','./login/index.html','./config.js','./manifest.webmanifest',
+  './index.html','./login/index.html','./config.js','./rpc-v109.js','./manifest.webmanifest',
   './icons/native-elaneeru.svg','./icons/icon-192.png','./icons/icon-512.png',
   './i18n-v102.js','./i18n-v104.js','./ui-v108.js'
 ];
@@ -29,7 +29,7 @@ self.addEventListener('fetch',event=>{
     event.respondWith((async()=>{const key=fallbackKey(url),isLogin=url.pathname.includes('/login/'),cached=await caches.match(key);if(cached){event.waitUntil(fetchAndCache(event.request,key).catch(()=>{}));return enhanceHtml(cached,isLogin)}return enhanceHtml(await fetchAndCache(event.request,key),isLogin)})().catch(()=>caches.match(fallbackKey(url)).then(r=>enhanceHtml(r,url.pathname.includes('/login/')))));
     return;
   }
-  if(url.pathname.endsWith('/config.js')||url.pathname.endsWith('/ui-v108.js')){event.respondWith(fetchAndCache(event.request).catch(()=>caches.match(event.request)));return}
+  if(url.pathname.endsWith('/config.js')||url.pathname.endsWith('/rpc-v109.js')||url.pathname.endsWith('/ui-v108.js')){event.respondWith(fetchAndCache(event.request).catch(()=>caches.match(event.request)));return}
   event.respondWith((async()=>{const c=await caches.match(event.request);if(c){event.waitUntil(fetchAndCache(event.request).catch(()=>{}));return c}return fetchAndCache(event.request)})());
 });
 self.addEventListener('message',event=>{if(event.data==='SKIP_WAITING')self.skipWaiting()});
