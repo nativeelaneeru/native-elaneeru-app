@@ -1,4 +1,4 @@
-const CACHE='native-elaneeru-v10.16.0';
+const CACHE='native-elaneeru-v10.17.0';
 const SHELL=[
   './index.html','./login/index.html','./config.js','./ui-v110.js','./ui-v111.js','./ui-v112.js','./manifest.webmanifest',
   './icons/native-elaneeru.svg','./icons/icon-192.png','./icons/icon-512.png',
@@ -18,7 +18,7 @@ function enhanceHtml(response,isLogin){
     if(!text.includes('ui-v108.js'))add.push('<script src="./ui-v108.js"></script>');
     if(!text.includes('ui-v110.js'))add.push('<script src="./ui-v110.js?v=1010"></script>');
     if(!text.includes('ui-v111.js'))add.push('<script src="./ui-v111.js?v=1011"></script>');
-    if(!text.includes('ui-v112.js'))add.push('<script src="./ui-v112.js?v=10125"></script>');
+    if(!text.includes('ui-v112.js'))add.push('<script src="./ui-v112.js?v=10130"></script>');
     add.push(`<script>document.addEventListener('DOMContentLoaded',function(){var brand='./icons/native-elaneeru.svg?v=1016';document.querySelectorAll('img.logo,img[src*="icon-192.png"]').forEach(function(img){img.src=brand;img.style.objectFit='contain'});setTimeout(function(){var s=document.querySelector('.nel-pwa-splash');if(s){s.style.pointerEvents='none';var i=s.querySelector('img');if(i){i.src=brand;i.style.objectFit='contain';i.style.animationDuration='.45s'}}},40);setTimeout(function(){var s=document.querySelector('.nel-pwa-splash');if(s){s.classList.add('out');setTimeout(function(){if(s&&s.remove)s.remove()},180)}},620)},{once:true});</script>`);
     if(add.length){const i=text.toLowerCase().lastIndexOf('</body>');text=i>=0?text.slice(0,i)+add.join('')+text.slice(i):text+add.join('')}
     const h=new Headers(response.headers);h.delete('content-length');return new Response(text,{status:response.status,statusText:response.statusText,headers:h});
@@ -31,7 +31,6 @@ self.addEventListener('fetch',event=>{
     event.respondWith((async()=>{const key=fallbackKey(url),isLogin=url.pathname.includes('/login/'),cached=await caches.match(key);if(cached){event.waitUntil(fetchAndCache(event.request,key).catch(()=>{}));return enhanceHtml(cached,isLogin)}return enhanceHtml(await fetchAndCache(event.request,key),isLogin)})().catch(()=>caches.match(fallbackKey(url)).then(r=>enhanceHtml(r,url.pathname.includes('/login/')))));
     return;
   }
-  if(url.pathname.endsWith('/config.js')||url.pathname.endsWith('/ui-v108.js')||url.pathname.endsWith('/ui-v110.js')||url.pathname.endsWith('/ui-v111.js')||url.pathname.endsWith('/ui-v112.js')){event.respondWith(fetchAndCache(event.request).catch(()=>caches.match(event.request)));return}
   event.respondWith((async()=>{const c=await caches.match(event.request);if(c){event.waitUntil(fetchAndCache(event.request).catch(()=>{}));return c}return fetchAndCache(event.request)})());
 });
 self.addEventListener('message',event=>{if(event.data==='SKIP_WAITING')self.skipWaiting()});

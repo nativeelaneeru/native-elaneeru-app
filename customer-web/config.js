@@ -1,6 +1,6 @@
 window.NEL_CONFIG = {
   apiUrl: 'https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec',
-  appVersion: '10.12.5-pwa',
+  appVersion: '10.13.0-pwa',
   supportPhone: '7411807675',
   supportWhatsApp: '917411807675',
   parentCompany: 'Sri Govindadri Ventures',
@@ -22,5 +22,5 @@ if (!window.NEL_UI_V111) {
   document.write('<script src="./ui-v111.js?v=1012"><\/script>');
 }
 if (!window.NEL_UI_V112) {
-  document.write('<script src="./ui-v112.js?v=10125"><\/script>');
+  document.write('<script src="./ui-v112.js?v=10130"><\/script>');
 }

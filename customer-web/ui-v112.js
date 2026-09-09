@@ -59,8 +59,9 @@
     var tries=0;
     (function waitForData(){
       if(render())return;
-      if(++tries<100)setTimeout(waitForData,120);
+      if(++tries<300)setTimeout(waitForData,120);
     })();
   }
+  window.addEventListener('nel:catalog',render);
   document.readyState==='complete'?start():window.addEventListener('load',start,{once:true});
 })();
