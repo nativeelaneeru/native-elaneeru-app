@@ -29,6 +29,9 @@ function enhanceHtml(response,isLogin){
 function fetchAndCache(request,key){return fetch(request,{cache:'no-store'}).then(r=>{if(r&&r.ok){const c=r.clone();caches.open(CACHE).then(x=>x.put(key||request,c)).catch(()=>{})}return r})}
 self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET')return;const url=new URL(event.request.url);if(url.origin!==self.location.origin)return;
+  // B2B and Operations are separate PWAs with their own service-worker scopes.
+  // Never let the B2C root worker serve or cache their pages/assets.
+  if(url.pathname.includes('/business/')||url.pathname.includes('/operations/'))return;
   if(event.request.mode==='navigate'){
     event.respondWith((async()=>{const key=fallbackKey(url),isLogin=url.pathname.includes('/login/'),cached=await caches.match(key);if(cached){event.waitUntil(fetchAndCache(event.request,key).catch(()=>{}));return enhanceHtml(cached,isLogin)}return enhanceHtml(await fetchAndCache(event.request,key),isLogin)})().catch(()=>caches.match(fallbackKey(url)).then(r=>enhanceHtml(r,url.pathname.includes('/login/')))));
     return;
