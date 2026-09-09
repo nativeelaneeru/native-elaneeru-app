@@ -95,6 +95,7 @@ function approveVendorOnboardingV2(email,pin,onboardingId,opt){
   const onb=rows_(V8.SHEETS.VENDOR_ONBOARD).find(x=>s_(x['Onboarding ID'])===s_(onboardingId));
   if(!onb) throw new Error('Onboarding not found.');
   if(s_(onb.Status).toUpperCase().indexOf('PENDING')!==0) throw new Error('This onboarding is already processed.');
+  if(!s_(onb['Customer Photo URL'])||!s_(onb['Shop Photo URL'])) throw new Error('Customer photo and shop photo are required before approval. Re-onboard this shop with V2.');
   const customerMobile=digits_(onb.Mobile);
   const activeVendor=rows_(V8.SHEETS.B2B_VENDORS).find(x=>digits_(x.Mobile)===customerMobile&&active_(x.Status));
   if(activeVendor) throw new Error('An active B2B vendor already exists for this mobile.');
