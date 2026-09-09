@@ -1,5 +1,5 @@
 /*******************************************************************************
- * NATIVE ELANEERU V10.9 — CANONICAL CUSTOMER PWA RPC + OPTIONAL PIN
+ * NATIVE ELANEERU V10.9 — CANONICAL PWA RPC + OPTIONAL PIN
  * JSONP removes the fragile cross-domain iframe/postMessage dependency.
  ******************************************************************************/
 
@@ -99,6 +99,7 @@ function getB2CBootstrapV107(mobile){
 
 function pwaCustomerRpcV109_(method,args){
   const allowed={
+    // B2C customer methods
     customerLoginV95:customerLoginV95,
     getCustomerPinStatusV107:getCustomerPinStatusV107,
     setCustomerPinV107:setCustomerPinV107,
@@ -111,9 +112,19 @@ function pwaCustomerRpcV109_(method,args){
     getCustomerDashboard:getCustomerDashboard,
     getCustomerLiveTracking:getCustomerLiveTracking,
     getB2CInvoiceV91:getB2CInvoiceV91,
+
+    // B2B business methods. Vendor-token checks remain enforced by the backend.
+    vendorLogin:vendorLogin,
+    vendorLogout:vendorLogout,
+    getB2BAppDataV9:getB2BAppDataV9,
+    placeB2BOrderV9:placeB2BOrderV9,
+    getVendorLiveTracking:getVendorLiveTracking,
+    getB2BInvoiceV91:getB2BInvoiceV91,
+
+    // Shared public compliance read
     getCompliancePublicV91:getCompliancePublicV91
   };
-  if(!Object.prototype.hasOwnProperty.call(allowed,method)) throw new Error('Customer RPC method not allowed: '+method);
+  if(!Object.prototype.hasOwnProperty.call(allowed,method)) throw new Error('PWA RPC method not allowed: '+method);
   return allowed[method].apply(null,args||[]);
 }
 
