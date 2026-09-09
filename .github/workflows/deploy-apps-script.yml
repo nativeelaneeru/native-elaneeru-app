@@ -53,36 +53,55 @@ jobs:
           npx clasp deploy -i "$DEPLOYMENT_ID" -d "GitHub auto deploy $GITHUB_SHA"
 
       - name: Verify public B2C catalogue endpoint
-        env:
-          API_URL: https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec
         run: |
           node <<'NODE'
           (async () => {
-            const api = process.env.API_URL;
+            const endpoints = [
+              'https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec',
+              'https://script.google.com/macros/s/AKfycby4tO2Y1xWbVv1XqzbIYjuTKOt4XRWPzB9MseMC1x-qc8gbNYPvqvG1z6PuCPGZi5O2/exec'
+            ];
             const methods = ['getAppConfig', 'getB2CAppDataV9'];
             let passed = false;
-            for (const method of methods) {
-              const request = {method, args: [], requestId: 'smoke-' + method + '-' + Date.now()};
-              const body = new URLSearchParams({payload: JSON.stringify(request)});
-              const response = await fetch(api + '?bridge=1', {
-                method: 'POST',
-                headers: {'content-type': 'application/x-www-form-urlencoded'},
-                body,
-                redirect: 'follow'
-              });
-              const text = await response.text();
-              const match = text.match(/parent\.postMessage\((\{[\s\S]*\}),"\*"\)/);
-              let payload = null;
-              if (match) {
-                try { payload = JSON.parse(match[1]).payload; } catch (error) {}
+            for (const api of endpoints) {
+              for (const method of methods) {
+                const request = {method, args: [], requestId: 'smoke-' + method + '-' + Date.now()};
+                const body = new URLSearchParams({payload: JSON.stringify(request)});
+                const response = await fetch(api + '?bridge=1', {
+                  method: 'POST',
+                  headers: {'content-type': 'application/x-www-form-urlencoded'},
+                  body,
+                  redirect: 'follow'
+                });
+                const text = await response.text();
+                const match = text.match(/parent\.postMessage\((\{[\s\S]*\}),"\*"\)/);
+                let payload = null;
+                if (match) {
+                  try { payload = JSON.parse(match[1]).payload; } catch (error) {}
+                }
+                const products = payload && payload.ok && payload.result && Array.isArray(payload.result.products)
+                  ? payload.result.products.length : 0;
+                const banners = payload && payload.ok && payload.result && Array.isArray(payload.result.banners)
+                  ? payload.result.banners.length : 0;
+                console.log(JSON.stringify({endpoint: api.slice(-18), transport: 'POST bridge', method, status: response.status, responseBytes: text.length, ok: !!(payload && payload.ok), error: payload && payload.error, products, banners}));
+                if (products > 0 && banners > 0) passed = true;
+
+                const callback = '__nelSmoke';
+                const jsonpUrl = api + '?jsonp=1&callback=' + callback + '&payload=' + encodeURIComponent(JSON.stringify(request));
+                const jsonpResponse = await fetch(jsonpUrl, {redirect: 'follow'});
+                const jsonpText = await jsonpResponse.text();
+                const jsonpMatch = jsonpText.match(/^__nelSmoke\(([\s\S]*)\);?$/);
+                let jsonpPayload = null;
+                if (jsonpMatch) {
+                  try { jsonpPayload = JSON.parse(jsonpMatch[1]); } catch (error) {}
+                }
+                const jp = jsonpPayload && jsonpPayload.result && Array.isArray(jsonpPayload.result.products)
+                  ? jsonpPayload.result.products.length : 0;
+                const jb = jsonpPayload && jsonpPayload.result && Array.isArray(jsonpPayload.result.banners)
+                  ? jsonpPayload.result.banners.length : 0;
+                console.log(JSON.stringify({endpoint: api.slice(-18), transport: 'JSONP', method, status: jsonpResponse.status, responseBytes: jsonpText.length, ok: !!(jsonpPayload && jsonpPayload.ok), error: jsonpPayload && jsonpPayload.error, products: jp, banners: jb}));
+                if (jp > 0 && jb > 0) passed = true;
               }
-              const products = payload && payload.ok && payload.result && Array.isArray(payload.result.products)
-                ? payload.result.products.length : 0;
-              const banners = payload && payload.ok && payload.result && Array.isArray(payload.result.banners)
-                ? payload.result.banners.length : 0;
-              console.log(JSON.stringify({transport: 'POST bridge', method, status: response.status, finalUrl: response.url, responseBytes: text.length, ok: !!(payload && payload.ok), error: payload && payload.error, products, banners}));
-              if (products > 0) passed = true;
             }
-            if (!passed) throw new Error('Public B2C endpoint returned no products for all supported methods.');
+            if (!passed) throw new Error('No public B2C endpoint returned both products and banners.');
           })().catch(error => { console.error(error); process.exit(1); });
           NODE
