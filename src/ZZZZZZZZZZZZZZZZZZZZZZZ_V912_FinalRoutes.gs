@@ -51,6 +51,7 @@ function doGetV912_(e){
   }
   if(page==='Barcode'){
     try{out.append(HtmlService.createTemplateFromFile('BarcodeFixV922').evaluate().getContent());}catch(err){}
+    try{out.append(HtmlService.createTemplateFromFile('BarcodeTabsV925').evaluate().getContent());}catch(err){}
   }
   return out
     .setTitle(V8.BRAND+' - '+(page==='index'?'B2C':page))
