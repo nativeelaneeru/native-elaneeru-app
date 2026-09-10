@@ -197,7 +197,7 @@ function registerB2CReferralV911_(referredMobile,referralCode){
     return {success:true,alreadyRegistered:true,status:s_(existing.Status),referralId:s_(existing['Referral ID'])};
   }
   if(v911HadExistingB2COrder_(ss,referred)){
-    throw new Error('Referral codes can be applied only before the customer places their first order.');
+    throw new Error('Invalid referral: referral codes can be applied only before the customer places their first order.');
   }
   const now=now_(),id=id_('REF-'),reward=v911RewardPatch_();
   const row={
