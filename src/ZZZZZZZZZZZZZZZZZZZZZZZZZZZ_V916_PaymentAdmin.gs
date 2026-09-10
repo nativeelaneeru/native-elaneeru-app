@@ -29,7 +29,10 @@ function getUpiPaymentsAdminV916(email,pin,statusFilter,channelFilter){
   const out=paymentRows.map(function(r){
     const ch=s_(r.Channel).toUpperCase(),orderId=s_(r['Order ID']);
     const order=ch==='B2B'?b2bById[orderId]:b2cById[orderId];
+    const rawTime=r['Submitted At']||r['Created At'];
+    const parsed=rawTime instanceof Date?rawTime:new Date(rawTime);
     return {
+      _sort:parsed&&!isNaN(parsed.getTime())?parsed.getTime():0,
       paymentId:s_(r['Payment ID']),orderId:orderId,channel:ch||'B2C',method:'UPI',mobile:digits_(r.Mobile),
       amount:n_(r.Amount),utr:s_(r.UTR),status:s_(r.Status).toUpperCase(),merchantUpiId:s_(r['Merchant UPI ID']),
       partyName:order?s_(order['Business Name']||order['Customer Name']):'',area:order?s_(order.Area):'',
@@ -37,7 +40,7 @@ function getUpiPaymentsAdminV916(email,pin,statusFilter,channelFilter){
       createdAt:fmtDT_(r['Created At']),submittedAt:fmtDT_(r['Submitted At']),verifiedAt:fmtDT_(r['Verified At']),
       verifiedBy:s_(r['Verified By']),notes:s_(r.Notes)
     };
-  }).sort(function(a,b){return String(b.submittedAt||b.createdAt).localeCompare(String(a.submittedAt||a.createdAt));}).slice(0,100);
+  }).sort(function(a,b){return b._sort-a._sort;}).slice(0,100).map(function(r){delete r._sort;return r;});
 
   function count(st){return allPayments.filter(function(r){return s_(r.Status).toUpperCase()===st;}).length;}
   return {ok:true,rows:out,counts:{pending:count('VERIFICATION_PENDING'),paid:count('PAID'),rejected:count('REJECTED'),intents:count('INTENT_CREATED')},storageSheet:V8.SHEETS.PAYMENTS};
