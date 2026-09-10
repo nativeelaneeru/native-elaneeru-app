@@ -73,15 +73,19 @@ const b2c113=read('b2c/ui-v113.js');
 const b2c125=read('b2c/ui-v125.js');
 const b2c127=read('b2c/ui-v127.js');
 const b2cDb=read('b2c/idb-v1.js');
+const b2cPayment=read('b2c/payment-upi-v10350.js');
 if(/ui-v126\.js/.test(b2cConfig))fail('b2c: legacy ui-v126 checkout patch must not be loaded');else pass('b2c: legacy ui-v126 is not loaded');
 if(/window\.placeOrder\s*=/.test(b2c113))fail('b2c: ui-v113 must not own placeOrder');else pass('b2c: ui-v113 does not own placeOrder');
 if(/window\.placeOrder\s*=/.test(b2c125))fail('b2c: ui-v125 must not own placeOrder');else pass('b2c: ui-v125 does not own placeOrder');
 if(!/window\.placeOrder\s*=\s*placeOrderV127/.test(b2c127))fail('b2c: ui-v127 is not the canonical checkout owner');else pass('b2c: ui-v127 is the canonical checkout owner');
 if(!/clearCart:function/.test(b2cDb)||!/await window\.NEL_DB\.clearCart\(\)/.test(b2c127))fail('b2c: IndexedDB does not clear cart on confirmed order');else pass('b2c: confirmed orders clear IndexedDB cart');
-if(/checkDeliveryLocation/.test(b2c127))fail('b2c: checkout still performs a redundant delivery RPC');else pass('b2c: checkout uses one server confirmation call');
-if(!/10\.31\.0-pwa/.test(b2cConfig))fail('b2c: Checkout Engine V2 app version is not active');else pass('b2c: Checkout Engine V2 app version is active');
+if(/checkDeliveryLocation/.test(b2c127))fail('b2c: checkout still performs a redundant delivery RPC');else pass('b2c: checkout uses one server confirmation call for COD');
+if(!/10\.35\.0-pwa/.test(b2cConfig))fail('b2c: app version 10.35.0-pwa is not active');else pass('b2c: app version 10.35.0-pwa is active');
 if(/await window\.loadCustomer\(false\)/.test(b2c127))fail('b2c: confirmation still waits for dashboard refresh');else pass('b2c: order history refresh is non-blocking after confirmation');
 if(!/4000/.test(b2c127)||!/Still confirming your order/.test(b2c127))fail('b2c: slow-confirmation UX is missing');else pass('b2c: slow confirmation has a soft progress message');
+if(!/payment-upi-v10350\.js/.test(b2cConfig))fail('b2c: direct UPI module is not loaded');else pass('b2c: direct UPI module is loaded');
+if(!/prepareB2CUpiPaymentV913/.test(b2cPayment)||!/Open UPI app/.test(b2cPayment)||!/UTR \/ transaction ID/.test(b2cPayment))fail('b2c: direct UPI preparation/UTR UI is incomplete');else pass('b2c: direct UPI preparation and UTR UI are wired');
+if(!/submitB2CUpiOrderV913/.test(b2c127)||!/VERIFICATION_PENDING/.test(b2c127))fail('b2c: canonical checkout is not wired to UPI verification-pending flow');else pass('b2c: canonical checkout supports verification-pending UPI orders');
 
 const fastCheckout=read('src/ZZZZZZZZZZZZZZ_V905_FastB2CCheckout.gs');
 const engineStart=fastCheckout.indexOf('function saveOrderV905_');
@@ -92,6 +96,11 @@ if(/waitLock\(20000\)/.test(engineBody))fail('backend: Checkout Engine V2 must n
 if(!/v905TryWriteLock_/.test(engineBody)||!/tryLock\(2500\)/.test(fastCheckout))fail('backend: Checkout Engine V2 short write lock is missing');else pass('backend: final write lock is capped at 2.5 seconds');
 if(!/setValues\(itemRows\)/.test(engineBody))fail('backend: order items are not batch-written');else pass('backend: order items are batch-written');
 if((engineBody.match(/SpreadsheetApp\.openById\(/g)||[]).length!==1)fail('backend: Checkout Engine V2 should open the spreadsheet once');else pass('backend: checkout opens the spreadsheet once');
+
+const upiBackend=read('src/ZZZZZZZZZZZZZZZZZZZZZZZZ_V913_DirectUpiPayments.gs');
+if(!/V8\.SHEETS\.PAYMENTS/.test(upiBackend)||!/paymentStorage:'Payment_Ledger'/.test(upiBackend))fail('backend: direct UPI is not using the central Payment_Ledger');else pass('backend: direct UPI uses the central Payment_Ledger');
+if(!/paymentIntentBeforeOrder:true/.test(upiBackend)||!/autoMarkPaid:false/.test(upiBackend)||!/manualVerificationRequired:true/.test(upiBackend))fail('backend: direct UPI safety model is incomplete');else pass('backend: UPI intent is created before order and never auto-marked paid');
+if(!/const V913_FALLBACK_UPI_ID = ''/.test(upiBackend))fail('backend: a merchant UPI ID was invented instead of waiting for configuration');else pass('backend: merchant UPI ID remains unconfigured until explicitly supplied');
 
 const b2bConfig=read('b2b/config.js'),b2bDb=read('b2b/idb-v1.js'),b2bGuard=read('b2b/session-guard-v980.js'),b2bSync=read('b2b/order-sync-v1.js');
 if(!/session-guard-v980\.js/.test(b2bConfig))fail('b2b: vendor cart guard is not loaded');else pass('b2b: vendor cart guard is loaded');
