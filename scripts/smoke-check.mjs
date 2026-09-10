@@ -80,12 +80,12 @@ if(/window\.placeOrder\s*=/.test(b2c125))fail('b2c: ui-v125 must not own placeOr
 if(!/window\.placeOrder\s*=\s*placeOrderV127/.test(b2c127))fail('b2c: ui-v127 is not the canonical checkout owner');else pass('b2c: ui-v127 is the canonical checkout owner');
 if(!/clearCart:function/.test(b2cDb)||!/await window\.NEL_DB\.clearCart\(\)/.test(b2c127))fail('b2c: IndexedDB does not clear cart on confirmed order');else pass('b2c: confirmed orders clear IndexedDB cart');
 if(/checkDeliveryLocation/.test(b2c127))fail('b2c: checkout still performs a redundant delivery RPC');else pass('b2c: checkout uses one server confirmation call for COD');
-if(!/10\.35\.0-pwa/.test(b2cConfig))fail('b2c: app version 10.35.0-pwa is not active');else pass('b2c: app version 10.35.0-pwa is active');
+if(!/paymentRelease:\s*'10\.35\.0-pwa'/.test(b2cConfig))fail('b2c: payment release 10.35.0-pwa is not active');else pass('b2c: payment release 10.35.0-pwa is active');
 if(/await window\.loadCustomer\(false\)/.test(b2c127))fail('b2c: confirmation still waits for dashboard refresh');else pass('b2c: order history refresh is non-blocking after confirmation');
 if(!/4000/.test(b2c127)||!/Still confirming your order/.test(b2c127))fail('b2c: slow-confirmation UX is missing');else pass('b2c: slow confirmation has a soft progress message');
 if(!/payment-upi-v10350\.js/.test(b2cConfig))fail('b2c: direct UPI module is not loaded');else pass('b2c: direct UPI module is loaded');
 if(!/prepareB2CUpiPaymentV913/.test(b2cPayment)||!/Open UPI app/.test(b2cPayment)||!/UTR \/ transaction ID/.test(b2cPayment))fail('b2c: direct UPI preparation/UTR UI is incomplete');else pass('b2c: direct UPI preparation and UTR UI are wired');
-if(!/submitB2CUpiOrderV913/.test(b2c127)||!/VERIFICATION_PENDING/.test(b2c127))fail('b2c: canonical checkout is not wired to UPI verification-pending flow');else pass('b2c: canonical checkout supports verification-pending UPI orders');
+if(!/submitB2CUpiOrderV913/.test(b2c127)||!/paymentStatus/.test(b2c127)||!/UPI verification pending/.test(b2c127))fail('b2c: canonical checkout is not wired to UPI verification-pending flow');else pass('b2c: canonical checkout supports verification-pending UPI orders');
 
 const fastCheckout=read('src/ZZZZZZZZZZZZZZ_V905_FastB2CCheckout.gs');
 const engineStart=fastCheckout.indexOf('function saveOrderV905_');
