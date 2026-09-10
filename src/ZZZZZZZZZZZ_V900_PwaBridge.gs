@@ -111,6 +111,7 @@ doPost=function(e){
       checkDeliveryLocation:checkDeliveryLocation,
       saveOrder:saveOrder,
       getB2COrderEngineHealthV901:getB2COrderEngineHealthV901,
+      getB2COrderEngineHealthV905:getB2COrderEngineHealthV905,
       getCustomerDashboard:getCustomerDashboard,
       getCustomerLiveTracking:getCustomerLiveTracking,
       getB2CInvoiceV91:getB2CInvoiceV91,
