@@ -27,8 +27,8 @@ img{max-width:100%}
   if(!page||page==='home'||page==='b2c') return;
   const base=location.href.split('?')[0];
   const apps=[
-    ['b2b','🥥','B2B'],['admin','📊','Admin'],['delivery','🛵','Delivery'],['driver','🚚','Driver'],
-    ['sales','📈','Sales'],['picker','📦','Picker'],['vendor','🤝','Vendor'],['barcode','▦','Barcode'],['inventory','🏬','Inventory'],['b2c','🛒','Customer']
+    ['b2b','🥥','B2B'],['admin','📊','Admin'],['approvals','✅','Vendor Approvals'],['delivery','🛵','Delivery'],['driver','🚚','Driver'],
+    ['sales','📈','Sales'],['picker','📦','Picker'],['vendor','🤝','Vendor Onboarding'],['barcode','▦','Barcode'],['inventory','🏬','Inventory'],['b2c','🛒','Customer']
   ];
   const btn=document.createElement('button'); btn.className='nel-ux-launcher'; btn.innerHTML='☰ <span>Apps</span>';
   const panel=document.createElement('div'); panel.className='nel-ux-panel';
