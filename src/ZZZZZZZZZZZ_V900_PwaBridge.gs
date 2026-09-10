@@ -110,6 +110,7 @@ doPost=function(e){
       saveCustomerProfile:saveCustomerProfile,
       checkDeliveryLocation:checkDeliveryLocation,
       saveOrder:saveOrder,
+      getB2COrderEngineHealthV901:getB2COrderEngineHealthV901,
       getCustomerDashboard:getCustomerDashboard,
       getCustomerLiveTracking:getCustomerLiveTracking,
       getB2CInvoiceV91:getB2CInvoiceV91,
