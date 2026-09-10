@@ -12,15 +12,16 @@ window.NEL_CONFIG = {
 
 window.NEL_RPC_V109 = true;
 
-document.write('<script src="./idb-v1.js?v=10330"></script>');
-if (!window.NEL_UI_V110) document.write('<script src="./ui-v110.js?v=10330"></script>');
-if (!window.NEL_UI_V111) document.write('<script src="./ui-v111.js?v=10330"></script>');
-if (!window.NEL_UI_V112) document.write('<script src="./ui-v112.js?v=10330"></script>');
-if (!window.NEL_UI_V113) document.write('<script src="./ui-v113.js?v=10330"></script>');
-if (!window.NEL_UI_V125) document.write('<script src="./ui-v125.js?v=10330"></script>');
-if (!window.NEL_UI_V127) document.write('<script src="./ui-v127.js?v=10330"></script>');
-document.write('<script src="./order-sync-v1.js?v=10330"></script>');
-document.write('<script src="./separate-links.js?v=10330"></script>');
-document.write('<script src="./cart-visibility-v10320.js?v=10330"></script>');
-document.write('<script src="./customer-growth-v10330.js?v=10330"></script>');
-document.write('<script src="./update-notifier.js?v=10330"></script>');
+document.write('<script src="./idb-v1.js?v=10340"></script>');
+if (!window.NEL_UI_V110) document.write('<script src="./ui-v110.js?v=10340"></script>');
+if (!window.NEL_UI_V111) document.write('<script src="./ui-v111.js?v=10340"></script>');
+if (!window.NEL_UI_V112) document.write('<script src="./ui-v112.js?v=10340"></script>');
+if (!window.NEL_UI_V113) document.write('<script src="./ui-v113.js?v=10340"></script>');
+if (!window.NEL_UI_V125) document.write('<script src="./ui-v125.js?v=10340"></script>');
+if (!window.NEL_UI_V127) document.write('<script src="./ui-v127.js?v=10340"></script>');
+document.write('<script src="./order-sync-v1.js?v=10340"></script>');
+document.write('<script src="./separate-links.js?v=10340"></script>');
+document.write('<script src="./cart-visibility-v10320.js?v=10340"></script>');
+document.write('<script src="./customer-growth-v10330.js?v=10340"></script>');
+document.write('<script src="./referral-reward-v10340.js?v=10340"></script>');
+document.write('<script src="./update-notifier.js?v=10340"></script>');
