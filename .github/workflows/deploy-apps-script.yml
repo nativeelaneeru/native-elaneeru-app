@@ -75,12 +75,12 @@ jobs:
             const callback='__nelOrderHealthV2';
             let last;
             for(let i=1;i<=6;i++){
-              const req={method:'getB2COrderEngineHealthV905',args:[],requestId:'b2c-v2-health-'+Date.now()};
+              const req={method:'getB2COrderEngineHealthV906',args:[],requestId:'b2c-v2-health-'+Date.now()};
               const url=process.env.API_URL+'?jsonp=1&callback='+callback+'&payload='+encodeURIComponent(JSON.stringify(req))+'&_='+Date.now();
               const r=await fetch(url,{redirect:'follow',cache:'no-store'});const text=await r.text();const m=text.match(/^__nelOrderHealthV2\(([\s\S]*)\);?$/);const p=m?JSON.parse(m[1]):null;
               console.log(JSON.stringify({attempt:i,status:r.status,payload:p}));
               const h=p&&p.ok&&p.result;
-              if(r.status===200&&h&&h.ok===true&&h.version==='9.0.5'&&h.canonicalOrderHandler===true&&h.singleSpreadsheetOpen===true&&h.targetedCustomerLookup===true&&h.shortWriteLock===true&&h.batchItemWrite===true&&h.cachedProducts===true&&h.noFullCustomerRowsScan===true&&h.idempotency===true)return;
+              if(r.status===200&&h&&h.ok===true&&h.engineVersion==='9.0.5'&&h.canonicalOrderHandler===true&&h.singleSpreadsheetOpen===true&&h.targetedCustomerLookup===true&&h.shortWriteLock===true&&h.batchItemWrite===true&&h.cachedProducts===true&&h.noFullCustomerRowsScan===true&&h.idempotency===true&&h.serverControlledPayment===true)return;
               last=new Error('B2C Checkout Engine V2 is not live yet.');await new Promise(r=>setTimeout(r,2500));
             }
             throw last;
