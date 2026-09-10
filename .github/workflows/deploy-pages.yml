@@ -26,6 +26,43 @@ jobs:
       - name: Validate B2C and B2B PWAs
         run: node scripts/smoke-check.mjs
 
+      - name: Verify live B2C ordering bridge
+        env:
+          API_URL: https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec
+        run: |
+          node <<'NODE'
+          (async () => {
+            async function call(method,args){
+              const form=new URLSearchParams();
+              form.set('payload',JSON.stringify({method,args,requestId:'b2c-smoke-'+Date.now()}));
+              const response=await fetch(process.env.API_URL+'?bridge=1',{
+                method:'POST',
+                headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8'},
+                body:form.toString(),
+                redirect:'follow'
+              });
+              return {status:response.status,text:await response.text()};
+            }
+            function exposed(x){
+              return x.status===200 && !/Method not allowed|Unknown endpoint|POST required/i.test(x.text);
+            }
+            let lastError;
+            for(let attempt=1;attempt<=4;attempt++){
+              try{
+                const config=await call('getAppConfig',[]);
+                const profileProbe=await call('saveCustomerProfile',[{mobile:'123',name:'',address:'',area:''}]);
+                const orderProbe=await call('saveOrder',[{mobile:'123',items:[]}]);
+                const ok=exposed(config)&&exposed(profileProbe)&&exposed(orderProbe);
+                console.log(JSON.stringify({attempt,ok,configStatus:config.status,profileStatus:profileProbe.status,orderStatus:orderProbe.status,profileText:profileProbe.text.slice(0,180),orderText:orderProbe.text.slice(0,180)}));
+                if(ok)return;
+                lastError=new Error('The configured B2C backend does not expose the required order methods.');
+              }catch(error){lastError=error;console.error('Attempt '+attempt+': '+error.message)}
+              await new Promise(resolve=>setTimeout(resolve,2500));
+            }
+            throw lastError||new Error('B2C ordering bridge verification failed.');
+          })().catch(error=>{console.error(error);process.exit(1)});
+          NODE
+
       - uses: actions/configure-pages@v5
         with:
           enablement: true
