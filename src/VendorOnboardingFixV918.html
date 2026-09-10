@@ -9,13 +9,14 @@
     const b=q('loginBtn'),mobile=digits(q('smobile')&&q('smobile').value),pin=String(q('spin')&&q('spin').value||'').trim();
     if(b){b.disabled=true;b.textContent='Checking PIN…'}if(typeof msg==='function')msg('');
     try{
-      if(!/^[6-9]\d{9}$/.test(mobile)||pin.length<4)throw new Error('Enter your authorized Sales mobile number and PIN.');
+      if(!/^[6-9]\d{9}$/.test(mobile)||pin.length<4)throw new Error('Enter your authorized staff mobile number and PIN.');
       const raw=await invoke('salesStaffLoginV82',[mobile,pin]);
-      if(!raw||typeof raw!=='object')throw new Error('Sales profile could not be loaded. Please try again.');
+      if(!raw||typeof raw!=='object')throw new Error('Staff profile could not be loaded. Please try again.');
       SALES=raw;PRODUCTS=Array.isArray(raw.products)?raw.products:[];
-      if(String(raw.role||'SALES').toUpperCase()!=='SALES')throw new Error('This login is not authorized for Vendor Onboarding.');
+      const apps=Array.isArray(raw.allowedApps)?raw.allowedApps:[];
+      if(apps.length&&apps.indexOf('VENDOR_ONBOARDING')===-1)throw new Error('This login is not authorized for Vendor Onboarding.');
       const login=q('login'),flow=q('flow'),box=q('salesBox');if(login)login.style.display='none';if(flow)flow.style.display='block';
-      if(box)box.innerHTML='<b>'+esc(raw.name||'Sales')+'</b><div class="muted">'+esc(raw.staffId||'')+' · Sales shift active</div>';
+      if(box)box.innerHTML='<b>'+esc(raw.name||'Staff')+'</b><div class="muted">'+esc(raw.staffId||'')+' · '+esc(raw.role||'STAFF')+' · Vendor Onboarding access active</div>';
       if(typeof renderProducts==='function')renderProducts();
       if(!PRODUCTS.length&&typeof msg==='function')msg('No LIVE B2B products found. Check B2B Status in the Products sheet.');
     }catch(e){SALES=null;PRODUCTS=[];if(typeof msg==='function')msg(text(e))}
@@ -26,17 +27,22 @@
     const b=q('submitBtn');if(!b)return;
     b.disabled=true;b.textContent='Submitting…';if(typeof msg==='function')msg('');
     try{
-      if(!SALES||typeof SALES!=='object')throw new Error('Sales session is missing. Please reload and sign in again.');
+      if(!SALES||typeof SALES!=='object')throw new Error('Staff session is missing. Please reload and sign in again.');
       if(typeof data!=='function')throw new Error('Vendor form is unavailable. Reload the page.');
       const payload=data();
       const raw=await invoke('submitVendorOnboardingV840',[digits(q('smobile')&&q('smobile').value),String(q('spin')&&q('spin').value||'').trim(),payload]);
       if(!raw||typeof raw!=='object'||raw.success===false||!raw.onboardingId)throw new Error(raw&&raw.error||'Vendor onboarding was not saved. Please retry.');
-      const form=q('formCard');if(form)form.innerHTML='<div class="success"><div class="tick">✅</div><h2>Submitted for approval</h2><div class="muted">'+esc(raw.productName||payload.productName||'')+'</div><div class="muted" style="margin-top:8px">Onboarding ID</div><h3>'+esc(raw.onboardingId)+'</h3><div class="muted">Captured by '+esc(raw.salesExecutive||SALES.name||'Sales')+'</div><div class="muted" style="margin-top:8px">Admin will review the photos/commercials, set the B2B PIN and activate the business account.</div><button class="btn" style="margin-top:14px" onclick="location.reload()">Add another vendor</button></div>';
+      const form=q('formCard');if(form)form.innerHTML='<div class="success"><div class="tick">✅</div><h2>Submitted for approval</h2><div class="muted">'+esc(raw.productName||payload.productName||'')+'</div><div class="muted" style="margin-top:8px">Onboarding ID</div><h3>'+esc(raw.onboardingId)+'</h3><div class="muted">Captured by '+esc(raw.salesExecutive||SALES.name||'Staff')+'</div><div class="muted" style="margin-top:8px">Admin will review the photos/commercials, set the B2B PIN and activate the business account.</div><button class="btn" style="margin-top:14px" onclick="location.reload()">Add another vendor</button></div>';
       const cat=q('catalogCard');if(cat)cat.style.display='none';if(typeof msg==='function')msg('Submitted successfully.',true);
     }catch(e){if(typeof msg==='function')msg(text(e));b.disabled=false;b.textContent='Submit vendor ✓'}
   }
 
+  function relabel(){
+    const m=q('smobile'),p=q('spin');if(m)m.placeholder='Authorized staff mobile';if(p)p.placeholder='Staff PIN';
+    const sec=document.querySelector('#login .security');if(sec)sec.textContent='Only staff explicitly granted Vendor Onboarding access can sign in. Admin access stays separate.';
+  }
   function start(){
+    relabel();
     try{window.salesLogin=safeSalesLogin;salesLogin=safeSalesLogin}catch(e){window.salesLogin=safeSalesLogin}
     try{window.submitForm=safeSubmit;submitForm=safeSubmit}catch(e){window.submitForm=safeSubmit}
   }
