@@ -1,0 +1,55 @@
+<script>
+(function(){
+  if(window.NEL_VENDOR_APPROVAL_FIX_V916)return;
+  window.NEL_VENDOR_APPROVAL_FIX_V916=true;
+  const q=id=>document.getElementById(id);
+  const invoke=(fn,args=[])=>new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve).withFailureHandler(e=>reject(new Error(e&&e.message?e.message:String(e))))[fn](...args));
+
+  function installRuleCard(){
+    const app=q('app');if(!app)return;
+    const stale=app.querySelector('.card.config');
+    if(stale)stale.style.display='none';
+    if(q('nel916ReferralRule'))return;
+    const card=document.createElement('div');
+    card.id='nel916ReferralRule';card.className='card config';
+    card.innerHTML='<div class="title"><div><h3>🎁 B2C Refer & Earn rule</h3><div class="muted">Production reward rule used by the customer app.</div></div><span class="badge">LOCKED RULE</span></div><div id="nel916ReferralRuleBody" class="credential" style="margin-top:10px"><strong>2 FREE Tender Coconuts</strong><div class="muted" style="margin-top:5px">Referrer earns the reward only after the referred customer completes the first delivered order. The referred customer receives no separate reward. Reward redemption remains controlled and is not auto-applied at checkout.</div></div>';
+    const first=app.querySelector('.card');
+    if(first)app.insertBefore(card,first);else app.appendChild(card);
+  }
+
+  async function loadRule(){
+    installRuleCard();
+    try{
+      const r=await invoke('getB2CReferralRuleV911',[]),host=q('nel916ReferralRuleBody');
+      if(!host)return;
+      const qty=Number(r&&r.referrerRewardQty||2),name=String(r&&r.rewardProductName||'Tender Coconut');
+      host.innerHTML='<strong>'+qty+' FREE '+(qty===1?name:name+'s')+'</strong><div class="muted" style="margin-top:5px">Qualification: first delivered order by the referred customer · Referred customer reward: '+Number(r&&r.referredRewardQty||0)+' · Automatic redemption: '+(r&&r.redemptionEnabled?'Enabled':'Off')+'</div>';
+    }catch(e){}
+  }
+
+  async function fixedLogin(){
+    const email=q('email'),pin=q('pin'),btn=q('loginBtn'),msg=q('loginMsg');
+    E=String(email&&email.value||'').trim().toLowerCase();
+    P=String(pin&&pin.value||'').trim();
+    if(btn){btn.disabled=true;btn.textContent='Checking…'}
+    if(msg)msg.textContent='';
+    try{
+      const ok=await invoke('adminLogin',[E,P]);
+      if(ok!==true)throw new Error('Invalid admin credentials.');
+      q('login').classList.add('hidden');q('app').classList.remove('hidden');
+      installRuleCard();
+      await Promise.all([loadPending(),loadRule()]);
+    }catch(e){if(msg)msg.textContent=e.message||String(e)}
+    finally{if(btn){btn.disabled=false;btn.textContent='Login'}}
+  }
+
+  function start(){
+    installRuleCard();
+    try{window.login=fixedLogin;login=fixedLogin}catch(e){}
+    const email=q('email'),pin=q('pin');
+    if(email)email.setAttribute('autocomplete','username');
+    if(pin){pin.setAttribute('autocomplete','current-password');pin.addEventListener('keydown',e=>{if(e.key==='Enter')fixedLogin()})}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>

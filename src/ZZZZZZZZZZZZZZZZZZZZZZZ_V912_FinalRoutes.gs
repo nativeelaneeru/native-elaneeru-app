@@ -22,6 +22,7 @@ function doGetV912_(e){
   const routes={
     '':'index','home':'index','b2c':'index','b2b':'B2B',
     'admin':'Admin','dashboard':'CumulativeDashboard','cumulative':'CumulativeDashboard','controltower':'CumulativeDashboard',
+    'payments':'PaymentVerification','paymentverification':'PaymentVerification','upiverification':'PaymentVerification',
     'sales':'Sales','picker':'Picker','barcode':'Barcode','inventory':'Inventory',
     'vendor':'VendorOnboardingV910','vendoronboarding':'VendorOnboardingV910',
     'approvals':'VendorApproval','vendorapproval':'VendorApproval',
@@ -36,6 +37,9 @@ function doGetV912_(e){
   }
   if(page==='Admin'){
     try{out.append(HtmlService.createTemplateFromFile('AdminFixesV915').evaluate().getContent());}catch(err){}
+  }
+  if(page==='VendorApproval'){
+    try{out.append(HtmlService.createTemplateFromFile('VendorApprovalFixV916').evaluate().getContent());}catch(err){}
   }
   return out
     .setTitle(V8.BRAND+' - '+(page==='index'?'B2C':page))

@@ -131,7 +131,11 @@ doPost=function(e){
       getB2BAppDataV9:getB2BAppDataV9,
       placeB2BOrderV9:placeB2BOrderV9,
       getB2BInvoiceV91:getB2BInvoiceV91,
-      getB2BOrderEngineHealthV904:getB2BOrderEngineHealthV904
+      getB2BOrderEngineHealthV904:getB2BOrderEngineHealthV904,
+      getB2BPaymentConfigV916:getB2BPaymentConfigV916,
+      getB2BPaymentEngineHealthV916:getB2BPaymentEngineHealthV916,
+      prepareB2BUpiPaymentV916:prepareB2BUpiPaymentV916,
+      submitB2BUpiOrderV916:submitB2BUpiOrderV916
     };
     if(!allowed[method]) throw new Error('Method not allowed.');
     const result=allowed[method].apply(null,args);
