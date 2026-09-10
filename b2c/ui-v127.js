@@ -62,7 +62,7 @@
 
   async function placeOrderV127(){
     var btn=el('placeBtn');if(btn&&btn.dataset.nel127Busy==='1')return;
-    var stage='cart';
+    var stage='cart',startedAt=Date.now(),slowTimer=null,verySlowTimer=null;
     if(btn){btn.dataset.nel127Busy='1';btn.disabled=true;btn.setAttribute('aria-busy','true');btn.textContent='Placing order…'}
     clearStatus();
     try{
@@ -102,8 +102,18 @@
       };
 
       stage='server order';status('Confirming stock, delivery, price and order…');
+      slowTimer=setTimeout(function(){status('Still confirming your order… please keep the app open.')},4000);
+      verySlowTimer=setTimeout(function(){status('Confirmation is taking longer than usual. Your request is protected from duplicate orders.')},8000);
       var result=await window.rpc('saveOrder',[payload]);
+      clearTimeout(slowTimer);clearTimeout(verySlowTimer);slowTimer=verySlowTimer=null;
       if(!result||!result.orderId)throw new Error('The server did not return an order number. Please retry before paying anyone.');
+
+      window.NEL_LAST_ORDER_METRICS={
+        orderId:result.orderId,
+        totalMs:Date.now()-startedAt,
+        serverMs:Number(result.processingMs||0),
+        engineVersion:String(result.engineVersion||'')
+      };
 
       try{S.cart={}}catch(e){}
       try{localStorage.removeItem('nel_cart_v9')}catch(e){}
@@ -111,10 +121,16 @@
       if(typeof window.updateCartBar==='function')window.updateCartBar();
       if(el('cartSheet'))el('cartSheet').classList.remove('show');
       if(typeof window.toast==='function')window.toast('Order '+result.orderId+' placed ✓');
-      status('Order '+result.orderId+' placed successfully.','ok');
-      try{if(typeof window.loadCustomer==='function')await window.loadCustomer(false)}catch(e){}
+
+      // Do not make the customer wait for the slower order-history/dashboard refresh.
       if(typeof window.go==='function')window.go('orders');
+      setTimeout(function(){
+        try{
+          if(typeof window.loadCustomer==='function')Promise.resolve(window.loadCustomer(false)).catch(function(){});
+        }catch(e){}
+      },0);
     }catch(err){
+      if(slowTimer)clearTimeout(slowTimer);if(verySlowTimer)clearTimeout(verySlowTimer);
       var msg=String(err&&err.message||err||'Order could not be placed.');
       status('Order not placed ('+stage+'): '+msg,'err');
       if(typeof window.toast==='function')window.toast(msg);
