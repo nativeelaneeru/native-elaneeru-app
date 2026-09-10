@@ -6,6 +6,7 @@
   function el(id){return document.getElementById(id)}
   function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})}
   function money(n){return '₹'+Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})}
+  function paymentLabel(v){v=String(v||'').toUpperCase();return v==='VERIFICATION_PENDING'?'Verification Pending':v==='PAID'?'Paid':v==='REJECTED'?'Payment Rejected':v||'Pending'}
   function note(){
     var select=el('payment');if(!select)return;
     var host=el('nelB2BPaymentNote');
@@ -27,7 +28,7 @@
   function installSheet(){
     if(el('nelB2BUpiSheet'))return;
     var style=document.createElement('style');
-    style.textContent='.nel916Sheet{position:fixed;inset:0;background:#0009;z-index:150;display:none;align-items:flex-end}.nel916Sheet.show{display:flex}.nel916Box{width:100%;max-width:820px;margin:auto;background:#fff;border-radius:24px 24px 0 0;padding:14px 15px calc(18px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto}.nel916Row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #dbe3ea}.nel916Upi{font-size:18px;font-weight:950;color:#123a5a;word-break:break-all}.nel916Warn{font-size:11px;line-height:1.45;background:#fff7db;border:1px solid #f0dfa4;color:#745400;border-radius:11px;padding:9px;margin:10px 0}.nel916Actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}@media(max-width:460px){.nel916Actions{grid-template-columns:1fr}}';
+    style.textContent='.nel916Sheet{position:fixed;inset:0;background:#0009;z-index:150;display:none;align-items:flex-end}.nel916Sheet.show{display:flex}.nel916Box{width:100%;max-width:820px;margin:auto;background:#fff;border-radius:24px 24px 0 0;padding:14px 15px calc(18px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto}.nel916Row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #dbe3ea}.nel916Upi{font-size:18px;font-weight:950;color:#123a5a;word-break:break-all}.nel916Warn{font-size:11px;line-height:1.45;background:#fff7db;border:1px solid #f0dfa4;color:#745400;border-radius:11px;padding:9px;margin:10px 0}.nel916Actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.nel916PayStatus{margin-top:8px;padding:7px 9px;background:#f2f6f8;border-radius:9px;font-size:10px;color:#123a5a;font-weight:850}@media(max-width:460px){.nel916Actions{grid-template-columns:1fr}}';
     document.head.appendChild(style);
     var sheet=document.createElement('div');sheet.id='nelB2BUpiSheet';sheet.className='nel916Sheet';
     sheet.innerHTML='<div class="nel916Box"><div class="grab"></div><div class="sectionHead" style="margin-top:0"><h2>Pay via UPI</h2><button id="nel916Close" class="mini">Close</button></div><div class="nel916Row"><span class="muted">Amount</span><b id="nel916Amount"></b></div><div class="nel916Row"><span class="muted">Pay to</span><div style="text-align:right"><div id="nel916Name" style="font-weight:900"></div><div id="nel916Upi" class="nel916Upi"></div></div></div><div class="nel916Actions"><button id="nel916Copy" class="secondary">Copy UPI ID</button><a id="nel916Open" class="primary" style="text-decoration:none;text-align:center" href="#">Open UPI App</a></div><div class="nel916Warn">After payment, enter the UTR / transaction reference below. Native Elaneeru will keep this payment as <b>Verification Pending</b> until Admin verifies it.</div><label class="muted">UPI transaction / UTR number</label><input id="nel916Utr" class="field" inputmode="text" autocomplete="off" placeholder="Enter transaction reference" style="margin-top:5px"><button id="nel916Submit" class="primary" style="width:100%;margin-top:10px">Submit payment & place order</button><div id="nel916Msg" class="muted" style="margin-top:8px"></div></div>';
@@ -74,6 +75,15 @@
     var basePlace=window.placeOrder;
     var placeWrapped=function(){var pay=String(el('payment')&&el('payment').value||'COD').toUpperCase();if(pay==='UPI')return startUpi();return basePlace.apply(this,arguments)};
     placeWrapped.__nel916=true;window.placeOrder=placeWrapped;try{placeOrder=placeWrapped}catch(e){}
+    if(typeof window.orderCard==='function'){
+      var baseOrderCard=window.orderCard;
+      var orderWrapped=function(o){
+        var html=baseOrderCard.apply(this,arguments),type=String(o&&o.paymentType||'').toUpperCase(),status=String(o&&o.paymentStatus||'').toUpperCase();
+        if(type!=='UPI'||!status)return html;
+        return '<div class="nel916OrderWrap">'+html+'<div class="nel916PayStatus">UPI Payment · '+esc(paymentLabel(status))+'</div></div>';
+      };
+      orderWrapped.__nel916=true;window.orderCard=orderWrapped;try{orderCard=orderWrapped}catch(e){}
+    }
     patched=true;setTimeout(syncMethods,0);return true;
   }
   function start(){installSheet();var tries=0;(function wait(){if(!patch()&&++tries<240)setTimeout(wait,50)})();}
