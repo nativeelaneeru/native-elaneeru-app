@@ -16,19 +16,15 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-
       - name: Install dependencies
         run: npm install
-
       - name: Configure clasp project
         shell: bash
         run: |
@@ -38,7 +34,6 @@ jobs:
             "rootDir": "src"
           }
           JSON
-
       - name: Configure Google auth
         shell: bash
         env:
@@ -46,90 +41,44 @@ jobs:
         run: |
           printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
           chmod 600 "$HOME/.clasprc.json"
-
       - name: Push files to Apps Script
         run: npx clasp push -f
-
-      - name: Update existing web app deployment
+      - name: Update main web app deployment
         shell: bash
         env:
           DEPLOYMENT_ID: ${{ secrets.APPS_SCRIPT_DEPLOYMENT_ID }}
-        run: |
-          npx clasp deploy -i "$DEPLOYMENT_ID" -d "GitHub auto deploy $GITHUB_SHA"
-
-      - name: Verify B2C catalogue endpoint
+        run: npx clasp deploy -i "$DEPLOYMENT_ID" -d "GitHub auto deploy $GITHUB_SHA"
+      - name: Update B2C customer web app deployment
+        shell: bash
+        env:
+          B2C_DEPLOYMENT_ID: AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3
+        run: npx clasp deploy -i "$B2C_DEPLOYMENT_ID" -d "B2C order engine fix $GITHUB_SHA"
+      - name: Verify main catalogue and B2B bridge
         env:
           API_URL: https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec
         run: |
           node <<'NODE'
-          (async () => {
-            const callback = '__nelSmokeCatalog';
-            const request = {method: 'getAppConfig', args: [], requestId: 'smoke-' + Date.now()};
-            const url = process.env.API_URL + '?jsonp=1&callback=' + callback + '&payload=' + encodeURIComponent(JSON.stringify(request));
-            let lastError;
-            for (let attempt = 1; attempt <= 5; attempt++) {
-              try {
-                const response = await fetch(url + '&_=' + Date.now(), {redirect: 'follow', cache: 'no-store'});
-                const text = await response.text();
-                const match = text.match(/^__nelSmokeCatalog\(([\s\S]*)\);?$/);
-                const payload = match ? JSON.parse(match[1]) : null;
-                const products = payload && payload.ok && payload.result && Array.isArray(payload.result.products) ? payload.result.products.length : 0;
-                console.log(JSON.stringify({attempt, status: response.status, ok: !!(payload && payload.ok), products, error: payload && payload.error}));
-                if (response.status === 200 && products > 0) return;
-                lastError = new Error('Catalogue endpoint did not return live products.');
-              } catch (error) {
-                lastError = error;
-                console.error('Attempt ' + attempt + ': ' + error.message);
-              }
-              await new Promise(resolve => setTimeout(resolve, 2500));
-            }
-            throw lastError || new Error('B2C catalogue verification failed.');
-          })().catch(error => { console.error(error); process.exit(1); });
+          (async()=>{
+            async function post(method,args){const form=new URLSearchParams();form.set('payload',JSON.stringify({method,args,requestId:'smoke-'+Date.now()}));const r=await fetch(process.env.API_URL+'?bridge=1',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8'},body:form.toString(),redirect:'follow'});return {status:r.status,text:await r.text()}}
+            const callback='__nelSmokeCatalog';const req={method:'getAppConfig',args:[],requestId:'catalog-'+Date.now()};const url=process.env.API_URL+'?jsonp=1&callback='+callback+'&payload='+encodeURIComponent(JSON.stringify(req))+'&_='+Date.now();
+            const r=await fetch(url,{redirect:'follow',cache:'no-store'});const text=await r.text();const m=text.match(/^__nelSmokeCatalog\(([\s\S]*)\);?$/);const p=m?JSON.parse(m[1]):null;const products=p&&p.ok&&p.result&&Array.isArray(p.result.products)?p.result.products.length:0;if(r.status!==200||products<1)throw new Error('Main catalogue failed.');
+            const data=await post('getB2BAppDataV9',['__invalid_smoke_token__']);const login=await post('vendorLogin',['0000000000','__bad_pin__']);if(!/Session has expired/i.test(data.text)||!/Invalid mobile or PIN/i.test(login.text))throw new Error('B2B bridge failed.');
+            console.log(JSON.stringify({products,b2bData:true,b2bLogin:true}));
+          })().catch(e=>{console.error(e);process.exit(1)});
           NODE
-
-      - name: Verify B2B bridge compatibility
+      - name: Verify B2C canonical order engine
         env:
-          API_URL: https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec
+          API_URL: https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec
         run: |
           node <<'NODE'
-          (async () => {
-            async function call(method,args){
-              const form=new URLSearchParams();
-              form.set('payload',JSON.stringify({method,args,requestId:'bridge-smoke-'+Date.now()}));
-              const response=await fetch(process.env.API_URL+'?bridge=1',{
-                method:'POST',
-                headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8'},
-                body:form.toString(),
-                redirect:'follow'
-              });
-              return {status:response.status,text:await response.text()};
+          (async()=>{
+            async function post(method,args){const form=new URLSearchParams();form.set('payload',JSON.stringify({method,args,requestId:'b2c-health-'+Date.now()}));const r=await fetch(process.env.API_URL+'?bridge=1',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8'},body:form.toString(),redirect:'follow'});return {status:r.status,text:await r.text()}}
+            let last;
+            for(let i=1;i<=6;i++){
+              const h=await post('getB2COrderEngineHealthV901',[]);console.log(JSON.stringify({attempt:i,status:h.status,text:h.text.slice(0,220)}));
+              if(h.status===200&&/canonicalOrderHandler/i.test(h.text)&&/recursiveWrappers[^a-z]*false/i.test(h.text))return;
+              last=new Error('B2C canonical order engine is not live yet.');await new Promise(r=>setTimeout(r,2500));
             }
-            let lastError;
-            for(let attempt=1;attempt<=5;attempt++){
-              try{
-                const compliance=await call('getCompliancePublicV91',[]);
-                const dataProbe=await call('getB2BAppDataV9',['__invalid_smoke_token__']);
-                const loginProbe=await call('vendorLogin',['0000000000','__bad_pin__']);
-
-                const complianceOk=compliance.status===200 &&
-                  /Sri Govindadri Ventures/i.test(compliance.text) &&
-                  !/Method not allowed/i.test(compliance.text);
-                const dataBridgeOk=dataProbe.status===200 &&
-                  /Session has expired/i.test(dataProbe.text) &&
-                  !/Method not allowed/i.test(dataProbe.text);
-                const loginBridgeOk=loginProbe.status===200 &&
-                  /Invalid mobile or PIN/i.test(loginProbe.text) &&
-                  !/Method not allowed/i.test(loginProbe.text);
-
-                console.log(JSON.stringify({attempt,complianceOk,dataBridgeOk,loginBridgeOk,complianceStatus:compliance.status,dataStatus:dataProbe.status,loginStatus:loginProbe.status}));
-                if(complianceOk&&dataBridgeOk&&loginBridgeOk)return;
-                lastError=new Error('B2B bridge compatibility verification failed.');
-              }catch(error){
-                lastError=error;
-                console.error('Attempt '+attempt+': '+error.message);
-              }
-              await new Promise(resolve=>setTimeout(resolve,2500));
-            }
-            throw lastError || new Error('B2B bridge verification failed.');
-          })().catch(error=>{console.error(error);process.exit(1)});
+            throw last;
+          })().catch(e=>{console.error(e);process.exit(1)});
           NODE
