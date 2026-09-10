@@ -16,10 +16,13 @@ saveOrder = function(order){
 };
 
 function getB2COrderEngineHealthV901(){
+  const src=String(saveOrder||'');
+  const canonical=src.indexOf('V901_CORE_SAVE_ORDER')>=0;
+  const recursive=src.indexOf('V839_ORIGINAL_SAVE_ORDER')>=0||src.indexOf('V841_ORIGINAL_SAVE_ORDER')>=0;
   return {
-    ok:true,
+    ok:canonical&&!recursive,
     version:'9.0.1',
-    canonicalOrderHandler:true,
-    recursiveWrappers:false
+    canonicalOrderHandler:canonical,
+    recursiveWrappers:recursive
   };
 }
