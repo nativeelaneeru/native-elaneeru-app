@@ -97,7 +97,7 @@ ok(/Verification Pending/i.test(b2bPaymentUi),'B2B UPI UI clearly states manual 
 ok(/paymentStatus/.test(b2bPaymentUi)&&/UPI Payment/.test(b2bPaymentUi),'B2B order history shows UPI payment verification status');
 ok(/paymentIntentBeforeOrder:true/.test(b2bPaymentBackend)&&/autoMarkPaid:false/.test(b2bPaymentBackend),'B2B UPI backend creates payment intent before order and never auto-marks paid');
 ok(/v916B2BQuote_/.test(b2bPaymentBackend)&&/b2bProducts_\(vid\)/.test(b2bPaymentBackend),'B2B UPI amount uses server-side negotiated pricing');
-ok(/V8\.SHEETS\.PAYMENTS/.test(b2bPaymentBackend)&&/Channel:'B2B'/.test(b2bPaymentBackend),'B2B UPI uses the central Payment_Ledger');
+ok(/v913PaymentSheet_\(ss\)/.test(b2bPaymentBackend)&&/Channel:'B2B'/.test(b2bPaymentBackend),'B2B UPI uses the central Payment_Ledger');
 ok(/findExistingB2BRequestV904_/.test(b2bPaymentBackend),'B2B UPI order creation reuses duplicate-request protection');
 ok(/v916UtrAlreadyUsed_/.test(b2bPaymentBackend)&&/duplicateUtrProtected:true/.test(b2bPaymentBackend),'B2B UPI rejects duplicate UTR reuse');
 ok(/V916_PREVIOUS_ROUTE_CANDIDATES_/.test(b2bPaymentBackend)&&/status==='PAID'/.test(b2bPaymentBackend)&&/fulfillmentRequiresPaidUpi:true/.test(b2bPaymentBackend),'B2B routing excludes UPI orders until payment is verified PAID');
