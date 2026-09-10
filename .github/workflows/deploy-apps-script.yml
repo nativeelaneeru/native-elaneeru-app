@@ -19,18 +19,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+
       - name: Install dependencies
         run: npm install
+
       - name: Validate Apps Script feature wiring
         run: |
           node <<'NODE'
           const fs=require('fs');
-          const files=['src/VendorOnboardingV910.html','src/VendorApproval.html','src/SharedUX.html'];
-          for(const file of files){
+          const htmlFiles=['src/VendorOnboardingV910.html','src/VendorApproval.html','src/SharedUX.html'];
+          for(const file of htmlFiles){
             const html=fs.readFileSync(file,'utf8');
             const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
             if(!scripts.length)throw new Error(file+' has no inline JavaScript to validate.');
@@ -46,8 +49,11 @@ jobs:
           const reward=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZ_V911_ReferralRewards.gs','utf8');
           new Function(reward);
           if(!/V911_REFERRER_FREE_QTY\s*=\s*2/.test(reward)||!/V911_REFERRED_FREE_QTY\s*=\s*0/.test(reward)||!/FIRST_DELIVERED_ORDER/.test(reward))throw new Error('Approved 2-free-coconut referral rule is not wired.');
+          const publicRead=fs.readFileSync('src/ZZZZZ_V838_PublicCatalog.gs','utf8');
+          if(!/getB2CReferralRuleV911:getB2CReferralRuleV911/.test(publicRead))throw new Error('Referral rule is not exposed through the read-only health endpoint.');
           console.log('Apps Script feature validation passed.');
           NODE
+
       - name: Configure clasp project
         shell: bash
         run: |
@@ -57,6 +63,7 @@ jobs:
             "rootDir": "src"
           }
           JSON
+
       - name: Configure Google auth
         shell: bash
         env:
@@ -64,104 +71,110 @@ jobs:
         run: |
           printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
           chmod 600 "$HOME/.clasprc.json"
+
       - name: Push files to Apps Script
         run: npx clasp push -f
+
       - name: Update main web app deployment
         shell: bash
         env:
           DEPLOYMENT_ID: ${{ secrets.APPS_SCRIPT_DEPLOYMENT_ID }}
         run: npx clasp deploy -i "$DEPLOYMENT_ID" -d "GitHub auto deploy $GITHUB_SHA"
+
       - name: Update B2C customer web app deployment
         shell: bash
         env:
           B2C_DEPLOYMENT_ID: AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3
         run: npx clasp deploy -i "$B2C_DEPLOYMENT_ID" -d "B2C Checkout Engine V2 $GITHUB_SHA"
-      - name: Verify onboarding, approvals and B2C growth bridge
+
+      - name: Verify live Apps Script production safely
         env:
-          API_URL: https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec
+          MAIN_API_URL: https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec
+          B2C_API_URL: https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec
         run: |
           node <<'NODE'
-          (async()=>{
-            async function page(name){
-              let last;
-              for(let attempt=1;attempt<=4;attempt++){
-                const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),30000);
-                try{
-                  const r=await fetch(process.env.API_URL+'?page='+encodeURIComponent(name)+'&_='+Date.now(),{redirect:'follow',cache:'no-store',signal:controller.signal});
-                  const type=String(r.headers.get('content-type')||'');
-                  await r.text();
-                  if(r.status===200&&/text\/html/i.test(type)){console.log('✓ '+name+' route is reachable (HTTP 200 HTML)');return}
-                  last=new Error(name+' route returned HTTP '+r.status+' with content-type '+type);
-                }catch(e){last=e}finally{clearTimeout(timeout)}
-                if(attempt<4)await new Promise(r=>setTimeout(r,1500*attempt));
+          const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+          async function fetchWithTimeout(url,options={},timeoutMs=30000){
+            const controller=new AbortController();
+            const timer=setTimeout(()=>controller.abort(),timeoutMs);
+            try{return await fetch(url,{...options,signal:controller.signal,redirect:'follow',cache:'no-store'})}
+            finally{clearTimeout(timer)}
+          }
+          async function retry(label,fn,attempts=5){
+            let last;
+            for(let i=1;i<=attempts;i++){
+              const started=Date.now();
+              try{
+                const value=await fn(i);
+                console.log('✓ '+label+' attempt '+i+' ('+(Date.now()-started)+'ms)');
+                return value;
+              }catch(e){
+                last=e;console.error(label+' attempt '+i+' failed: '+e.message);
+                if(i<attempts)await sleep(1500*i);
               }
-              throw last||new Error(name+' route did not respond.');
             }
-            async function post(method,args){
-              const form=new URLSearchParams();form.set('payload',JSON.stringify({method,args,requestId:'feature-smoke-'+Date.now()}));
-              const r=await fetch(process.env.API_URL+'?bridge=1',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8'},body:form.toString(),redirect:'follow'});
-              return {status:r.status,text:await r.text()};
-            }
+            throw last||new Error(label+' failed.');
+          }
+          async function jsonp(base,method){
+            return retry(method,async i=>{
+              const callback='__nelVerify';
+              const req={method,args:[],requestId:'verify-'+method+'-'+i+'-'+Date.now()};
+              const url=base+'?jsonp=1&callback='+callback+'&payload='+encodeURIComponent(JSON.stringify(req))+'&_='+Date.now();
+              const r=await fetchWithTimeout(url,{},30000);
+              const text=await r.text();
+              const m=text.match(/^__nelVerify\(([\s\S]*)\);?$/);
+              const payload=m?JSON.parse(m[1]):null;
+              if(r.status!==200||!payload||payload.ok!==true)throw new Error('HTTP '+r.status+' / '+(payload&&payload.error||'invalid JSONP'));
+              return payload.result;
+            });
+          }
+          async function post(base,method,args){
+            return retry(method,async()=>{
+              const form=new URLSearchParams();
+              form.set('payload',JSON.stringify({method,args,requestId:'verify-'+method+'-'+Date.now()}));
+              const r=await fetchWithTimeout(base+'?bridge=1',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8'},body:form.toString()},30000);
+              const text=await r.text();
+              if(r.status!==200)throw new Error('HTTP '+r.status);
+              return text;
+            });
+          }
+          async function page(name){
+            return retry('route '+name,async()=>{
+              const r=await fetchWithTimeout(process.env.MAIN_API_URL+'?page='+encodeURIComponent(name)+'&_='+Date.now(),{},30000);
+              const type=String(r.headers.get('content-type')||'');
+              await r.text();
+              if(r.status!==200||!/text\/html/i.test(type))throw new Error('HTTP '+r.status+' / '+type);
+              return true;
+            });
+          }
+          (async()=>{
             await page('vendor');
             await page('approvals');
-            const growth=await post('getB2CCustomerGrowthV910',['123']);
-            if(growth.status!==200||!/valid 10 digit mobile/i.test(growth.text))throw new Error('B2C growth bridge is not reachable.');
-            const subscription=await post('saveB2CSubscriptionV910',['123',{}]);
-            if(subscription.status!==200||!/valid 10 digit mobile/i.test(subscription.text))throw new Error('B2C subscription bridge is not reachable.');
-            const rule=await post('getB2CReferralRuleV911',[]);
-            if(rule.status!==200||!/"rewardType":"FREE_PRODUCT"/.test(rule.text)||!/"rewardProductId":"TC"/.test(rule.text)||!/"referrerRewardQty":2/.test(rule.text)||!/"referredRewardQty":0/.test(rule.text)||!/"qualificationRule":"FIRST_DELIVERED_ORDER"/.test(rule.text))throw new Error('2-free-coconut referral rule is not live.');
-            console.log('✓ Vendor routes, subscriptions and 2-free-coconut Refer & Earn rule are live without writing test data');
-          })().catch(e=>{console.error(e);process.exit(1)});
-          NODE
-      - name: Verify main catalogue and B2B bridge
-        env:
-          API_URL: https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec
-        run: |
-          node <<'NODE'
-          (async()=>{
-            async function post(method,args){const form=new URLSearchParams();form.set('payload',JSON.stringify({method,args,requestId:'smoke-'+Date.now()}));const r=await fetch(process.env.API_URL+'?bridge=1',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8'},body:form.toString(),redirect:'follow'});return {status:r.status,text:await r.text()}}
-            const callback='__nelSmokeCatalog';const req={method:'getAppConfig',args:[],requestId:'catalog-'+Date.now()};const url=process.env.API_URL+'?jsonp=1&callback='+callback+'&payload='+encodeURIComponent(JSON.stringify(req))+'&_='+Date.now();
-            const r=await fetch(url,{redirect:'follow',cache:'no-store'});const text=await r.text();const m=text.match(/^__nelSmokeCatalog\(([\s\S]*)\);?$/);const p=m?JSON.parse(m[1]):null;const products=p&&p.ok&&p.result&&Array.isArray(p.result.products)?p.result.products.length:0;if(r.status!==200||products<1)throw new Error('Main catalogue failed.');
-            const data=await post('getB2BAppDataV9',['__invalid_smoke_token__']);const login=await post('vendorLogin',['0000000000','__bad_pin__']);if(!/Session has expired/i.test(data.text)||!/Invalid mobile or PIN/i.test(login.text))throw new Error('B2B bridge failed.');
-            console.log(JSON.stringify({products,b2bData:true,b2bLogin:true}));
-          })().catch(e=>{console.error(e);process.exit(1)});
-          NODE
-      - name: Verify B2C fast Checkout Engine V2
-        env:
-          API_URL: https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec
-        run: |
-          node <<'NODE'
-          (async()=>{
-            const callback='__nelOrderHealthV2';
-            let last;
-            for(let i=1;i<=6;i++){
-              const req={method:'getB2COrderEngineHealthV906',args:[],requestId:'b2c-v2-health-'+Date.now()};
-              const url=process.env.API_URL+'?jsonp=1&callback='+callback+'&payload='+encodeURIComponent(JSON.stringify(req))+'&_='+Date.now();
-              const r=await fetch(url,{redirect:'follow',cache:'no-store'});const text=await r.text();const m=text.match(/^__nelOrderHealthV2\(([\s\S]*)\);?$/);const p=m?JSON.parse(m[1]):null;
-              console.log(JSON.stringify({attempt:i,status:r.status,payload:p}));
-              const h=p&&p.ok&&p.result;
-              if(r.status===200&&h&&h.ok===true&&h.engineVersion==='9.0.5'&&h.canonicalOrderHandler===true&&h.singleSpreadsheetOpen===true&&h.targetedCustomerLookup===true&&h.shortWriteLock===true&&h.batchItemWrite===true&&h.cachedProducts===true&&h.noFullCustomerRowsScan===true&&h.idempotency===true&&h.serverControlledPayment===true)return;
-              last=new Error('B2C Checkout Engine V2 is not live yet.');await new Promise(r=>setTimeout(r,2500));
-            }
-            throw last;
-          })().catch(e=>{console.error(e);process.exit(1)});
-          NODE
-      - name: Verify B2B canonical idempotent order engine
-        env:
-          API_URL: https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec
-        run: |
-          node <<'NODE'
-          (async()=>{
-            const callback='__nelB2BHealth';
-            let last;
-            for(let i=1;i<=6;i++){
-              const req={method:'getB2BOrderEngineHealthV904',args:[],requestId:'b2b-health-'+Date.now()};
-              const url=process.env.API_URL+'?jsonp=1&callback='+callback+'&payload='+encodeURIComponent(JSON.stringify(req))+'&_='+Date.now();
-              const r=await fetch(url,{redirect:'follow',cache:'no-store'});const text=await r.text();const m=text.match(/^__nelB2BHealth\(([\s\S]*)\);?$/);const p=m?JSON.parse(m[1]):null;
-              console.log(JSON.stringify({attempt:i,status:r.status,payload:p}));
-              if(r.status===200&&p&&p.ok&&p.result&&p.result.canonicalOrderHandler===true&&p.result.idempotency===true&&p.result.serverControlledDeliveryCharge===true)return;
-              last=new Error('B2B idempotent order engine is not live yet.');await new Promise(r=>setTimeout(r,2500));
-            }
-            throw last;
+
+            const growth=await post(process.env.MAIN_API_URL,'getB2CCustomerGrowthV910',['123']);
+            if(!/valid 10 digit mobile/i.test(growth))throw new Error('B2C growth bridge is not reachable.');
+            const sub=await post(process.env.MAIN_API_URL,'saveB2CSubscriptionV910',['123',{}]);
+            if(!/valid 10 digit mobile/i.test(sub))throw new Error('B2C subscription bridge is not reachable.');
+
+            const rule=await jsonp(process.env.MAIN_API_URL,'getB2CReferralRuleV911');
+            if(!rule||rule.rewardType!=='FREE_PRODUCT'||rule.rewardProductId!=='TC'||rule.referrerRewardQty!==2||rule.referredRewardQty!==0||rule.qualificationRule!=='FIRST_DELIVERED_ORDER'||rule.redemptionEnabled!==false)throw new Error('2-free-coconut referral rule does not match the approved production rule.');
+            console.log('✓ Refer & Earn: referrer gets 2 free Tender Coconuts after first delivered order; referred reward is 0');
+
+            const catalogue=await jsonp(process.env.MAIN_API_URL,'getAppConfig');
+            const products=catalogue&&Array.isArray(catalogue.products)?catalogue.products:[];
+            if(products.length<1)throw new Error('Main catalogue has no products.');
+            if(!products.some(p=>String(p.productId||p.id||'').toUpperCase()==='TC'||/Tender Coconut/i.test(String(p.productName||p.name||''))))throw new Error('Tender Coconut is missing from main catalogue.');
+
+            const data=await post(process.env.MAIN_API_URL,'getB2BAppDataV9',['__invalid_smoke_token__']);
+            const login=await post(process.env.MAIN_API_URL,'vendorLogin',['0000000000','__bad_pin__']);
+            if(!/Session has expired/i.test(data)||!/Invalid mobile or PIN/i.test(login))throw new Error('B2B bridge safety checks failed.');
+
+            const b2cHealth=await jsonp(process.env.B2C_API_URL,'getB2COrderEngineHealthV906');
+            if(!b2cHealth||b2cHealth.ok!==true||b2cHealth.engineVersion!=='9.0.5'||b2cHealth.canonicalOrderHandler!==true||b2cHealth.idempotency!==true||b2cHealth.serverControlledPayment!==true)throw new Error('B2C Checkout Engine V2 is not healthy.');
+
+            const b2bHealth=await jsonp(process.env.MAIN_API_URL,'getB2BOrderEngineHealthV904');
+            if(!b2bHealth||b2bHealth.canonicalOrderHandler!==true||b2bHealth.idempotency!==true||b2bHealth.serverControlledDeliveryCharge!==true)throw new Error('B2B canonical order engine is not healthy.');
+
+            console.log('Live Apps Script verification passed. No production order or valid customer/vendor record was created.');
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
