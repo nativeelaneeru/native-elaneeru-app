@@ -1,0 +1,54 @@
+<style>
+#accessV917 .accessGrid{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr auto;gap:8px;align-items:end}
+#accessV917 .accessUser{border-top:1px solid #edf0ed;padding:12px 0}.accessUser:first-child{border-top:0}
+#accessV917 .accessMeta{display:flex;gap:7px;flex-wrap:wrap;margin-top:5px}
+#accessV917 .accessActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+#accessV917 .accessNote{background:#eef6ef;border:1px solid #d3e4d5;border-radius:11px;padding:10px;margin-top:10px}
+@media(max-width:900px){#accessV917 .accessGrid{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){#accessV917 .accessGrid{grid-template-columns:1fr}}
+</style>
+<script>
+(function(){
+  if(window.NEL_ADMIN_ACCESS_V917)return;window.NEL_ADMIN_ACCESS_V917=true;
+  const oldPanels=['orders','customers','feedback','tickets','delivery','routeplan'];
+  function byId(id){return document.getElementById(id)}
+  function safe(v){return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+  function staffCall(fn,args){return new Promise((resolve,reject)=>{const r=google.script.run.withSuccessHandler(resolve).withFailureHandler(e=>reject(new Error(e&&e.message?e.message:String(e))));r[fn].apply(r,args||[])})}
+  function currentAdmin(){return {email:String(window.E||'').trim(),pin:String(window.P||'').trim()}}
+  function pin4(){return String(Math.floor(1000+Math.random()*9000))}
+
+  function install(){
+    const dash=byId('dash'),tabs=dash&&dash.querySelector('.tabs');if(!dash||!tabs||byId('tAccess'))return;
+    const btn=document.createElement('button');btn.id='tAccess';btn.textContent='Access Management';btn.type='button';btn.onclick=openAccessV917;tabs.appendChild(btn);
+    const panel=document.createElement('div');panel.id='access';panel.className='card hidden';panel.innerHTML='<div id="accessV917"><div class="row" style="justify-content:space-between"><div><h3 style="margin:0">Access Management</h3><div class="muted">Create and control Sales / Picker access without editing the sheet manually.</div></div><button class="secondary" type="button" onclick="loadAccessV917()">Refresh</button></div><div class="accessNote muted"><b>Security:</b> Staff PINs are stored only as hashes in <b>Staff_Users</b>. Existing PINs cannot be viewed; Admin can only reset them.</div><div class="card" style="box-shadow:none;margin-top:12px"><h4 style="margin-top:0">Grant Access</h4><div class="accessGrid"><div><div class="muted">Name *</div><input id="acName" placeholder="Staff name" style="width:100%"></div><div><div class="muted">Mobile *</div><input id="acMobile" inputmode="numeric" maxlength="10" placeholder="10 digit mobile" style="width:100%"></div><div><div class="muted">Role *</div><select id="acRole" style="width:100%"><option value="SALES">Sales · Vendor Onboarding</option><option value="PICKER">Picker</option></select></div><div><div class="muted">PIN *</div><div class="row" style="gap:4px"><input id="acPin" type="text" inputmode="numeric" maxlength="8" placeholder="4–8 digits" style="width:110px"><button class="secondary" type="button" onclick="generateAccessPinV917()">Generate</button></div></div><button id="acGrant" type="button" onclick="grantAccessV917()">Grant Access</button></div><div id="acResult" class="muted" style="margin-top:9px"></div></div><div id="acList"><div class="muted">Open this tab to load staff access.</div></div></div>';
+    tabs.insertAdjacentElement('afterend',panel);
+    tabs.querySelectorAll('button:not(#tAccess)').forEach(b=>b.addEventListener('click',()=>{panel.classList.add('hidden');btn.classList.remove('active')}));
+  }
+
+  window.generateAccessPinV917=function(){const x=byId('acPin');if(x)x.value=pin4()};
+  window.openAccessV917=function(){oldPanels.forEach(id=>{const x=byId(id);if(x)x.classList.add('hidden')});const tabs=byId('dash').querySelector('.tabs');tabs.querySelectorAll('button').forEach(b=>b.classList.remove('active'));byId('tAccess').classList.add('active');byId('access').classList.remove('hidden');loadAccessV917()};
+  window.loadAccessV917=async function(){
+    const a=currentAdmin(),host=byId('acList');if(!a.email||!a.pin){if(host)host.innerHTML='<div class="muted">Admin session is required.</div>';return}
+    host.innerHTML='<div class="muted" style="padding:10px 0">Loading staff access…</div>';
+    try{const d=await staffCall('getStaffAccessAdminV917',[a.email,a.pin]);renderList(d.rows||[])}catch(e){host.innerHTML='<div class="muted">'+safe(e.message)+'</div>'}
+  };
+  function renderList(rows){
+    const host=byId('acList');
+    if(!rows.length){host.innerHTML='<div class="muted" style="padding:14px 0">No staff access created yet.</div>';return}
+    host.innerHTML='<h4>Staff Access</h4>'+rows.map(r=>'<div class="accessUser"><div class="row" style="justify-content:space-between"><div><b>'+safe(r.name||'Staff')+'</b> <span class="badge">'+safe(r.role||'')+'</span><div class="muted">'+safe(r.mobile)+' · '+safe(r.staffId)+'</div></div><span class="badge '+(r.status==='ACTIVE'?'':'warn')+'">'+safe(r.status)+'</span></div><div class="accessMeta"><span class="badge">App: '+safe(r.allowedApp||'')+'</span>'+(r.lastLogin?'<span class="badge">Last login: '+safe(r.lastLogin)+'</span>':'')+'</div><div class="accessActions"><button class="secondary" type="button" onclick="resetAccessPinV917(\''+safe(r.staffId)+'\',\''+safe(r.mobile)+'\')">Reset PIN</button><button class="secondary" type="button" onclick="setAccessStatusV917(\''+safe(r.staffId)+'\',\''+(r.status==='ACTIVE'?'INACTIVE':'ACTIVE')+'\')">'+(r.status==='ACTIVE'?'Disable':'Reactivate')+'</button>'+(r.role==='SALES'?'<a class="waLink" style="margin-top:0" target="_blank" href="?page=vendor">Open Vendor Onboarding</a>':'')+'</div></div>').join('');
+  }
+  window.grantAccessV917=async function(){
+    const a=currentAdmin(),name=byId('acName').value.trim(),mobile=byId('acMobile').value.replace(/\D/g,'').slice(-10),role=byId('acRole').value,staffPin=byId('acPin').value.trim(),b=byId('acGrant');
+    b.disabled=true;b.textContent='Granting…';byId('acResult').textContent='';
+    try{const r=await staffCall('grantStaffAccessV917',[a.email,a.pin,{name,mobile,role,staffPin}]);byId('acResult').innerHTML='<b>Access active.</b> Login: '+safe(r.mobile)+' · PIN '+safe(staffPin)+(r.role==='SALES'?' · Vendor Onboarding':'');byId('acPin').value='';await loadAccessV917();if(typeof toast==='function')toast('Access granted to '+r.name)}catch(e){byId('acResult').textContent=e.message;if(typeof toast==='function')toast(e.message)}finally{b.disabled=false;b.textContent='Grant Access'}
+  };
+  window.resetAccessPinV917=async function(staffId,mobile){
+    const newPin=prompt('Enter a new 4–8 digit PIN for '+mobile,pin4());if(newPin===null)return;if(!/^\d{4,8}$/.test(String(newPin).trim()))return alert('Use a 4–8 digit numeric PIN.');
+    const a=currentAdmin();try{await staffCall('resetStaffPinV917',[a.email,a.pin,staffId,String(newPin).trim()]);alert('PIN reset successfully.\nMobile: '+mobile+'\nNew PIN: '+String(newPin).trim());if(typeof toast==='function')toast('Staff PIN reset')}catch(e){alert(e.message)}
+  };
+  window.setAccessStatusV917=async function(staffId,status){
+    if(!confirm((status==='ACTIVE'?'Reactivate':'Disable')+' this staff access?'))return;const a=currentAdmin();try{await staffCall('setStaffAccessStatusV917',[a.email,a.pin,staffId,status]);if(typeof toast==='function')toast('Access '+(status==='ACTIVE'?'reactivated':'disabled'));await loadAccessV917()}catch(e){alert(e.message)}
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})();
+</script>
