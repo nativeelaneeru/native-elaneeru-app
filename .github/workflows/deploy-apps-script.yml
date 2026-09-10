@@ -72,11 +72,14 @@ jobs:
         run: |
           node <<'NODE'
           (async()=>{
-            async function post(method,args){const form=new URLSearchParams();form.set('payload',JSON.stringify({method,args,requestId:'b2c-health-'+Date.now()}));const r=await fetch(process.env.API_URL+'?bridge=1',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8'},body:form.toString(),redirect:'follow'});return {status:r.status,text:await r.text()}}
+            const callback='__nelOrderHealth';
             let last;
             for(let i=1;i<=6;i++){
-              const h=await post('getB2COrderEngineHealthV901',[]);console.log(JSON.stringify({attempt:i,status:h.status,text:h.text.slice(0,220)}));
-              if(h.status===200&&/canonicalOrderHandler/i.test(h.text)&&/recursiveWrappers[^a-z]*false/i.test(h.text))return;
+              const req={method:'getB2COrderEngineHealthV901',args:[],requestId:'b2c-health-'+Date.now()};
+              const url=process.env.API_URL+'?jsonp=1&callback='+callback+'&payload='+encodeURIComponent(JSON.stringify(req))+'&_='+Date.now();
+              const r=await fetch(url,{redirect:'follow',cache:'no-store'});const text=await r.text();const m=text.match(/^__nelOrderHealth\(([\s\S]*)\);?$/);const p=m?JSON.parse(m[1]):null;
+              console.log(JSON.stringify({attempt:i,status:r.status,payload:p}));
+              if(r.status===200&&p&&p.ok&&p.result&&p.result.canonicalOrderHandler===true&&p.result.recursiveWrappers===false)return;
               last=new Error('B2C canonical order engine is not live yet.');await new Promise(r=>setTimeout(r,2500));
             }
             throw last;
