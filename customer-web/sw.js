@@ -1,4 +1,4 @@
-const CACHE='native-elaneeru-v10.21.0';
+const CACHE='native-elaneeru-v10.22.0';
 const SHELL=[
   './index.html','./login/index.html','./config.js','./ui-v110.js','./ui-v111.js','./ui-v112.js','./manifest.webmanifest',
   './icons/native-elaneeru.svg','./icons/icon-192.png','./icons/icon-512.png',
