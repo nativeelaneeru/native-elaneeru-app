@@ -1,22 +1,23 @@
 /**
  * Native Elaneeru V8.3.6 — Sales onboarding catalog patch
  * Keeps the existing V8 core untouched while exposing LIVE B2B products to
- * authenticated sales staff and persisting the selected product on onboarding.
+ * staff explicitly authorized for Vendor Onboarding and persisting the selected product.
  */
 
 function salesStaffLoginV82(mobile,pin){
-  const u=staffLoginV81_(mobile,pin,'SALES');
+  const u=staffAppLoginV917_(mobile,pin,'VENDOR_ONBOARDING');
   return {
     staffId:u.staffId,
     name:u.name,
     mobile:u.mobile,
     role:u.role,
+    allowedApps:u.allowedApps,
     products:b2bProducts_('')
   };
 }
 
 function submitVendorOnboardingV83(mobile,pin,p){
-  const u=staffLoginV81_(mobile,pin,'SALES');
+  const u=staffAppLoginV917_(mobile,pin,'VENDOR_ONBOARDING');
   p=p||{};
 
   const liveProducts=b2bProducts_('');
