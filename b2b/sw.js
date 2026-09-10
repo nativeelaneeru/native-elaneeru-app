@@ -1,10 +1,11 @@
-const CACHE='native-elaneeru-business-v9.6.0';
+const CACHE='native-elaneeru-business-v9.6.1';
 const SHELL=[
   './',
   './index.html',
   './config.js',
   './ui-v113.js',
   './separate-links.js',
+  './session-v960.js',
   './manifest.webmanifest',
   '../icons/icon-192.png',
   '../icons/icon-512.png'
@@ -67,7 +68,7 @@ self.addEventListener('fetch',event=>{
     return;
   }
 
-  const critical=/\/(?:config|ui-v113|separate-links)\.js$/;
+  const critical=/\/(?:config|ui-v113|separate-links|session-v960)\.js$/;
   if(critical.test(url.pathname)||url.pathname.endsWith('/manifest.webmanifest')){
     event.respondWith(networkFirst(request));
     return;
