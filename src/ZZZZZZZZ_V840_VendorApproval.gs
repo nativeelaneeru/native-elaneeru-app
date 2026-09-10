@@ -33,7 +33,7 @@ function uploadOnboardingPhotoV840_(dataUrl,fileName,onboardingId,kind){
   if(!match) throw new Error('Invalid '+kind+' photo.');
   const bytes=Utilities.base64Decode(match[2]);
   if(bytes.length>4*1024*1024) throw new Error('Please use a smaller '+kind+' photo.');
-  const folderId=PropertiesService.getScriptProperties().getProperty('VENDOR_ONBOARDING_DRIVE_FOLDER_ID');
+  const folderId='1GAk4K3NlWpCabU_jjy68nevXn8PhY_Oj';
   const folder=folderId?DriveApp.getFolderById(folderId):DriveApp.getRootFolder();
   const safe=String(fileName||kind+'.jpg').replace(/[^a-zA-Z0-9._-]/g,'_');
   const file=folder.createFile(Utilities.newBlob(bytes,match[1],onboardingId+'_'+kind+'_'+safe));
