@@ -27,7 +27,19 @@
     data.metrics=data.metrics&&typeof data.metrics==='object'?data.metrics:{};
     data.productSales=data.productSales&&typeof data.productSales==='object'?data.productSales:{};
     ['orders','customers','feedback','tickets','partners','assignments'].forEach(function(k){if(!Array.isArray(data[k]))data[k]=[]});
+    data.orders.forEach(function(o){if(o&&typeof o==='object'&&!Array.isArray(o.items))o.items=[]});
     return data;
+  }
+  function safeRender(){
+    try{
+      DATA=normaliseDashboard(typeof DATA==='undefined'?null:DATA);
+      if(typeof window.__NEL_ADMIN_ORIGINAL_RENDER==='function')return window.__NEL_ADMIN_ORIGINAL_RENDER();
+      if(typeof render==='function'&&render!==safeRender)return render();
+    }catch(err){
+      const text=err&&err.message?err.message:String(err);
+      if(typeof toast==='function')toast('Dashboard display error: '+text);
+      else setLoginMessage('Dashboard display error: '+text,true);
+    }
   }
 
   window.iso=localIso;
@@ -49,11 +61,11 @@
     google.script.run
       .withSuccessHandler(function(d){
         DATA=normaliseDashboard(d);
-        try{render()}catch(err){toast('Dashboard display error: '+(err&&err.message?err.message:err))}
+        safeRender();
       })
       .withFailureHandler(function(err){
         const text=err&&err.message?err.message:'Dashboard could not be loaded.';
-        toast(text);
+        if(typeof toast==='function')toast(text);else setLoginMessage(text,true);
         if(/invalid admin credentials/i.test(text)){
           P='';
           el('dash')&&el('dash').classList.add('hidden');
@@ -98,6 +110,10 @@
 
   function ready(){
     const email=el('email'),pin=el('pin');
+    if(typeof render==='function'&&!window.__NEL_ADMIN_ORIGINAL_RENDER){
+      window.__NEL_ADMIN_ORIGINAL_RENDER=render;
+      try{render=safeRender}catch(err){window.render=safeRender}
+    }
     if(email){email.setAttribute('autocomplete','username');email.setAttribute('autocapitalize','none')}
     if(pin){
       pin.setAttribute('autocomplete','current-password');
