@@ -1,12 +1,32 @@
 {
-  "id":"./",
-  "name":"Native Elaneeru Customer",
-  "short_name":"Elaneeru",
-  "description":"Fresh tender coconut ordering for retail customers.",
-  "start_url":"./",
-  "scope":"./",
-  "display":"standalone",
-  "background_color":"#f5f7f5",
-  "theme_color":"#075b34",
-  "icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+  "id": "./",
+  "name": "Native Elaneeru",
+  "short_name": "Native Elaneeru",
+  "description": "Fresh tender coconuts delivered locally.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff8e9",
+  "theme_color": "#086c3b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./icons/native-elaneeru.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }

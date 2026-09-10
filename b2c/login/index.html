@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#075b34">
+<title>Native Elaneeru Login</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:22px;background:linear-gradient(155deg,#053d25,#0a7a43 58%,#14a866);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#142019}.box{width:min(430px,100%);background:#fff;border-radius:26px;padding:21px;box-shadow:0 28px 80px #002b1b66}.head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.logo{width:76px;height:76px;border-radius:20px;object-fit:contain;background:#fff;box-shadow:0 8px 24px #0002}.lang{border:1px solid #d7e6dc;border-radius:11px;padding:8px 10px;background:#f7fbf8;color:#075b34;font-weight:900}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.55px;color:#0a7a43;font-weight:900;margin-top:15px}h1{font-size:29px;line-height:1.05;margin:5px 0 7px;color:#075b34}p{font-size:12px;line-height:1.55;color:#68766d;margin:0 0 15px}.field{width:100%;border:1px solid #d8e5dc;border-radius:13px;padding:13px;font:inherit;outline:0;margin-top:9px}.field:focus{border-color:#55ad7b;box-shadow:0 0 0 4px #dff4e8}.pin{letter-spacing:5px;text-align:center;font-weight:900}.btn{width:100%;margin-top:10px;border:0;border-radius:13px;padding:13px;background:#075b34;color:#fff;font-weight:900;font:inherit}.btn.alt{background:#edf7f0;color:#075b34}.btn.ghost{background:#fff;color:#075b34;border:1px solid #cfe0d5}.btn:disabled{opacity:.55}.msg{font-size:11px;color:#a03d26;min-height:18px;margin-top:8px}.info{font-size:11px;color:#486052;background:#eff8f2;border-radius:12px;padding:10px;margin-top:10px}.fine{font-size:10px;color:#7c877f;text-align:center;margin-top:10px}.hide{display:none!important}
+</style>
+</head>
+<body>
+<main class="box">
+<div class="head"><img class="logo" src="../icons/native-elaneeru.svg" alt="Native Elaneeru"><select id="language" class="lang"><option value="en">EN</option><option value="kn">ಕನ್ನಡ</option><option value="te">తెలుగు</option><option value="hi">हिन्दी</option></select></div>
+<div class="eyebrow">Sri Govindadri Ventures</div>
+<h1 id="title">Welcome to Native Elaneeru</h1>
+<p id="intro">Enter your mobile number. You can continue without a PIN or create an optional 4-digit PIN.</p>
+<section id="mobileStep"><input id="mobile" class="field" inputmode="numeric" maxlength="10" autocomplete="tel" placeholder="10 digit mobile number"><button id="continueBtn" class="btn">Continue</button></section>
+<section id="pinLoginStep" class="hide"><div class="info">A PIN is already set for this mobile number.</div><input id="loginPin" class="field pin" inputmode="numeric" maxlength="4" type="password" placeholder="4 digit PIN"><button id="loginBtn" class="btn">Login</button><button class="btn ghost backBtn">Change mobile number</button></section>
+<section id="noPinStep" class="hide"><div class="info">No PIN is set. Create one now or continue without a PIN.</div><button id="showCreateBtn" class="btn">Create 4-digit PIN</button><button id="skipPinBtn" class="btn alt">Continue without PIN</button><button class="btn ghost backBtn">Change mobile number</button></section>
+<section id="createPinStep" class="hide"><div class="info">Create a 4-digit PIN. Only a secure hash is stored.</div><input id="newPin" class="field pin" inputmode="numeric" maxlength="4" type="password" placeholder="New 4 digit PIN"><input id="confirmPin" class="field pin" inputmode="numeric" maxlength="4" type="password" placeholder="Confirm PIN"><button id="createPinBtn" class="btn">Create PIN & Continue</button><button id="createBackBtn" class="btn alt">Back</button></section>
+<div id="msg" class="msg"></div><div class="fine">This device will remember your login until you log out.</div>
+</main>
+<script>
+(()=>{
+'use strict';
+const API='https://script.google.com/macros/s/AKfycby4tO2Y1xWbVv1XqzbIYjuTKOt4XRWPzB9MseMC1x-qc8gbNYPvqvG1z6PuCPGZi5O2/exec';
+const $=id=>document.getElementById(id);let seq=0,currentMobile='';
+const digits=v=>String(v||'').replace(/\D/g,'').slice(-10);
+function say(v){$('msg').textContent=v||''}
+function show(id){['mobileStep','pinLoginStep','noPinStep','createPinStep'].forEach(x=>$(x).classList.toggle('hide',x!==id))}
+function rpc(method,args=[]){return new Promise((resolve,reject)=>{const cb='__nelLogin113'+Date.now()+(++seq)+Math.floor(Math.random()*10000),s=document.createElement('script');let done=false;const clean=()=>{if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}try{s.remove()}catch(e){}};window[cb]=p=>{clean();p=p||{};p.ok?resolve(p.result):reject(new Error(p.error||'Request failed.'))};s.onerror=()=>{clean();reject(new Error('Unable to connect. Please retry.'))};s.async=true;s.src=API+'?jsonp=1&callback='+encodeURIComponent(cb)+'&payload='+encodeURIComponent(JSON.stringify({method,args,requestId:cb}))+'&v=1130&_='+Date.now();document.head.appendChild(s);const timer=setTimeout(()=>{clean();reject(new Error('Connection timed out. Please retry.'))},30000)})}
+function saveOpen(m,p={}){p.mobile=m;try{localStorage.setItem('nel_b2c_session_mobile',m);localStorage.setItem('nel_b2c_profile',JSON.stringify(p));localStorage.setItem('nel_profile_v9',JSON.stringify(p))}catch(e){}location.replace('../?v=1013')}
+async function lookup(){const m=digits($('mobile').value);say('');if(!/^[6-9]\d{9}$/.test(m)){say('Enter a valid 10 digit mobile number.');return}currentMobile=m;const b=$('continueBtn');b.disabled=true;b.textContent='Checking…';try{const r=await rpc('getCustomerPinStatusV107',[m]);show(r&&r.hasPin?'pinLoginStep':'noPinStep')}catch(e){say('Backend is taking longer than expected. You can still continue without PIN.');show('noPinStep')}finally{b.disabled=false;b.textContent='Continue'}}
+async function pinLogin(){const p=digits($('loginPin').value);say('');if(p.length!==4)return say('Enter your 4 digit PIN.');const b=$('loginBtn');b.disabled=true;b.textContent='Checking…';try{const r=await rpc('customerLoginWithPinV107',[currentMobile,p]);saveOpen(currentMobile,r&&r.profile||{})}catch(e){say(e.message)}finally{b.disabled=false;b.textContent='Login'}}
+function skip(){const m=currentMobile||digits($('mobile').value);if(!/^[6-9]\d{9}$/.test(m))return say('Enter a valid 10 digit mobile number.');saveOpen(m,{})}
+async function createPin(){const a=digits($('newPin').value),b=digits($('confirmPin').value);say('');if(a.length!==4)return say('Enter a 4 digit PIN.');if(a!==b)return say('PINs do not match.');const btn=$('createPinBtn');btn.disabled=true;btn.textContent='Saving PIN…';try{await rpc('setCustomerPinV107',[currentMobile,a,'']);saveOpen(currentMobile,{})}catch(e){say(e.message);btn.disabled=false;btn.textContent='Create PIN & Continue'}}
+$('mobile').oninput=e=>e.target.value=digits(e.target.value);$('loginPin').oninput=e=>e.target.value=digits(e.target.value);$('newPin').oninput=e=>e.target.value=digits(e.target.value);$('confirmPin').oninput=e=>e.target.value=digits(e.target.value);$('continueBtn').onclick=lookup;$('loginBtn').onclick=pinLogin;$('skipPinBtn').onclick=skip;$('showCreateBtn').onclick=()=>{say('');show('createPinStep');$('newPin').focus()};$('createPinBtn').onclick=createPin;$('createBackBtn').onclick=()=>show('noPinStep');document.querySelectorAll('.backBtn').forEach(b=>b.onclick=()=>{currentMobile='';$('mobile').value='';$('loginPin').value='';say('');show('mobileStep');$('mobile').focus()});$('mobile').onkeydown=e=>{if(e.key==='Enter')lookup()};$('loginPin').onkeydown=e=>{if(e.key==='Enter')pinLogin()};
+try{const saved=digits(localStorage.getItem('nel_b2c_session_mobile')||'');if(/^[6-9]\d{9}$/.test(saved))location.replace('../?v=1013')}catch(e){}
+})();
+</script>
+</body></html>
