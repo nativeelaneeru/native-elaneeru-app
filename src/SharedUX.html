@@ -23,19 +23,35 @@ img{max-width:100%}
 </style>
 <script>
 (function(){
-  const q=new URLSearchParams(location.search); const page=(q.get('page')||'').toLowerCase();
-  if(!page||page==='home'||page==='b2c') return;
+  if(document.querySelector('.nel-ux-launcher'))return;
   const MAIN='https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec';
+  const B2C='https://nativeelaneeru.github.io/native-elaneeru-app/b2c/';
+  const B2B='https://nativeelaneeru.github.io/native-elaneeru-app/b2b/';
+  const q=new URLSearchParams(location.search);let page=(q.get('page')||'').toLowerCase();
+  if(!page){
+    const t=String(document.title||'').toLowerCase();
+    if(t.includes('cumulative')||t.includes('control tower'))page='dashboard';
+    else if(t.includes('payment')||t.includes('upi'))page='payments';
+    else if(t.includes('vendor approval'))page='approvals';
+    else if(t.includes('vendor onboarding'))page='vendor';
+    else if(t.includes('inventory'))page='inventory';
+    else if(t.includes('barcode'))page='barcode';
+    else if(t.includes('picker'))page='picker';
+    else if(t.includes('sales'))page='sales';
+    else if(t.includes('b2b driver')||t.includes('driver'))page='driver';
+    else if(t.includes('delivery'))page='delivery';
+    else if(t.includes('admin'))page='admin';
+  }
   const apps=[
-    ['dashboard','📊','Control Tower'],['admin','⚙️','Operations Admin'],['payments','💳','UPI Verification'],['approvals','✅','Vendor Approvals'],
-    ['vendor','🤝','Vendor Onboarding'],['sales','📈','Sales'],['picker','📦','Picker'],['barcode','▦','Barcode'],['inventory','🏬','Inventory'],
-    ['delivery','🛵','B2C Delivery'],['driver','🚚','B2B Driver'],['b2b','🥥','B2B'],['b2c','🛒','Customer']
+    ['dashboard','📊','Control Tower',MAIN+'?page=dashboard'],['admin','⚙️','Operations Admin',MAIN+'?page=admin'],['payments','💳','UPI Verification',MAIN+'?page=payments'],['approvals','✅','Vendor Approvals',MAIN+'?page=approvals'],
+    ['vendor','🤝','Vendor Onboarding',MAIN+'?page=vendor'],['sales','📈','Sales',MAIN+'?page=sales'],['picker','📦','Picker',MAIN+'?page=picker'],['barcode','▦','Barcode',MAIN+'?page=barcode'],['inventory','🏬','Inventory',MAIN+'?page=inventory'],
+    ['delivery','🛵','B2C Delivery',MAIN+'?page=delivery'],['driver','🚚','B2B Driver',MAIN+'?page=driver'],['b2b','🥥','B2B',B2B],['b2c','🛒','Customer',B2C]
   ];
-  const btn=document.createElement('button'); btn.className='nel-ux-launcher'; btn.innerHTML='☰ <span>Apps</span>';
-  const panel=document.createElement('div'); panel.className='nel-ux-panel';
-  panel.innerHTML='<div class="nel-ux-head"><div><b>Native Elaneeru Apps</b><div class="nel-ux-badge"><i class="nel-ux-dot"></i>Production</div></div><button class="nel-ux-close" aria-label="Close">×</button></div><div class="nel-ux-grid">'+apps.map(a=>'<a target="_top" class="nel-ux-app '+(page===a[0]?'nel-ux-current':'')+'" href="'+MAIN+'?page='+encodeURIComponent(a[0])+'"><span>'+a[1]+'</span>'+a[2]+'</a>').join('')+'</div>';
+  const btn=document.createElement('button');btn.type='button';btn.className='nel-ux-launcher';btn.innerHTML='☰ <span>Apps</span>';
+  const panel=document.createElement('div');panel.className='nel-ux-panel';
+  panel.innerHTML='<div class="nel-ux-head"><div><b>Native Elaneeru Apps</b><div class="nel-ux-badge"><i class="nel-ux-dot"></i>Production</div></div><button type="button" class="nel-ux-close" aria-label="Close">×</button></div><div class="nel-ux-grid">'+apps.map(a=>'<a target="_top" rel="noopener" class="nel-ux-app '+(page===a[0]?'nel-ux-current':'')+'" href="'+a[3]+'"><span>'+a[1]+'</span>'+a[2]+'</a>').join('')+'</div>';
   document.body.append(btn,panel);
-  const close=()=>panel.classList.remove('open'); btn.onclick=()=>panel.classList.toggle('open'); panel.querySelector('.nel-ux-close').onclick=close;
+  const close=()=>panel.classList.remove('open');btn.onclick=()=>panel.classList.toggle('open');panel.querySelector('.nel-ux-close').onclick=close;
   document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
 })();
 </script>
