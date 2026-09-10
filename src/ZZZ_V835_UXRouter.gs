@@ -9,7 +9,8 @@ function doGet(e){
   const routes={
     '':'index','home':'index','b2c':'index','b2b':'B2B',
     'admin':'Admin','sales':'Sales','picker':'Picker','barcode':'Barcode','inventory':'Inventory',
-    'vendor':'VendorOnboarding','vendoronboarding':'VendorOnboarding',
+    'vendor':'VendorOnboardingV910','vendoronboarding':'VendorOnboardingV910',
+    'approvals':'VendorApproval','vendorapproval':'VendorApproval',
     'b2bdriver':'Driver','driver':'Driver',
     'b2cdelivery':'Delivery','delivery':'Delivery',
     'routeplanner':'Admin'
