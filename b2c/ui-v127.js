@@ -37,7 +37,11 @@
   function getGps(){
     return new Promise(function(resolve,reject){
       if(!navigator.geolocation)return reject(new Error('GPS is not available on this device.'));
-      navigator.geolocation.getCurrentPosition(function(pos){resolve({lat:pos.coords.latitude,lng:pos.coords.longitude})},function(err){reject(new Error(err&&err.message?err.message:'Location permission is required for home delivery.'))},{enableHighAccuracy:true,timeout:18000,maximumAge:60000});
+      navigator.geolocation.getCurrentPosition(
+        function(pos){resolve({lat:pos.coords.latitude,lng:pos.coords.longitude})},
+        function(err){reject(new Error(err&&err.message?err.message:'Location permission is required for home delivery.'))},
+        {enableHighAccuracy:true,timeout:12000,maximumAge:300000}
+      );
     });
   }
 
@@ -81,14 +85,12 @@
         try{S.lat=gps.lat;S.lng=gps.lng}catch(e){}
       }
 
-      if(home){
-        stage='delivery check';status('Checking delivery availability…');
-        var loc=await window.rpc('checkDeliveryLocation',[p.latitude,p.longitude]);
-        if(!loc||loc.eligible!==true)throw new Error('This address is outside our current delivery radius.');
-      }
-
       var localProfile={mobile:p.mobile,name:p.name,address:p.address,area:p.area,pincode:p.pincode,latitude:p.latitude||'',longitude:p.longitude||''};
-      try{localStorage.setItem('nel_profile_v9',JSON.stringify(localProfile));localStorage.setItem('nel_b2c_profile',JSON.stringify(localProfile))}catch(e){}
+      try{
+        localStorage.setItem('nel_profile_v9',JSON.stringify(localProfile));
+        localStorage.setItem('nel_b2c_profile',JSON.stringify(localProfile));
+        if(window.NEL_DB&&typeof window.NEL_DB.setProfile==='function')window.NEL_DB.setProfile(localProfile).catch(function(){});
+      }catch(e){}
 
       var payload={
         mobile:p.mobile,name:p.name,
@@ -99,12 +101,13 @@
         timeSlot:home&&el('slot')?el('slot').value:'Pickup'
       };
 
-      stage='server order';status('Confirming stock, price and order with Native Elaneeru…');
+      stage='server order';status('Confirming stock, delivery, price and order…');
       var result=await window.rpc('saveOrder',[payload]);
       if(!result||!result.orderId)throw new Error('The server did not return an order number. Please retry before paying anyone.');
 
       try{S.cart={}}catch(e){}
       try{localStorage.removeItem('nel_cart_v9')}catch(e){}
+      try{if(window.NEL_DB&&typeof window.NEL_DB.clearCart==='function')await window.NEL_DB.clearCart()}catch(e){}
       if(typeof window.updateCartBar==='function')window.updateCartBar();
       if(el('cartSheet'))el('cartSheet').classList.remove('show');
       if(typeof window.toast==='function')window.toast('Order '+result.orderId+' placed ✓');
@@ -116,7 +119,12 @@
       status('Order not placed ('+stage+'): '+msg,'err');
       if(typeof window.toast==='function')window.toast(msg);
     }finally{
-      var current=el('placeBtn');if(current){current.dataset.nel127Busy='0';current.disabled=false;current.removeAttribute('aria-busy');var total=typeof window.cartTotal==='function'?window.cartTotal():0;current.textContent='Place order · '+money(total)}
+      var current=el('placeBtn');
+      if(current){
+        current.dataset.nel127Busy='0';current.disabled=false;current.removeAttribute('aria-busy');
+        var total=typeof window.cartTotal==='function'?window.cartTotal():0;
+        current.textContent='Place order · '+money(total);
+      }
     }
   }
 
