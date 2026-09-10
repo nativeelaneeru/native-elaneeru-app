@@ -14,7 +14,8 @@ function read(rel){return fs.readFileSync(path.join(ROOT,rel),'utf8')}
 
 function resolveLocal(baseDir,ref){
   const clean=String(ref||'').split('#')[0].split('?')[0];
-  if(!clean||/^(?:https?:|mailto:|tel:|data:|javascript:|#)/i.test(clean))return null;
+  if(!clean||clean.includes('${')||clean.includes('{{')||clean.includes('<%'))return null;
+  if(/^(?:https?:|mailto:|tel:|data:|javascript:|#)/i.test(clean))return null;
   const rel=path.normalize(path.join(baseDir,clean));
   return rel.replaceAll('\\','/');
 }
