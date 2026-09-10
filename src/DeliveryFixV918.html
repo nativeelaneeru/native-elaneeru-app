@@ -14,13 +14,15 @@
       if(!/^\d{10}$/.test(MOB)||PIN.length<4)throw new Error('Enter your delivery mobile number and PIN.');
       const r=await call('driverLoginV8',[MOB,PIN,'B2C']);if(!r||r.success!==true)throw new Error(r&&r.error||'Delivery login failed.');
       q('login')&&q('login').classList.add('hidden');q('app')&&q('app').classList.remove('hidden');q('sticky')&&q('sticky').classList.remove('hidden');
-      await safeRefresh();
+      // Login owns BUSY while authentication is running. Force the first route
+      // refresh instead of letting the BUSY guard skip it and leave blank cards.
+      await safeRefresh(true);
     }catch(e){if(msg)msg.textContent=text(e);if(typeof toast==='function')toast(text(e))}
     finally{if(typeof setBusy==='function')setBusy(false)}
   }
 
-  async function safeRefresh(){
-    if(typeof BUSY!=='undefined'&&BUSY)return;
+  async function safeRefresh(force){
+    if(typeof BUSY!=='undefined'&&BUSY&&!force)return;
     if(typeof setBusy==='function')setBusy(true,'Syncing route…');
     try{
       DATA=normalise(await call('getDriverDayRouteV8',[MOB,PIN,'B2C',today()]));
