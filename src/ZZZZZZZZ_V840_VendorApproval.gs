@@ -7,6 +7,16 @@
 function submitVendorOnboardingV840(mobile,pin,p){
   const u=staffLoginV81_(mobile,pin,'SALES');
   p=p||{};
+  const paymentMode=s_(p.paymentMode||'COD').toUpperCase();
+  if(!['COD','UPI','CREDIT'].includes(paymentMode))throw new Error('Payment mode must be COD, UPI or CREDIT.');
+  p.paymentMode=paymentMode;
+  if(paymentMode==='CREDIT'){
+    if(n_(p.creditLimit)<=0)throw new Error('Enter a valid credit limit for a CREDIT vendor.');
+    p.creditDays=Math.max(0,Math.floor(n_(p.creditDays)));
+    p.creditLimit=Math.max(0,n_(p.creditLimit));
+  }else{
+    p.creditDays=0;p.creditLimit=0;
+  }
   const vendorMobile=digits_(p.mobile);
   if(!/^[6-9]\d{9}$/.test(vendorMobile)) throw new Error('Enter a valid vendor mobile number.');
   const activeVendor=rows_(V8.SHEETS.B2B_VENDORS).find(x=>digits_(x.Mobile)===vendorMobile&&active_(x.Status));
@@ -29,9 +39,10 @@ function submitVendorOnboardingV840(mobile,pin,p){
   updateObj_(V8.SHEETS.VENDOR_ONBOARD,row._row,{
     'Product ID':product.productId,'Product Name':product.productName,
     'Customer Photo URL':ownerUrl,'Shop Photo URL':shopUrl,'Photo Captured At':capturedAt,
+    'Payment Mode':paymentMode,'Credit Days':p.creditDays,'Credit Limit':p.creditLimit,
     Status:'PENDING','Updated At':capturedAt
   });
-  return {success:true,onboardingId:r.onboardingId,productName:product.productName,salesExecutive:u.name,status:'PENDING'};
+  return {success:true,onboardingId:r.onboardingId,productName:product.productName,salesExecutive:u.name,status:'PENDING',paymentMode:paymentMode};
 }
 
 function uploadOnboardingPhotoV840_(dataUrl,fileName,onboardingId,kind){
@@ -56,8 +67,8 @@ function getPendingVendorOnboardingsV840(email,pin){
     .map(r=>({onboardingId:s_(r['Onboarding ID']),businessName:s_(r['Business Name']),ownerName:s_(r['Owner Name']),
       mobile:s_(r.Mobile),area:s_(r.Area),productId:s_(r['Product ID']),productName:s_(r['Product Name']),
       agreedPrice:n_(r['Agreed Price']),moq:n_(r.MOQ),expectedDailyQty:n_(r['Expected Daily Qty']),
-      paymentMode:s_(r['Payment Mode']),ownerPhotoUrl:s_(r['Customer Photo URL']),shopPhotoUrl:s_(r['Shop Photo URL']),
-      createdAt:r['Created At']})); 
+      paymentMode:s_(r['Payment Mode']).toUpperCase()||'COD',creditDays:n_(r['Credit Days']),creditLimit:n_(r['Credit Limit']),
+      ownerPhotoUrl:s_(r['Customer Photo URL']),shopPhotoUrl:s_(r['Shop Photo URL']),createdAt:r['Created At']})); 
 }
 
 function approveVendorOnboardingV840(email,pin,onboardingId,initialPin,targetQty,rewardText){
@@ -73,6 +84,9 @@ function approveVendorOnboardingV840(email,pin,onboardingId,initialPin,targetQty
   const productId=s_(row['Product ID']);
   const product=b2bProducts_('').find(x=>s_(x.productId)===productId);
   if(!product) throw new Error('The selected product is no longer LIVE for B2B.');
+  const paymentMode=s_(row['Payment Mode']||'COD').toUpperCase();
+  if(!['COD','UPI','CREDIT'].includes(paymentMode))throw new Error('Onboarding has an unsupported payment mode.');
+  if(paymentMode==='CREDIT'&&n_(row['Credit Limit'])<=0)throw new Error('Credit vendor requires a valid credit limit before approval.');
   const vendorId=id_('VEN-');
   const pricingId=id_('PRC-');
   const targetId=id_('TGT-');
@@ -84,7 +98,7 @@ function approveVendorOnboardingV840(email,pin,onboardingId,initialPin,targetQty
     'Vendor ID':vendorId,'Business Name':s_(row['Business Name']),'Owner Name':s_(row['Owner Name']),
     Mobile:vendorMobile,WhatsApp:digits_(row.WhatsApp||row.Mobile),'Vendor Type':s_(row['Vendor Type']),
     Area:s_(row.Area),Address:s_(row.Address),Pincode:s_(row.Pincode),Latitude:n_(row.Latitude),Longitude:n_(row.Longitude),
-    'Payment Type':s_(row['Payment Mode'])||'COD','Credit Days':n_(row['Credit Days']),'Credit Limit':n_(row['Credit Limit']),
+    'Payment Type':paymentMode,'Credit Days':paymentMode==='CREDIT'?n_(row['Credit Days']):0,'Credit Limit':paymentMode==='CREDIT'?n_(row['Credit Limit']):0,
     Outstanding:0,MOQ:n_(row.MOQ)||n_(product.moq)||1,'Delivery Frequency':s_(row['Delivery Frequency']),
     'Preferred Time':s_(row['Preferred Time']),'PIN Hash':hashV8_(initialPin),Status:'ACTIVE', 'Created At':now,'Updated At':now,
     'Customer Photo URL':s_(row['Customer Photo URL']),'Shop Photo URL':s_(row['Shop Photo URL']),'Onboarding ID':onboardingId
@@ -102,5 +116,5 @@ function approveVendorOnboardingV840(email,pin,onboardingId,initialPin,targetQty
     Status:'APPROVED','Approved Vendor ID':vendorId,'Approved At':now,'Approved By':String(email||'').trim().toLowerCase(),
     'Pricing ID':pricingId,'Target ID':targetId,'Initial PIN Set':'YES','Updated At':now
   });
-  return {success:true,vendorId:vendorId,pricingId:pricingId,targetId:targetId,initialPin:initialPin};
+  return {success:true,vendorId:vendorId,pricingId:pricingId,targetId:targetId,initialPin:initialPin,paymentMode:paymentMode};
 }
