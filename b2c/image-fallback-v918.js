@@ -8,9 +8,17 @@
     var parent=img.parentNode;
     if(!parent)return;
 
-    // Product/deal images may carry older inline onerror handlers that remove
-    // the image before reading parentNode. Neutralise that handler first so a
-    // broken image can never throw an uncaught exception in production.
+    // Older product cards still contain inline onerror handlers such as
+    // `this.remove(); this.parentNode...`. Once remove() runs, parentNode is
+    // null and that legacy handler throws. Stop the error event during capture
+    // so it never reaches the inline target handler, then render our safe
+    // fallback here.
+    try{
+      if(event.stopImmediatePropagation)event.stopImmediatePropagation();
+      else if(event.stopPropagation)event.stopPropagation();
+      if(event.preventDefault)event.preventDefault();
+    }catch(e){}
+
     if(img.hasAttribute&&img.hasAttribute('onerror')){
       try{img.onerror=null;img.removeAttribute('onerror')}catch(e){}
     }
