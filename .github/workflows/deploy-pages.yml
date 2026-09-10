@@ -26,6 +26,52 @@ jobs:
       - name: Validate B2C and B2B PWAs
         run: node scripts/smoke-check.mjs
 
+      - name: Verify B2B cart ownership guard
+        run: |
+          node <<'NODE'
+          const fs=require('fs');
+          const vm=require('vm');
+          (async()=>{
+            const source=fs.readFileSync('b2b/session-guard-v980.js','utf8');
+            const store=new Map([
+              ['nel_b2b_cart_owner_mobile','6111111111'],
+              ['nel_b2b_cart_v113',JSON.stringify({TC:{qty:20}})]
+            ]);
+            const localStorage={
+              getItem:k=>store.has(k)?store.get(k):null,
+              setItem:(k,v)=>store.set(k,String(v)),
+              removeItem:k=>store.delete(k)
+            };
+            function baseRpc(method,args){
+              if(method==='vendorLogin'){
+                if(args&&args[1]==='bad')return Promise.reject(new Error('Invalid mobile or PIN.'));
+                return Promise.resolve({token:'test-token'});
+              }
+              return Promise.resolve({});
+            }
+            const logoutBtn={onclick:null};
+            const context={
+              console,Promise,localStorage,CART:{},DATA:null,
+              document:{readyState:'complete',getElementById:id=>id==='logoutBtn'?logoutBtn:null},
+              rpc:baseRpc,logout:function(){},
+              setTimeout:()=>0,setInterval:()=>0
+            };
+            context.window=context;
+            vm.createContext(context);
+            vm.runInContext(source,context,{filename:'b2b/session-guard-v980.js'});
+
+            await context.rpc('vendorLogin',['6222222222','bad']).then(()=>{throw new Error('Bad vendor login unexpectedly succeeded.')},()=>{});
+            if(store.get('nel_b2b_cart_owner_mobile')!=='6111111111')throw new Error('Failed login changed the remembered cart owner.');
+            if(!store.has('nel_b2b_cart_v113'))throw new Error('Failed login cleared the existing vendor cart.');
+
+            const success=await context.rpc('vendorLogin',['6222222222','good']);
+            if(!success||success.token!=='test-token')throw new Error('Successful vendor login wrapper lost the login result.');
+            if(store.get('nel_b2b_cart_owner_mobile')!=='6222222222')throw new Error('Successful vendor switch did not update cart ownership.');
+            if(store.has('nel_b2b_cart_v113'))throw new Error('Successful vendor switch did not clear the previous vendor cart.');
+            console.log('B2B cart ownership guard passed: failed login preserves cart; successful switch clears stale cart.');
+          })().catch(error=>{console.error(error);process.exit(1)});
+          NODE
+
       - name: Verify live B2C backend health (read-only)
         env:
           API_URL: https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec
@@ -33,15 +79,30 @@ jobs:
           node <<'NODE'
           (async () => {
             async function jsonp(method){
-              const callback='__nelPagesHealth';
-              const request={method,args:[],requestId:'pages-health-'+method+'-'+Date.now()};
-              const url=process.env.API_URL+'?jsonp=1&callback='+callback+'&payload='+encodeURIComponent(JSON.stringify(request))+'&_='+Date.now();
-              const response=await fetch(url,{redirect:'follow',cache:'no-store'});
-              const text=await response.text();
-              const match=text.match(/^__nelPagesHealth\(([\s\S]*)\);?$/);
-              const payload=match?JSON.parse(match[1]):null;
-              if(response.status!==200||!payload||payload.ok!==true) throw new Error(method+' did not return a valid structured response.');
-              return payload.result;
+              let lastError;
+              for(let attempt=1;attempt<=4;attempt++){
+                try{
+                  const callback='__nelPagesHealth';
+                  const request={method,args:[],requestId:'pages-health-'+method+'-'+attempt+'-'+Date.now()};
+                  const url=process.env.API_URL+'?jsonp=1&callback='+callback+'&payload='+encodeURIComponent(JSON.stringify(request))+'&_='+Date.now();
+                  const controller=new AbortController();
+                  const timeout=setTimeout(()=>controller.abort(),30000);
+                  let response,text;
+                  try{
+                    response=await fetch(url,{redirect:'follow',cache:'no-store',signal:controller.signal});
+                    text=await response.text();
+                  }finally{clearTimeout(timeout)}
+                  const match=text.match(/^__nelPagesHealth\(([\s\S]*)\);?$/);
+                  const payload=match?JSON.parse(match[1]):null;
+                  if(response.status===200&&payload&&payload.ok===true){
+                    console.log(JSON.stringify({method,attempt,status:response.status,ok:true}));
+                    return payload.result;
+                  }
+                  lastError=new Error(method+' returned an invalid structured response (HTTP '+response.status+').');
+                }catch(error){lastError=error;console.error(method+' attempt '+attempt+': '+error.message)}
+                if(attempt<4)await new Promise(resolve=>setTimeout(resolve,1500*attempt));
+              }
+              throw lastError||new Error(method+' health check failed.');
             }
             const config=await jsonp('getAppConfig');
             const health=await jsonp('getB2COrderEngineHealthV906');
