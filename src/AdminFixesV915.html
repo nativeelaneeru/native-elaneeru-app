@@ -1,0 +1,110 @@
+<script>
+(function(){
+  if(window.__NEL_ADMIN_FIXES_V915)return;
+  window.__NEL_ADMIN_FIXES_V915=true;
+
+  function el(id){return document.getElementById(id)}
+  function localIso(d){
+    d=d instanceof Date?d:new Date(d);
+    if(isNaN(d.getTime()))return '';
+    const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+day;
+  }
+  function setLoginMessage(text,isError){
+    const msg=el('msg');if(!msg)return;
+    msg.textContent=text||'';
+    msg.style.color=isError?'#b42318':'#68766d';
+    msg.style.marginTop='8px';
+  }
+  function setLoginBusy(busy){
+    const btn=el('loginBtn');if(!btn)return;
+    btn.disabled=!!busy;
+    btn.textContent=busy?'Signing in…':'Login';
+    btn.style.opacity=busy?'.65':'1';
+  }
+  function normaliseDashboard(data){
+    data=data&&typeof data==='object'?data:{};
+    data.metrics=data.metrics&&typeof data.metrics==='object'?data.metrics:{};
+    data.productSales=data.productSales&&typeof data.productSales==='object'?data.productSales:{};
+    ['orders','customers','feedback','tickets','partners','assignments'].forEach(function(k){if(!Array.isArray(data[k]))data[k]=[]});
+    return data;
+  }
+
+  window.iso=localIso;
+  window.rangePreset=function(){
+    const preset=el('preset');if(!preset)return;
+    const p=preset.value,n=new Date(),s=new Date(n),e=new Date(n);
+    if(p==='yesterday'){s.setDate(n.getDate()-1);e.setTime(s.getTime())}
+    if(p==='week'){const day=(n.getDay()+6)%7;s.setDate(n.getDate()-day)}
+    if(p==='month')s.setTime(new Date(n.getFullYear(),n.getMonth(),1).getTime());
+    if(p!=='custom'){
+      if(el('start'))el('start').value=localIso(s);
+      if(el('end'))el('end').value=localIso(e);
+    }
+  };
+
+  window.refresh=function(){
+    const start=el('start'),end=el('end');
+    if(!E||!P){setLoginMessage('Please sign in again.',true);return}
+    google.script.run
+      .withSuccessHandler(function(d){
+        DATA=normaliseDashboard(d);
+        try{render()}catch(err){toast('Dashboard display error: '+(err&&err.message?err.message:err))}
+      })
+      .withFailureHandler(function(err){
+        const text=err&&err.message?err.message:'Dashboard could not be loaded.';
+        toast(text);
+        if(/invalid admin credentials/i.test(text)){
+          P='';
+          el('dash')&&el('dash').classList.add('hidden');
+          el('login')&&el('login').classList.remove('hidden');
+          setLoginMessage('Admin session is not valid. Please sign in again.',true);
+        }
+      })
+      .getAdminDashboard(E,P,start?start.value:'',end?end.value:'');
+  };
+
+  window.doLogin=function(){
+    const email=String(el('email')&&el('email').value||'').trim().toLowerCase();
+    const pin=String(el('pin')&&el('pin').value||'').trim();
+    setLoginMessage('',false);
+    if(!email||!/^\S+@\S+\.\S+$/.test(email)){setLoginMessage('Enter a valid admin email.',true);return}
+    if(pin.length<4){setLoginMessage('Enter your admin PIN.',true);return}
+    setLoginBusy(true);
+    google.script.run
+      .withSuccessHandler(function(ok){
+        if(ok!==true){
+          P='';
+          setLoginBusy(false);
+          setLoginMessage('Invalid admin email or PIN.',true);
+          const pinEl=el('pin');if(pinEl){pinEl.focus();pinEl.select()}
+          return;
+        }
+        E=email;P=pin;
+        setLoginBusy(false);
+        setLoginMessage('',false);
+        el('login')&&el('login').classList.add('hidden');
+        el('dash')&&el('dash').classList.remove('hidden');
+        rangePreset();
+        refresh();
+      })
+      .withFailureHandler(function(err){
+        P='';
+        setLoginBusy(false);
+        setLoginMessage(err&&err.message?err.message:'Admin login failed. Please try again.',true);
+      })
+      .adminLogin(email,pin);
+  };
+
+  function ready(){
+    const email=el('email'),pin=el('pin');
+    if(email){email.setAttribute('autocomplete','username');email.setAttribute('autocapitalize','none')}
+    if(pin){
+      pin.setAttribute('autocomplete','current-password');
+      pin.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();window.doLogin()}});
+    }
+    if(email)email.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();if(pin)pin.focus()}});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
+})();
+</script>
