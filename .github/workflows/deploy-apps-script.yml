@@ -32,7 +32,7 @@ jobs:
         run: |
           node <<'NODE'
           const fs=require('fs');
-          const htmlFiles=['src/VendorOnboardingV910.html','src/VendorApproval.html','src/CumulativeDashboard.html','src/SharedUX.html'];
+          const htmlFiles=['src/VendorOnboardingV910.html','src/VendorApproval.html','src/VendorApprovalFixV916.html','src/PaymentVerification.html','src/CumulativeDashboard.html','src/SharedUX.html'];
           for(const file of htmlFiles){
             const html=fs.readFileSync(file,'utf8');
             const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
@@ -41,25 +41,41 @@ jobs:
           }
           const onboarding=fs.readFileSync('src/VendorOnboardingV910.html','utf8');
           if(!/submitVendorOnboardingV840/.test(onboarding)||!/ownerPhotoData/.test(onboarding)||!/shopPhotoData/.test(onboarding))throw new Error('Vendor onboarding production wiring is incomplete.');
+          const onboardingBackend=fs.readFileSync('src/ZZZZZZZZ_V840_VendorApproval.gs','utf8');
+          new Function(onboardingBackend);
+          if(!/\['COD','UPI','CREDIT'\]/.test(onboardingBackend)||!/VENDOR_ONBOARDING_PHOTO_FOLDER_ID/.test(onboardingBackend)||!/already active as B2B vendor/.test(onboardingBackend)||!/already pending/.test(onboardingBackend))throw new Error('Vendor onboarding commercial/duplicate protections are incomplete.');
           const approval=fs.readFileSync('src/VendorApproval.html','utf8');
           if(!/approveVendorOnboardingV840/.test(approval)||!/Initial B2B PIN/.test(approval))throw new Error('Vendor approval/PIN wiring is incomplete.');
+          const approvalFix=fs.readFileSync('src/VendorApprovalFixV916.html','utf8');
+          if(!/ok!==true/.test(approvalFix)||!/2 FREE Tender Coconuts/.test(approvalFix))throw new Error('Vendor approval login/referral hardening is incomplete.');
           const routes=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZ_V912_FinalRoutes.gs','utf8');
           new Function(routes);
-          if(!/'vendor':'VendorOnboardingV910'/.test(routes)||!/'approvals':'VendorApproval'/.test(routes)||!/'dashboard':'CumulativeDashboard'/.test(routes))throw new Error('Final production routes are incomplete.');
+          if(!/'vendor':'VendorOnboardingV910'/.test(routes)||!/'approvals':'VendorApproval'/.test(routes)||!/'dashboard':'CumulativeDashboard'/.test(routes)||!/'payments':'PaymentVerification'/.test(routes))throw new Error('Final production routes are incomplete.');
           const reward=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZ_V911_ReferralRewards.gs','utf8');
           new Function(reward);
           if(!/V911_REFERRER_FREE_QTY\s*=\s*2/.test(reward)||!/V911_REFERRED_FREE_QTY\s*=\s*0/.test(reward)||!/FIRST_DELIVERED_ORDER/.test(reward))throw new Error('Approved 2-free-coconut referral rule is not wired.');
           const payment=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZ_V913_DirectUpiPayments.gs','utf8');
           new Function(payment);
           if(!/Payment_Ledger/.test(payment)||!/prepareB2CUpiPaymentV913/.test(payment)||!/submitB2CUpiOrderV913/.test(payment)||!/autoMarkPaid:false/.test(payment))throw new Error('Direct UPI payment foundation is incomplete.');
+          const b2bPayment=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZ_V916_B2BPayments.gs','utf8');
+          new Function(b2bPayment);
+          if(!/prepareB2BUpiPaymentV916/.test(b2bPayment)||!/submitB2BUpiOrderV916/.test(b2bPayment)||!/verifyB2BUpiPaymentV916/.test(b2bPayment)||!/paymentIntentBeforeOrder:true/.test(b2bPayment)||!/autoMarkPaid:false/.test(b2bPayment)||!/duplicateUtrProtected:true/.test(b2bPayment)||!/fulfillmentRequiresPaidUpi:true/.test(b2bPayment)||!/V916_PREVIOUS_ROUTE_CANDIDATES_/.test(b2bPayment))throw new Error('B2B UPI payment safety contract is incomplete.');
+          const paymentAdmin=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V916_PaymentAdmin.gs','utf8');
+          new Function(paymentAdmin);
+          if(!/getUpiPaymentsAdminV916/.test(paymentAdmin)||!/V8\.SHEETS\.PAYMENTS/.test(paymentAdmin))throw new Error('Central payment verification backend is incomplete.');
+          const paymentUi=fs.readFileSync('src/PaymentVerification.html','utf8');
+          if(!/getUpiPaymentsAdminV916/.test(paymentUi)||!/verifyB2BUpiPaymentV916/.test(paymentUi)||!/verifyB2CUpiPaymentV913/.test(paymentUi))throw new Error('Central payment verification UI is incomplete.');
           const cumulative=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZ_V914_CumulativeDashboard.gs','utf8');
           new Function(cumulative);
           if(!/getCumulativeDashboardV914/.test(cumulative)||!/B2C_Subscriptions/.test(cumulative)||!/B2C_Referrals/.test(cumulative)||!/V8\.SHEETS\.PAYMENTS/.test(cumulative)||!/V8\.SHEETS\.B2B_ORDERS/.test(cumulative)||!/V8\.SHEETS\.VENDOR_ONBOARD/.test(cumulative))throw new Error('Cumulative dashboard does not cover the full operating model.');
           const cumulativeUi=fs.readFileSync('src/CumulativeDashboard.html','utf8');
-          if(!/getCumulativeDashboardV914/.test(cumulativeUi)||!/Vendor Approvals/.test(cumulativeUi)||!/Live B2B App/.test(cumulativeUi))throw new Error('Cumulative dashboard UI is not wired to B2B/vendor operations.');
+          if(!/getCumulativeDashboardV914/.test(cumulativeUi)||!/Vendor Approvals/.test(cumulativeUi)||!/Live B2B App/.test(cumulativeUi)||!/\?page=payments/.test(cumulativeUi))throw new Error('Cumulative dashboard UI is not wired to B2B/vendor/payment operations.');
+          const bridge=fs.readFileSync('src/ZZZZZZZZZZZ_V900_PwaBridge.gs','utf8');
+          if(!/getB2BPaymentConfigV916:getB2BPaymentConfigV916/.test(bridge)||!/prepareB2BUpiPaymentV916:prepareB2BUpiPaymentV916/.test(bridge)||!/submitB2BUpiOrderV916:submitB2BUpiOrderV916/.test(bridge))throw new Error('B2B payment methods are not exposed through the authenticated PWA bridge.');
           const publicRead=fs.readFileSync('src/ZZZZZ_V838_PublicCatalog.gs','utf8');
           if(!/getB2CReferralRuleV911:getB2CReferralRuleV911/.test(publicRead))throw new Error('Referral rule is not exposed through the read-only health endpoint.');
-          if(!/getB2CPaymentEngineHealthV913:getB2CPaymentEngineHealthV913/.test(publicRead))throw new Error('Payment engine health is not exposed through the read-only health endpoint.');
+          if(!/getB2CPaymentEngineHealthV913:getB2CPaymentEngineHealthV913/.test(publicRead))throw new Error('B2C payment engine health is not exposed through the read-only health endpoint.');
+          if(!/getB2BPaymentEngineHealthV916:getB2BPaymentEngineHealthV916/.test(publicRead))throw new Error('B2B payment engine health is not exposed through the read-only health endpoint.');
           if(!/getCumulativeDashboardHealthV914:getCumulativeDashboardHealthV914/.test(publicRead))throw new Error('Cumulative dashboard health is not exposed through the read-only health endpoint.');
           console.log('Apps Script feature validation passed.');
           NODE
@@ -159,6 +175,7 @@ jobs:
           }
           (async()=>{
             await page('dashboard');
+            await page('payments');
             await page('vendor');
             await page('approvals');
 
@@ -172,8 +189,12 @@ jobs:
             console.log('✓ Refer & Earn: referrer gets 2 free Tender Coconuts after first delivered order; referred reward is 0');
 
             const paymentHealth=await jsonp(process.env.MAIN_API_URL,'getB2CPaymentEngineHealthV913');
-            if(!paymentHealth||paymentHealth.ok!==true||paymentHealth.engineVersion!=='9.1.3'||paymentHealth.codPreserved!==true||paymentHealth.directUpiSupported!==true||paymentHealth.serverCalculatedAmount!==true||paymentHealth.paymentIntentBeforeOrder!==true||paymentHealth.manualVerificationRequired!==true||paymentHealth.autoMarkPaid!==false||paymentHealth.storageSheet!=='Payment_Ledger'||paymentHealth.separatePaymentDatabase!==false)throw new Error('Direct UPI payment engine does not match the production safety contract.');
+            if(!paymentHealth||paymentHealth.ok!==true||paymentHealth.engineVersion!=='9.1.3'||paymentHealth.codPreserved!==true||paymentHealth.directUpiSupported!==true||paymentHealth.serverCalculatedAmount!==true||paymentHealth.paymentIntentBeforeOrder!==true||paymentHealth.manualVerificationRequired!==true||paymentHealth.autoMarkPaid!==false||paymentHealth.storageSheet!=='Payment_Ledger'||paymentHealth.separatePaymentDatabase!==false)throw new Error('B2C direct UPI payment engine does not match the production safety contract.');
             console.log('✓ B2C payment foundation: COD preserved; direct UPI uses server amount + Payment_Ledger + manual verification');
+
+            const b2bPaymentHealth=await jsonp(process.env.MAIN_API_URL,'getB2BPaymentEngineHealthV916');
+            if(!b2bPaymentHealth||b2bPaymentHealth.ok!==true||b2bPaymentHealth.engineVersion!=='9.1.6'||b2bPaymentHealth.codPreserved!==true||b2bPaymentHealth.creditPreserved!==true||b2bPaymentHealth.directUpiSupported!==true||b2bPaymentHealth.serverCalculatedAmount!==true||b2bPaymentHealth.paymentIntentBeforeOrder!==true||b2bPaymentHealth.manualVerificationRequired!==true||b2bPaymentHealth.autoMarkPaid!==false||b2bPaymentHealth.negotiatedPricing!==true||b2bPaymentHealth.serverControlledDeliveryCharge!==true||b2bPaymentHealth.duplicateUtrProtected!==true||b2bPaymentHealth.fulfillmentRequiresPaidUpi!==true||b2bPaymentHealth.storageSheet!=='Payment_Ledger'||b2bPaymentHealth.separatePaymentDatabase!==false)throw new Error('B2B direct UPI payment engine does not match the production safety contract.');
+            console.log('✓ B2B payment foundation: COD/CREDIT preserved; UPI uses negotiated server pricing, duplicate UTR protection and paid-only fulfilment');
 
             const dashboardHealth=await jsonp(process.env.MAIN_API_URL,'getCumulativeDashboardHealthV914');
             if(!dashboardHealth||dashboardHealth.ok!==true||dashboardHealth.version!=='9.1.4'||dashboardHealth.readOnly!==true||dashboardHealth.singleWorkbook!==true||!Array.isArray(dashboardHealth.includes)||!dashboardHealth.includes.includes('B2B')||!dashboardHealth.includes.includes('VENDOR_ONBOARDING'))throw new Error('Cumulative dashboard health contract failed.');
@@ -185,8 +206,9 @@ jobs:
             if(!products.some(p=>String(p.productId||p.id||'').toUpperCase()==='TC'||/Tender Coconut/i.test(String(p.productName||p.name||''))))throw new Error('Tender Coconut is missing from main catalogue.');
 
             const data=await post(process.env.MAIN_API_URL,'getB2BAppDataV9',['__invalid_smoke_token__']);
+            const paymentConfig=await post(process.env.MAIN_API_URL,'getB2BPaymentConfigV916',['__invalid_smoke_token__']);
             const login=await post(process.env.MAIN_API_URL,'vendorLogin',['0000000000','__bad_pin__']);
-            if(!/Session has expired/i.test(data)||!/Invalid mobile or PIN/i.test(login))throw new Error('B2B bridge safety checks failed.');
+            if(!/Session has expired/i.test(data)||!/Session has expired/i.test(paymentConfig)||!/Invalid mobile or PIN/i.test(login))throw new Error('B2B bridge safety checks failed.');
 
             const b2cHealth=await jsonp(process.env.B2C_API_URL,'getB2COrderEngineHealthV906');
             if(!b2cHealth||b2cHealth.ok!==true||b2cHealth.engineVersion!=='9.0.5'||b2cHealth.canonicalOrderHandler!==true||b2cHealth.idempotency!==true||b2cHealth.serverControlledPayment!==true)throw new Error('B2C Checkout Engine V2 is not healthy.');
