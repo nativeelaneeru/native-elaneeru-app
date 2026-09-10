@@ -1,5 +1,5 @@
-/** Native Elaneeru V9.2.3 — resilient Barcode console catalogue. */
-const V922_BARCODE_CONSOLE_VERSION='9.2.3';
+/** Native Elaneeru V9.2.4 — resilient Barcode console catalogue + static RPC bridge. */
+const V922_BARCODE_CONSOLE_VERSION='9.2.4';
 
 function v923EnsureProductHeaders_(){
   const sh=sh_(V8.SHEETS.PRODUCTS);
@@ -56,6 +56,50 @@ function v923EnsureTenderCoconut_(){
     });
     return {created:true,repaired:true};
   });
+}
+
+function v924BarcodeJsonSafe_(value){
+  if(value==null)return value;
+  if(value instanceof Date)return Utilities.formatDate(value,'Asia/Kolkata',"yyyy-MM-dd'T'HH:mm:ssXXX");
+  if(Array.isArray(value))return value.map(v924BarcodeJsonSafe_);
+  if(typeof value==='object'){
+    const out={};
+    Object.keys(value).forEach(function(k){
+      const v=value[k];
+      if(typeof v!=='function'&&v!==undefined)out[k]=v924BarcodeJsonSafe_(v);
+    });
+    return out;
+  }
+  return value;
+}
+
+/**
+ * Static Apps Script bridge for the Barcode page.
+ * google.script.run is not a normal JavaScript object, so client-side dynamic
+ * method access/apply can silently produce an undefined success result.
+ * Keep the client call static and dispatch only this strict admin-safe allowlist.
+ */
+function barcodeRpcV924(method,args){
+  method=s_(method);
+  args=Array.isArray(args)?args:[];
+  let result;
+  switch(method){
+    case 'getBarcodeConsoleV922':
+      result=getBarcodeConsoleV922(args[0],args[1]);
+      break;
+    case 'createBatchV81':
+      result=createBatchV81(args[0],args[1],args[2]||{});
+      break;
+    case 'assignBatchV81':
+      result=assignBatchV81(args[0],args[1],args[2]||{});
+      break;
+    case 'markBatchPrintedV81':
+      result=markBatchPrintedV81(args[0],args[1],args[2]);
+      break;
+    default:
+      throw new Error('Barcode method is not allowed: '+method);
+  }
+  return v924BarcodeJsonSafe_(result);
 }
 
 function getBarcodeConsoleV922(email,pin){
