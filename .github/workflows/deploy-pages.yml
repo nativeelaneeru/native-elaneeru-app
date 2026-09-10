@@ -29,6 +29,9 @@ jobs:
       - name: Verify feature regressions
         run: node scripts/feature-regression.mjs
 
+      - name: Verify full app regressions
+        run: node scripts/full-app-regression.mjs
+
       - name: Verify B2B cart ownership guard
         run: |
           node <<'NODE'
@@ -108,11 +111,9 @@ jobs:
               }
               throw lastError||new Error(method+' health check failed.');
             }
-            // Pure runtime/code health first: this does not open the spreadsheet.
             const health=await jsonp('getB2COrderEngineHealthV906');
             if(!health||health.ok!==true||health.engineVersion!=='9.0.5'||health.canonicalOrderHandler!==true||health.idempotency!==true||health.serverControlledPayment!==true) throw new Error('B2C Checkout Engine V2 health is not ready.');
 
-            // Spreadsheet-backed catalogue second, so runtime vs workbook stalls are distinguishable.
             const config=await jsonp('getAppConfig');
             const products=config&&Array.isArray(config.products)?config.products:[];
             const tender=products.some(p=>String(p.id||p.productId||p['Product ID']||'').toUpperCase()==='TC'||/tender coconut/i.test(String(p.name||p.productName||p['Product Name']||'')));
