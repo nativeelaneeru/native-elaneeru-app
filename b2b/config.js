@@ -7,6 +7,7 @@ window.NEL_B2B_CONFIG={
 };
 document.write('<script src="./idb-v1.js?v=980"></script>');
 if(!window.NEL_B2B_UI_V113) document.write('<script src="./ui-v113.js?v=980"></script>');
+document.write('<script src="./order-sync-v1.js?v=980"></script>');
 document.write('<script src="./separate-links.js?v=980"></script>');
 document.write('<script src="./session-v960.js?v=980"></script>');
 document.write('<script src="./session-guard-v980.js?v=980"></script>');
