@@ -1,27 +1,27 @@
 /**
- * Native Elaneeru V8.4.1 — B2C checkout recovery.
- * A customer who entered via PIN/Continue can complete their first order after
- * providing profile details; the backend creates the missing customer row safely.
+ * Native Elaneeru V8.4.1 — B2C checkout recovery helper.
+ *
+ * This file no longer wraps saveOrder. The helper is called by the single
+ * canonical V9.0.1 order wrapper, preventing circular saveOrder delegation.
  */
-const V841_ORIGINAL_SAVE_ORDER = saveOrder;
-saveOrder = function(order){
+function ensureB2CCustomerForOrderV841_(order){
   order=order||{};
   const mobile=digits_(order.mobile);
   const exists=rows_(V8.SHEETS.CUSTOMERS).some(r=>digits_(r.Mobile)===mobile);
-  if(!exists){
-    const profile={
-      mobile:mobile,
-      name:s_(order.name),
-      address:s_(order.address),
-      area:s_(order.area),
-      pincode:s_(order.pincode),
-      latitude:order.latitude==null?'':order.latitude,
-      longitude:order.longitude==null?'':order.longitude
-    };
-    if(!profile.name||!profile.address||!profile.area){
-      throw new Error('Please complete and save your profile before placing your first order.');
-    }
-    saveCustomerProfile(profile);
+  if(exists) return true;
+
+  const profile={
+    mobile:mobile,
+    name:s_(order.name),
+    address:s_(order.address),
+    area:s_(order.area),
+    pincode:s_(order.pincode),
+    latitude:order.latitude==null?'':order.latitude,
+    longitude:order.longitude==null?'':order.longitude
+  };
+  if(!profile.name||!profile.address||!profile.area){
+    throw new Error('Please complete and save your profile before placing your first order.');
   }
-  return V841_ORIGINAL_SAVE_ORDER(order);
-};
+  saveCustomerProfile(profile);
+  return true;
+}
