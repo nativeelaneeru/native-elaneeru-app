@@ -1,6 +1,6 @@
 window.NEL_CONFIG = {
-  apiUrl: 'https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec',
-  appVersion: '10.16.0-pwa',
+  apiUrl: 'https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec',
+  appVersion: '10.21.0-pwa',
   supportPhone: '7411807675',
   supportWhatsApp: '917411807675',
   parentCompany: 'Sri Govindadri Ventures',
