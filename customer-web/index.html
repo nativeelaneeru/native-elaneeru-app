@@ -68,6 +68,8 @@ function filteredProducts(){const q=S.query.toLowerCase();return(S.cfg?.products
   const button=$('placeBtn'); if(button)button.disabled=true;
   try{
     if(home){const loc=await rpc('checkDeliveryLocation',[S.lat,S.lng]);if(!loc.eligible)throw new Error('Home delivery is outside our '+(S.cfg?.deliveryRadiusKm||3)+' KM service radius.')}
+    await rpc('saveCustomerProfile',[{mobile,name,address,area,pincode,latitude:home?S.lat:'',longitude:home?S.lng:''}]);
+    localStorage.setItem('nel_profile_v9',JSON.stringify({mobile,name,address,area,pincode,latitude:home?S.lat:'',longitude:home?S.lng:''}));
     const payload={mobile,name,items:cartLines().map(x=>({productId:x.p.productId,quantity:x.q})),cashbackUsed:0,fulfilmentType:fulfil,address:home?address:'Native Elaneeru Hub Pickup',area:home?area:'HUB',pincode:home?pincode:'',latitude:home?S.lat:'',longitude:home?S.lng:'',payment:'COD',timeSlot:home?$('slot').value:'Pickup'};
     const r=await rpc('saveOrder',[payload]);
     S.cart={};localStorage.removeItem('nel_cart_v9');updateCartBar();closeSheet('cartSheet');toast('Order '+r.orderId+' placed ✓');await loadCustomer(false);go('orders');
