@@ -37,6 +37,9 @@ function doGetV912_(e){
   if(page==='Admin'){
     try{out.append(HtmlService.createTemplateFromFile('AdminFixesV915').evaluate().getContent());}catch(err){}
   }
+  if(page==='VendorApproval'){
+    try{out.append(HtmlService.createTemplateFromFile('VendorApprovalFixV916').evaluate().getContent());}catch(err){}
+  }
   return out
     .setTitle(V8.BRAND+' - '+(page==='index'?'B2C':page))
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
