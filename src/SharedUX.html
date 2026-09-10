@@ -23,6 +23,24 @@ img{max-width:100%}
 </style>
 <script>
 (function(){
+  /* Shared RPC fallback for appended compatibility/safety scripts. */
+  if(typeof window.nelRpcCall!=='function'){
+    window.nelRpcCall=function(fn,args){
+      args=Array.isArray(args)?args:[];
+      return new Promise(function(resolve,reject){
+        try{
+          if(!window.google||!google.script||!google.script.run)throw new Error('Apps Script connection is unavailable. Reload the page.');
+          var runner=google.script.run.withSuccessHandler(resolve).withFailureHandler(function(e){reject(new Error(e&&e.message?e.message:String(e)))});
+          if(!runner[fn])throw new Error('Backend function is unavailable: '+fn);
+          runner[fn].apply(runner,args);
+        }catch(e){reject(e instanceof Error?e:new Error(String(e)))}
+      });
+    };
+  }
+  /* Older appended scripts call bare call(). Expose a window fallback without
+     disturbing pages that already own a lexical/function call helper. */
+  if(typeof window.call!=='function')window.call=window.nelRpcCall;
+
   if(document.querySelector('.nel-ux-launcher'))return;
   const MAIN='https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec';
   const B2C='https://nativeelaneeru.github.io/native-elaneeru-app/b2c/';
