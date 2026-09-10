@@ -26,6 +26,9 @@ jobs:
       - name: Validate B2C and B2B PWAs
         run: node scripts/smoke-check.mjs
 
+      - name: Verify feature regressions
+        run: node scripts/feature-regression.mjs
+
       - name: Verify B2B cart ownership guard
         run: |
           node <<'NODE'
