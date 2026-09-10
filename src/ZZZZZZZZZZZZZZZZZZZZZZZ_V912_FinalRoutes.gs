@@ -49,6 +49,9 @@ function doGetV912_(e){
   if(page==='Delivery'){
     try{out.append(HtmlService.createTemplateFromFile('DeliveryFixV918').evaluate().getContent());}catch(err){}
   }
+  if(page==='Barcode'){
+    try{out.append(HtmlService.createTemplateFromFile('BarcodeFixV922').evaluate().getContent());}catch(err){}
+  }
   return out
     .setTitle(V8.BRAND+' - '+(page==='index'?'B2C':page))
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
