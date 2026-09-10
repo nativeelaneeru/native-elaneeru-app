@@ -32,13 +32,25 @@ jobs:
         run: |
           node <<'NODE'
           const fs=require('fs');
-          const htmlFiles=['src/VendorOnboardingV910.html','src/VendorApproval.html','src/VendorApprovalFixV916.html','src/PaymentVerification.html','src/CumulativeDashboard.html','src/SharedUX.html'];
+          const htmlFiles=[
+            'src/Admin.html','src/AdminFixesV915.html','src/AdminAccessV917.html',
+            'src/VendorOnboardingV910.html','src/VendorApproval.html','src/VendorApprovalFixV916.html',
+            'src/PaymentVerification.html','src/CumulativeDashboard.html','src/Sales.html','src/Picker.html',
+            'src/Barcode.html','src/Inventory.html','src/Delivery.html','src/Driver.html','src/SharedUX.html'
+          ];
           for(const file of htmlFiles){
             const html=fs.readFileSync(file,'utf8');
             const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
             if(!scripts.length)throw new Error(file+' has no inline JavaScript to validate.');
             scripts.forEach((source,i)=>{new Function(source);console.log('✓ '+file+' inline script '+(i+1)+' parses')});
           }
+          const routeUis=['src/PaymentVerification.html','src/AdminAccessV917.html','src/SharedUX.html'];
+          for(const file of routeUis){
+            const html=fs.readFileSync(file,'utf8');
+            if(/href=["']\?page=/.test(html))throw new Error(file+' still contains iframe-relative app navigation.');
+          }
+          const picker=fs.readFileSync('src/Picker.html','utf8');
+          if(/Demo picker|9000000005|2222/.test(picker))throw new Error('Picker production UI exposes demo credentials.');
           const onboarding=fs.readFileSync('src/VendorOnboardingV910.html','utf8');
           if(!/submitVendorOnboardingV840/.test(onboarding)||!/ownerPhotoData/.test(onboarding)||!/shopPhotoData/.test(onboarding))throw new Error('Vendor onboarding production wiring is incomplete.');
           const onboardingBackend=fs.readFileSync('src/ZZZZZZZZ_V840_VendorApproval.gs','utf8');
@@ -50,7 +62,12 @@ jobs:
           if(!/ok!==true/.test(approvalFix)||!/2 FREE Tender Coconuts/.test(approvalFix))throw new Error('Vendor approval login/referral hardening is incomplete.');
           const routes=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZ_V912_FinalRoutes.gs','utf8');
           new Function(routes);
-          if(!/'vendor':'VendorOnboardingV910'/.test(routes)||!/'approvals':'VendorApproval'/.test(routes)||!/'dashboard':'CumulativeDashboard'/.test(routes)||!/'payments':'PaymentVerification'/.test(routes))throw new Error('Final production routes are incomplete.');
+          const requiredRoutes=[
+            "'admin':'Admin'","'dashboard':'CumulativeDashboard'","'payments':'PaymentVerification'",
+            "'sales':'Sales'","'picker':'Picker'","'barcode':'Barcode'","'inventory':'Inventory'",
+            "'vendor':'VendorOnboardingV910'","'approvals':'VendorApproval'","'driver':'Driver'","'delivery':'Delivery'","'b2b':'B2B'"
+          ];
+          for(const r of requiredRoutes)if(!routes.includes(r))throw new Error('Final production route missing: '+r);
           const reward=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZ_V911_ReferralRewards.gs','utf8');
           new Function(reward);
           if(!/V911_REFERRER_FREE_QTY\s*=\s*2/.test(reward)||!/V911_REFERRED_FREE_QTY\s*=\s*0/.test(reward)||!/FIRST_DELIVERED_ORDER/.test(reward))throw new Error('Approved 2-free-coconut referral rule is not wired.');
@@ -77,7 +94,7 @@ jobs:
           if(!/getB2CPaymentEngineHealthV913:getB2CPaymentEngineHealthV913/.test(publicRead))throw new Error('B2C payment engine health is not exposed through the read-only health endpoint.');
           if(!/getB2BPaymentEngineHealthV916:getB2BPaymentEngineHealthV916/.test(publicRead))throw new Error('B2B payment engine health is not exposed through the read-only health endpoint.');
           if(!/getCumulativeDashboardHealthV914:getCumulativeDashboardHealthV914/.test(publicRead))throw new Error('Cumulative dashboard health is not exposed through the read-only health endpoint.');
-          console.log('Apps Script feature validation passed.');
+          console.log('Apps Script feature validation passed across all routed app UIs.');
           NODE
 
       - name: Configure clasp project
@@ -168,16 +185,14 @@ jobs:
             return retry('route '+name,async()=>{
               const r=await fetchWithTimeout(process.env.MAIN_API_URL+'?page='+encodeURIComponent(name)+'&_='+Date.now(),{},30000);
               const type=String(r.headers.get('content-type')||'');
-              await r.text();
-              if(r.status!==200||!/text\/html/i.test(type))throw new Error('HTTP '+r.status+' / '+type);
+              const text=await r.text();
+              if(r.status!==200||!/text\/html/i.test(type)||text.length<80)throw new Error('HTTP '+r.status+' / '+type+' / short HTML');
+              if(/Exception:|Script function not found/i.test(text))throw new Error('Apps Script route rendered an exception.');
               return true;
             });
           }
           (async()=>{
-            await page('dashboard');
-            await page('payments');
-            await page('vendor');
-            await page('approvals');
+            for(const route of ['dashboard','admin','payments','vendor','approvals','sales','picker','barcode','inventory','delivery','driver','b2b','b2c'])await page(route);
 
             const growth=await post(process.env.MAIN_API_URL,'getB2CCustomerGrowthV910',['123']);
             if(!/valid 10 digit mobile/i.test(growth))throw new Error('B2C growth bridge is not reachable.');
@@ -216,6 +231,6 @@ jobs:
             const b2bHealth=await jsonp(process.env.MAIN_API_URL,'getB2BOrderEngineHealthV904');
             if(!b2bHealth||b2bHealth.canonicalOrderHandler!==true||b2bHealth.idempotency!==true||b2bHealth.serverControlledDeliveryCharge!==true)throw new Error('B2B canonical order engine is not healthy.');
 
-            console.log('Live Apps Script verification passed. No production order, UPI intent, or valid customer/vendor record was created.');
+            console.log('Live Apps Script verification passed across all app routes. No production order, UPI intent, or valid customer/vendor record was created.');
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
