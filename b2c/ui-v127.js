@@ -49,12 +49,27 @@
     var base=window.catalogJsonpV114;
     if(typeof base!=='function'||base.__nel127)return;
     var wrapped=function(){
-      var ctx=this,args=arguments,current=currentCatalogue();
-      if(!current)return base.apply(ctx,args);
-      var request;
-      try{request=Promise.resolve(base.apply(ctx,args)).catch(function(){return current})}catch(e){return Promise.resolve(current)}
-      var fallback=new Promise(function(resolve){setTimeout(function(){resolve(current)},3500)});
-      return Promise.race([request,fallback]);
+      var ctx=this,args=arguments,current=currentCatalogue(),primary;
+      try{primary=Promise.resolve(base.apply(ctx,args))}catch(e){primary=Promise.reject(e)}
+
+      function bridgeCatalogue(){
+        if(typeof window.rpc!=='function'){
+          if(current)return Promise.resolve(current);
+          return Promise.reject(new Error('Catalogue bridge is unavailable.'));
+        }
+        return Promise.resolve(window.rpc('getAppConfig',[])).then(function(data){
+          if(data&&Array.isArray(data.products)&&data.products.length)return data;
+          if(current)return current;
+          throw new Error('Live product catalogue is unavailable.');
+        });
+      }
+
+      var delayedBridge=new Promise(function(resolve,reject){
+        setTimeout(function(){bridgeCatalogue().then(resolve,reject)},1200);
+      });
+      return Promise.race([primary,delayedBridge]).catch(function(firstError){
+        return bridgeCatalogue().catch(function(){if(current)return current;throw firstError});
+      });
     };
     wrapped.__nel127=true;wrapped.__base=base;window.catalogJsonpV114=wrapped;
     try{catalogJsonpV114=wrapped}catch(e){}
