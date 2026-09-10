@@ -1,9 +1,193 @@
-<!doctype html><html><head><base target="_top"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b6b3a"><title>Native Elaneeru Barcode</title><style>
-:root{--g:#0b6b3a;--bg:#f5f7f5;--line:#dfe7e0;--muted:#6a756d;--ink:#17241c}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,system-ui,Arial;color:var(--ink)}header{background:linear-gradient(135deg,#075d32,#128649);color:#fff;padding:17px}.head{max-width:1100px;margin:auto}.brand{font-size:22px;font-weight:950}.wrap{max-width:1100px;margin:auto;padding:14px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:0 3px 14px #00000008}.login,.grid,.assignGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;font:inherit;outline:none}.field:focus{border-color:#62a97a;box-shadow:0 0 0 3px #e8f6ec}.btn{border:0;border-radius:11px;padding:12px 14px;background:var(--g);color:#fff;font-weight:900}.btn.alt{background:#edf7f0;color:var(--g)}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.step{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}.step b{display:block;color:var(--g);margin-bottom:3px}.muted{font-size:12px;color:var(--muted)}.label{border:2px dashed #1f2937;border-radius:16px;padding:20px;text-align:center;background:#fffdf5}.barcode{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:21px;letter-spacing:2px;word-break:break-all;margin:8px 0}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;min-width:780px}th,td{padding:10px;border-bottom:1px solid #edf1ed;text-align:left;font-size:12px}th{color:var(--muted);font-size:11px}.pill{padding:4px 7px;border-radius:99px;background:#e9f7ed;color:#0b6b3a;font-weight:900;font-size:10px}.msg{font-size:12px;color:#9a3412;margin:8px 2px}@media(max-width:720px){.login,.grid,.assignGrid,.steps{grid-template-columns:1fr}.wrap{padding:11px}}@media print{header,.noPrint,.steps,.login,.grid>.card:last-child,.recent{display:none!important}.label{border:2px solid #111;margin-top:40px}}
-</style></head><body><header><div class="head"><div class="brand">Barcode & Batch Control</div><div style="font-size:12px;opacity:.82">Create → assign → scan → deliver with stock traceability</div></div></header><main class="wrap"><div class="steps"><div class="step"><b>1. Create batch</b><span class="muted">Receive coconuts into a traceable batch.</span></div><div class="step"><b>2. Assign to order</b><span class="muted">System blocks wrong product and over-assignment.</span></div><div class="step"><b>3. Driver verifies</b><span class="muted">Assigned barcode is scanned at delivery.</span></div></div><div class="card login noPrint"><input id="email" class="field" type="email" autocomplete="username" placeholder="Admin email"><input id="pin" class="field" type="password" autocomplete="current-password" placeholder="Admin PIN"><button class="btn" onclick="load()" style="grid-column:1/-1">Open batch console</button></div><div id="msg" class="msg"></div><div class="grid noPrint"><div class="card"><h3>Create new batch</h3><select id="product" class="field"></select><div style="height:8px"></div><div class="assignGrid"><input id="qty" class="field" type="number" min="1" value="100" placeholder="Quantity"><input id="location" class="field" value="HUB" placeholder="Location"></div><button class="btn" style="width:100%;margin-top:10px" onclick="createBatch()">Generate batch & barcode</button></div><div class="card"><h3>Assign batch to order</h3><input id="barcode" class="field" placeholder="Scan / paste barcode or batch ID" autofocus><div style="height:8px"></div><div class="assignGrid"><select id="otype" class="field"><option>B2B</option><option>B2C</option></select><input id="oid" class="field" placeholder="Order ID"></div><div style="height:8px"></div><input id="aqty" class="field" type="number" min="1" placeholder="Quantity to assign"><button class="btn" style="width:100%;margin-top:10px" onclick="assign()">Validate & assign</button></div></div><div id="labelBox" class="card" style="display:none"><div class="label"><div id="lname" style="font-size:20px;font-weight:950"></div><div id="lbatch" class="muted"></div><div id="lbarcode" class="barcode"></div><div id="lqty" style="font-size:18px;font-weight:900"></div></div><button class="btn alt noPrint" style="margin-top:10px" onclick="window.print()">🖨️ Print label</button></div><div class="card recent"><div style="display:flex;justify-content:space-between;align-items:center"><h3>Recent batches</h3><button class="btn alt noPrint" onclick="load()">Refresh</button></div><div class="scroll"><table><thead><tr><th>Batch</th><th>Barcode</th><th>Product</th><th>Available</th><th>Reserved</th><th>Delivered</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table></div></div></main><script>
-const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])),call=(f,a=[])=>new Promise((r,j)=>google.script.run.withSuccessHandler(r).withFailureHandler(e=>j(new Error(e&&e.message?e.message:String(e))))[f](...a));function msg(t,ok=false){$('msg').style.color=ok?'#0b6b3a':'#9a3412';$('msg').textContent=t||''}
-function creds(){return {email:String($('email').value||'').trim().toLowerCase(),pin:String($('pin').value||'').trim()}}
-async function load(){try{const c=creds();if(!c.email||c.pin.length<4)throw new Error('Enter your Admin email and PIN.');const raw=await call('getBarcodeConsoleV81',[c.email,c.pin]),d=raw&&typeof raw==='object'?raw:{},products=Array.isArray(d.products)?d.products:[],batches=Array.isArray(d.batches)?d.batches:[];$('product').innerHTML=products.map(p=>`<option value="${esc(p&&p.id)}">${esc(p&&p.name)}</option>`).join('');$('rows').innerHTML=batches.map(b=>`<tr><td><b>${esc(b&&b['Batch ID'])}</b></td><td>${esc(b&&b.Barcode)}</td><td>${esc(b&&b['Product Name'])}</td><td>${Number(b&&b['Available Qty'])||0}</td><td>${Number(b&&b['Reserved Qty'])||0}</td><td>${Number(b&&b['Delivered Qty'])||0}</td><td><span class="pill">${esc(b&&b.Status||'')}</span></td></tr>`).join('')||'<tr><td colspan="7">No batches yet.</td></tr>';msg('Batch console ready.',true)}catch(e){msg(e&&e.message?e.message:String(e))}}
-async function createBatch(){try{const c=creds(),qty=Number($('qty').value||0);if(!c.email||c.pin.length<4)throw new Error('Admin login is required.');if(!$('product').value)throw new Error('Select a product.');if(!(qty>0))throw new Error('Quantity must be greater than 0.');const r=await call('createBatchV81',[c.email,c.pin,{productId:$('product').value,qty,location:$('location').value}]),b=r&&r.batch;if(!b)throw new Error('Batch was created but the batch details were not returned. Refresh the console.');$('barcode').value=b.Barcode||'';$('labelBox').style.display='block';$('lname').textContent=b['Product Name']||'';$('lbatch').textContent='Batch '+String(b['Batch ID']||'');$('lbarcode').textContent=b.Barcode||'';$('lqty').textContent='Quantity: '+(Number(b['Original Qty'])||0);msg('Batch created. You can print the label or assign it now.',true);await load()}catch(e){msg(e&&e.message?e.message:String(e))}}
-async function assign(){try{const c=creds(),orderId=String($('oid').value||'').trim(),qty=Number($('aqty').value||0),key=String($('barcode').value||'').trim();if(!c.email||c.pin.length<4)throw new Error('Admin login is required.');if(!key||!orderId||!(qty>0))throw new Error('Barcode/Batch ID, Order ID and quantity are required.');const r=await call('assignBatchV81',[c.email,c.pin,{barcodeOrBatch:key,orderType:$('otype').value,orderId,qty}]);if(!r||r.success===false)throw new Error(r&&r.error||'Batch assignment failed.');msg(`Assigned ${Number(r.assignedQty)||0}. Batch remaining ${Number(r.remainingAfter)||0}.`,true);await load()}catch(e){msg(e&&e.message?e.message:String(e))}}
-</script></body></html>
+<!doctype html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b6b3a">
+  <title>Native Elaneeru Barcode</title>
+  <style>
+    :root{--g:#0b6b3a;--bg:#f5f7f5;--line:#dfe7e0;--muted:#6a756d;--ink:#17241c}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,system-ui,Arial;color:var(--ink)}
+    header{background:linear-gradient(135deg,#075d32,#128649);color:#fff;padding:17px}.head{max-width:1100px;margin:auto}.brand{font-size:22px;font-weight:950}
+    .wrap{max-width:1100px;margin:auto;padding:14px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:0 3px 14px #00000008}
+    .login,.grid,.assignGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;font:inherit;outline:none}.field:focus{border-color:#62a97a;box-shadow:0 0 0 3px #e8f6ec}
+    .btn{border:0;border-radius:11px;padding:12px 14px;background:var(--g);color:#fff;font-weight:900;cursor:pointer}.btn.alt{background:#edf7f0;color:var(--g)}.btn.small{padding:7px 10px;font-size:11px;min-height:34px}
+    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.step{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}.step b{display:block;color:var(--g);margin-bottom:3px}.muted{font-size:12px;color:var(--muted)}
+    .labelWrap{display:flex;justify-content:center;background:#eef2ee;border-radius:14px;padding:16px}.label{width:100mm;min-height:50mm;border:1px solid #cfd8d1;border-radius:5mm;padding:5mm;background:#fff;color:#111;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center}.labelBrand{font-size:14px;font-weight:950;letter-spacing:.2px}.labelMeta{font-size:10px;margin-top:2px}.label svg{display:block;width:92mm;max-width:100%;height:23mm;margin:3mm auto 1mm}.barcodeText{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:1px;word-break:break-all}.labelBottom{display:flex;gap:12px;justify-content:center;font-size:10px;font-weight:800;margin-top:2px}
+    .printActions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;min-width:900px}th,td{padding:10px;border-bottom:1px solid #edf1ed;text-align:left;font-size:12px}th{color:var(--muted);font-size:11px}.pill{padding:4px 7px;border-radius:99px;background:#e9f7ed;color:#0b6b3a;font-weight:900;font-size:10px}.msg{font-size:12px;color:#9a3412;margin:8px 2px}
+    @media(max-width:720px){.login,.grid,.assignGrid,.steps{grid-template-columns:1fr}.wrap{padding:11px}.label{width:100%;min-height:46mm}}
+    @media print{
+      @page{margin:6mm}
+      body{background:#fff!important}
+      body *{visibility:hidden!important}
+      #labelBox,#labelBox *{visibility:visible!important}
+      #labelBox{display:block!important;position:absolute;left:0;top:0;width:100%;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:#fff!important}
+      #labelBox .labelWrap{padding:0!important;background:#fff!important}
+      #printLabel{width:100mm!important;min-height:50mm!important;border:1px solid #111!important;border-radius:0!important;box-shadow:none!important;margin:0 auto!important;padding:4mm!important}
+      .noPrint{display:none!important}
+    }
+  </style>
+</head>
+<body>
+<header><div class="head"><div class="brand">Barcode & Batch Control</div><div style="font-size:12px;opacity:.82">Create → print → assign → scan → deliver with stock traceability</div></div></header>
+<main class="wrap">
+  <div class="steps">
+    <div class="step"><b>1. Create batch</b><span class="muted">Receive coconuts into a traceable batch.</span></div>
+    <div class="step"><b>2. Print & assign</b><span class="muted">Print the scannable label and assign the batch to an order.</span></div>
+    <div class="step"><b>3. Driver verifies</b><span class="muted">Driver scans the assigned barcode at delivery.</span></div>
+  </div>
+
+  <div class="card login noPrint">
+    <input id="email" class="field" type="email" autocomplete="username" placeholder="Admin email">
+    <input id="pin" class="field" type="password" autocomplete="current-password" placeholder="Admin PIN">
+    <button class="btn" onclick="loadConsole()" style="grid-column:1/-1">Open batch console</button>
+  </div>
+  <div id="msg" class="msg noPrint"></div>
+
+  <div class="grid noPrint">
+    <div class="card">
+      <h3>Create new batch</h3>
+      <select id="product" class="field"></select><div style="height:8px"></div>
+      <div class="assignGrid"><input id="qty" class="field" type="number" min="1" value="100" placeholder="Quantity"><input id="location" class="field" value="HUB" placeholder="Location"></div>
+      <button class="btn" style="width:100%;margin-top:10px" onclick="createBatch()">Generate batch & barcode</button>
+    </div>
+    <div class="card">
+      <h3>Assign batch to order</h3>
+      <input id="barcode" class="field" placeholder="Scan / paste barcode or batch ID" autofocus><div style="height:8px"></div>
+      <div class="assignGrid"><select id="otype" class="field"><option>B2B</option><option>B2C</option></select><input id="oid" class="field" placeholder="Order ID"></div><div style="height:8px"></div>
+      <input id="aqty" class="field" type="number" min="1" placeholder="Quantity to assign">
+      <button class="btn" style="width:100%;margin-top:10px" onclick="assignBatch()">Validate & assign</button>
+    </div>
+  </div>
+
+  <div id="labelBox" class="card" style="display:none">
+    <div class="labelWrap">
+      <div id="printLabel" class="label">
+        <div class="labelBrand">🥥 NATIVE ELANEERU</div>
+        <div id="lname" class="labelMeta"></div>
+        <div id="lbarcodeSvg"></div>
+        <div id="lbarcode" class="barcodeText"></div>
+        <div class="labelBottom"><span id="lbatch"></span><span id="lqty"></span><span id="llocation"></span></div>
+      </div>
+    </div>
+    <div class="printActions noPrint"><button class="btn" type="button" onclick="printCurrentLabel()">🖨️ Print Barcode Label</button><button class="btn alt" type="button" onclick="hideLabel()">Close</button></div>
+  </div>
+
+  <div class="card recent noPrint">
+    <div style="display:flex;justify-content:space-between;align-items:center"><div><h3 style="margin-bottom:3px">Recent batches</h3><div class="muted">Print any existing batch again whenever required.</div></div><button class="btn alt" onclick="loadConsole()">Refresh</button></div>
+    <div class="scroll"><table><thead><tr><th>Batch</th><th>Barcode</th><th>Product</th><th>Available</th><th>Reserved</th><th>Delivered</th><th>Status</th><th>Label</th></tr></thead><tbody id="rows"></tbody></table></div>
+  </div>
+</main>
+<script>
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})}
+function rpcCall(fn,args){
+  args=Array.isArray(args)?args:[];
+  return new Promise(function(resolve,reject){
+    try{
+      if(!window.google||!google.script||!google.script.run)throw new Error('Apps Script connection is unavailable. Reload the page.');
+      var runner=google.script.run.withSuccessHandler(resolve).withFailureHandler(function(e){reject(new Error(e&&e.message?e.message:String(e)))});
+      runner[fn].apply(runner,args);
+    }catch(e){reject(e instanceof Error?e:new Error(String(e)))}
+  });
+}
+function showMsg(t,ok){var e=$('msg');if(!e)return;e.style.color=ok?'#0b6b3a':'#9a3412';e.textContent=t||''}
+function creds(){return {email:String($('email')&&$('email').value||'').trim().toLowerCase(),pin:String($('pin')&&$('pin').value||'').trim()}}
+var BATCHES=[],CURRENT_LABEL=null;
+
+/* Pure client-side Code 39 generator. No external CDN/library is required. */
+var CODE39={
+  '0':0x034,'1':0x121,'2':0x061,'3':0x160,'4':0x031,'5':0x130,'6':0x070,'7':0x025,'8':0x124,'9':0x064,
+  'A':0x109,'B':0x049,'C':0x148,'D':0x019,'E':0x118,'F':0x058,'G':0x00D,'H':0x10C,'I':0x04C,'J':0x01C,
+  'K':0x103,'L':0x043,'M':0x142,'N':0x013,'O':0x112,'P':0x052,'Q':0x007,'R':0x106,'S':0x046,'T':0x016,
+  'U':0x181,'V':0x0C1,'W':0x1C0,'X':0x091,'Y':0x190,'Z':0x0D0,
+  '-':0x085,'.':0x184,' ':0x0C4,'$':0x0A8,'/':0x0A2,'+':0x08A,'%':0x02A,'*':0x094
+};
+function code39Svg(raw){
+  var value=String(raw||'').trim().toUpperCase();
+  if(!value)throw new Error('Barcode value is empty.');
+  for(var c of value){if(CODE39[c]==null)throw new Error('Barcode contains unsupported character: '+c)}
+  var encoded='*'+value+'*',unit=2,wide=5,quiet=12,x=quiet,bars=[];
+  for(var ci=0;ci<encoded.length;ci++){
+    var pattern=CODE39[encoded[ci]];
+    for(var i=0;i<9;i++){
+      var isWide=((pattern>>(8-i))&1)===1,w=isWide?wide:unit;
+      if(i%2===0)bars.push('<rect x="'+x+'" y="0" width="'+w+'" height="52" fill="#000"/>');
+      x+=w;
+    }
+    if(ci<encoded.length-1)x+=unit;
+  }
+  var total=x+quiet;
+  return '<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Barcode '+esc(value)+'" viewBox="0 0 '+total+' 68" preserveAspectRatio="xMidYMid meet"><rect width="100%" height="100%" fill="#fff"/>'+bars.join('')+'<text x="'+(total/2)+'" y="65" text-anchor="middle" font-family="monospace" font-size="9" fill="#000">'+esc(value)+'</text></svg>';
+}
+function field(b,n,alt){return b&&b[n]!=null?b[n]:(alt&&b&&b[alt]!=null?b[alt]:'')}
+function renderLabel(batch){
+  batch=batch&&typeof batch==='object'?batch:{};
+  var barcode=String(field(batch,'Barcode','barcode')||'').trim();
+  var batchId=String(field(batch,'Batch ID','batchId')||'').trim();
+  var product=String(field(batch,'Product Name','productName')||'Tender Coconut').trim();
+  var qty=Number(field(batch,'Original Qty','qty')||field(batch,'Available Qty'))||0;
+  var location=String(field(batch,'Location','location')||'HUB').trim();
+  if(!barcode)throw new Error('This batch has no barcode value.');
+  $('lname').textContent=product;
+  $('lbatch').textContent='Batch: '+batchId;
+  $('lbarcode').textContent=barcode;
+  $('lqty').textContent='Qty: '+qty;
+  $('llocation').textContent='Location: '+location;
+  $('lbarcodeSvg').innerHTML=code39Svg(barcode);
+  $('labelBox').style.display='block';
+  CURRENT_LABEL={Barcode:barcode,'Batch ID':batchId,'Product Name':product,'Original Qty':qty,Location:location};
+  try{$('labelBox').scrollIntoView({behavior:'smooth',block:'start'})}catch(e){}
+}
+function hideLabel(){if($('labelBox'))$('labelBox').style.display='none'}
+function printCurrentLabel(){
+  if(!CURRENT_LABEL)return alert('Select or create a batch first.');
+  window.print();
+}
+function printBatchIndex(i){
+  var b=BATCHES[Number(i)];if(!b)return alert('Batch not found. Refresh and try again.');
+  try{renderLabel(b);setTimeout(function(){window.print()},120)}catch(e){alert(e&&e.message?e.message:String(e))}
+}
+
+async function loadConsole(){
+  try{
+    var c=creds();if(!c.email||c.pin.length<4)throw new Error('Enter your Admin email and PIN.');
+    var raw=await rpcCall('getBarcodeConsoleV81',[c.email,c.pin]),d=raw&&typeof raw==='object'?raw:{},products=Array.isArray(d.products)?d.products:[];
+    BATCHES=Array.isArray(d.batches)?d.batches:[];
+    $('product').innerHTML=products.map(function(p){return '<option value="'+esc(p&&p.id)+'">'+esc(p&&p.name)+'</option>'}).join('');
+    $('rows').innerHTML=BATCHES.map(function(b,i){return '<tr><td><b>'+esc(b&&b['Batch ID'])+'</b></td><td>'+esc(b&&b.Barcode)+'</td><td>'+esc(b&&b['Product Name'])+'</td><td>'+Number(b&&b['Available Qty']||0)+'</td><td>'+Number(b&&b['Reserved Qty']||0)+'</td><td>'+Number(b&&b['Delivered Qty']||0)+'</td><td><span class="pill">'+esc(b&&b.Status||'')+'</span></td><td><button class="btn alt small" type="button" onclick="printBatchIndex('+i+')">🖨️ Print</button></td></tr>'}).join('')||'<tr><td colspan="8">No batches yet.</td></tr>';
+    showMsg('Batch console ready.',true);
+  }catch(e){showMsg(e&&e.message?e.message:String(e),false)}
+}
+
+async function createBatch(){
+  try{
+    var c=creds(),qty=Number($('qty').value||0);if(!c.email||c.pin.length<4)throw new Error('Admin login is required.');if(!$('product').value)throw new Error('Select a product.');if(!(qty>0))throw new Error('Quantity must be greater than 0.');
+    var r=await rpcCall('createBatchV81',[c.email,c.pin,{productId:$('product').value,qty:qty,location:$('location').value}]),b=r&&r.batch;
+    if(!b&&r&&r.batchId){b={'Batch ID':r.batchId,Barcode:r.barcode,'Product Name':r.productName,'Original Qty':r.qty,Location:$('location').value||'HUB'}}
+    if(!b)throw new Error('Batch was created but the batch details were not returned. Refresh the console.');
+    $('barcode').value=b.Barcode||b.barcode||'';
+    renderLabel(b);
+    showMsg('Batch created. The scannable barcode label is ready to print.',true);
+    await loadConsole();
+  }catch(e){showMsg(e&&e.message?e.message:String(e),false)}
+}
+
+async function assignBatch(){
+  try{
+    var c=creds(),orderId=String($('oid').value||'').trim(),qty=Number($('aqty').value||0),key=String($('barcode').value||'').trim();
+    if(!c.email||c.pin.length<4)throw new Error('Admin login is required.');if(!key||!orderId||!(qty>0))throw new Error('Barcode/Batch ID, Order ID and quantity are required.');
+    var r=await rpcCall('assignBatchV81',[c.email,c.pin,{barcodeOrBatch:key,orderType:$('otype').value,orderId:orderId,qty:qty}]);
+    if(!r||r.success===false)throw new Error(r&&r.error||'Batch assignment failed.');
+    showMsg('Assigned '+(Number(r.assignedQty)||0)+'. Batch remaining '+(Number(r.remainingAfter)||0)+'.',true);await loadConsole();
+  }catch(e){showMsg(e&&e.message?e.message:String(e),false)}
+}
+
+/* Backwards-compatible aliases for any cached inline actions. */
+window.load=loadConsole;
+window.assign=assignBatch;
+window.call=window.call||rpcCall;
+</script>
+</body>
+</html>
