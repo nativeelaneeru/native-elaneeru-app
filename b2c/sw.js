@@ -1,4 +1,4 @@
-const CACHE='native-elaneeru-b2c-v10.30.0';
+const CACHE='native-elaneeru-b2c-v10.31.0';
 const SHELL=[
   './','./index.html','./login/index.html','./config.js','./manifest.webmanifest','./idb-v1.js','./order-sync-v1.js',
   './ui-v108.js','./ui-v110.js','./ui-v111.js','./ui-v112.js','./ui-v113.js','./ui-v125.js','./ui-v127.js',
@@ -7,7 +7,7 @@ const SHELL=[
 ];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>{
-    if(self.registration.active){return self.registration.showNotification('Native Elaneeru update ready',{body:'A new version is ready. Open the app and tap Update now.',tag:'native-elaneeru-update',icon:'./icons/icon-192.png',badge:'./icons/icon-192.png',data:{url:'./'}}).catch(()=>{});}
+    if(self.registration.active){return self.registration.showNotification('Native Elaneeru update ready',{body:'A faster checkout update is ready. Open the app and tap Update now.',tag:'native-elaneeru-update',icon:'./icons/icon-192.png',badge:'./icons/icon-192.png',data:{url:'./'}}).catch(()=>{});}
   }))
 });
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()))});
