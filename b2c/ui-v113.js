@@ -4,15 +4,8 @@
   function addStyle(){
     if(document.getElementById('nel113Style'))return;
     var s=document.createElement('style');s.id='nel113Style';
-    s.textContent='.nel113-business{border:1px solid #ffffff45;background:#ffffff12;color:#fff;border-radius:11px;padding:8px 9px;text-decoration:none;font-size:10px;font-weight:900;white-space:nowrap}.nel113-net{position:fixed;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:150;padding:6px 9px;border-radius:999px;background:#173c28;color:#fff;font-size:9px;font-weight:900;box-shadow:0 5px 18px #0002;opacity:.96}.nel113-net.off{background:#a52a2a}.nel113-net.ok{background:#075b34}@media(max-width:430px){.nel113-business{padding:8px 7px;font-size:0}.nel113-business:after{content:"🏪";font-size:15px}}';
+    s.textContent='.nel113-net{position:fixed;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:150;padding:6px 9px;border-radius:999px;background:#173c28;color:#fff;font-size:9px;font-weight:900;box-shadow:0 5px 18px #0002;opacity:.96}.nel113-net.off{background:#a52a2a}.nel113-net.ok{background:#075b34}';
     document.head.appendChild(s);
-  }
-
-  function addBusinessSwitch(){
-    if(document.getElementById('nel113Business'))return;
-    var row=document.querySelector('.brandRow');if(!row)return;
-    var a=document.createElement('a');a.id='nel113Business';a.className='nel113-business';a.href='../b2b/';a.setAttribute('aria-label','Open Native Elaneeru Business');a.textContent='🏪 Business';
-    var support=row.querySelector('.support');if(support)row.insertBefore(a,support);else row.appendChild(a);
   }
 
   function networkBadge(){
@@ -36,7 +29,7 @@
   }
 
   function start(){
-    addStyle();addBusinessSwitch();networkBadge();
+    addStyle();networkBadge();
     var tries=0;(function patch(){if(!patchSaveProfile()&&++tries<120)setTimeout(patch,100)})();
   }
 
