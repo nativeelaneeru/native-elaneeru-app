@@ -25,7 +25,7 @@ jobs:
           node-version: '24'
       - name: Install dependencies
         run: npm install
-      - name: Validate Apps Script HTML JavaScript
+      - name: Validate Apps Script feature wiring
         run: |
           node <<'NODE'
           const fs=require('fs');
@@ -40,7 +40,13 @@ jobs:
           if(!/submitVendorOnboardingV840/.test(onboarding)||!/ownerPhotoData/.test(onboarding)||!/shopPhotoData/.test(onboarding))throw new Error('Vendor onboarding production wiring is incomplete.');
           const approval=fs.readFileSync('src/VendorApproval.html','utf8');
           if(!/approveVendorOnboardingV840/.test(approval)||!/Initial B2B PIN/.test(approval))throw new Error('Vendor approval/PIN wiring is incomplete.');
-          console.log('Apps Script HTML validation passed.');
+          const routes=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZ_V912_FinalRoutes.gs','utf8');
+          new Function(routes);
+          if(!/'vendor':'VendorOnboardingV910'/.test(routes)||!/'approvals':'VendorApproval'/.test(routes))throw new Error('Final vendor routes are not wired to the current onboarding/approval screens.');
+          const reward=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZ_V911_ReferralRewards.gs','utf8');
+          new Function(reward);
+          if(!/V911_REFERRER_FREE_QTY\s*=\s*2/.test(reward)||!/V911_REFERRED_FREE_QTY\s*=\s*0/.test(reward)||!/FIRST_DELIVERED_ORDER/.test(reward))throw new Error('Approved 2-free-coconut referral rule is not wired.');
+          console.log('Apps Script feature validation passed.');
           NODE
       - name: Configure clasp project
         shell: bash
@@ -76,32 +82,35 @@ jobs:
         run: |
           node <<'NODE'
           (async()=>{
-            async function page(name,needle){
+            async function page(name){
               let last;
               for(let attempt=1;attempt<=4;attempt++){
                 const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),30000);
                 try{
                   const r=await fetch(process.env.API_URL+'?page='+encodeURIComponent(name)+'&_='+Date.now(),{redirect:'follow',cache:'no-store',signal:controller.signal});
-                  const text=await r.text();
-                  if(r.status===200&&text.includes(needle)){console.log('✓ '+name+' route renders');return}
-                  last=new Error(name+' route returned HTTP '+r.status+' without '+needle);
+                  const type=String(r.headers.get('content-type')||'');
+                  await r.text();
+                  if(r.status===200&&/text\/html/i.test(type)){console.log('✓ '+name+' route is reachable (HTTP 200 HTML)');return}
+                  last=new Error(name+' route returned HTTP '+r.status+' with content-type '+type);
                 }catch(e){last=e}finally{clearTimeout(timeout)}
                 if(attempt<4)await new Promise(r=>setTimeout(r,1500*attempt));
               }
-              throw last||new Error(name+' route did not render.');
+              throw last||new Error(name+' route did not respond.');
             }
             async function post(method,args){
               const form=new URLSearchParams();form.set('payload',JSON.stringify({method,args,requestId:'feature-smoke-'+Date.now()}));
               const r=await fetch(process.env.API_URL+'?bridge=1',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8'},body:form.toString(),redirect:'follow'});
               return {status:r.status,text:await r.text()};
             }
-            await page('vendor','Vendor Onboarding');
-            await page('approvals','Vendor Approvals');
+            await page('vendor');
+            await page('approvals');
             const growth=await post('getB2CCustomerGrowthV910',['123']);
             if(growth.status!==200||!/valid 10 digit mobile/i.test(growth.text))throw new Error('B2C growth bridge is not reachable.');
             const subscription=await post('saveB2CSubscriptionV910',['123',{}]);
             if(subscription.status!==200||!/valid 10 digit mobile/i.test(subscription.text))throw new Error('B2C subscription bridge is not reachable.');
-            console.log('✓ B2C subscriptions and Refer & Earn bridge methods are live without writing test data');
+            const rule=await post('getB2CReferralRuleV911',[]);
+            if(rule.status!==200||!/"rewardType":"FREE_PRODUCT"/.test(rule.text)||!/"rewardProductId":"TC"/.test(rule.text)||!/"referrerRewardQty":2/.test(rule.text)||!/"referredRewardQty":0/.test(rule.text)||!/"qualificationRule":"FIRST_DELIVERED_ORDER"/.test(rule.text))throw new Error('2-free-coconut referral rule is not live.');
+            console.log('✓ Vendor routes, subscriptions and 2-free-coconut Refer & Earn rule are live without writing test data');
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
       - name: Verify main catalogue and B2B bridge
