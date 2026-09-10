@@ -1,7 +1,7 @@
 /**
- * Native Elaneeru V8.3.8 — public read-only B2C endpoint.
- * Uses JSONP so the GitHub Pages PWA can fetch safe read-only diagnostics
- * without relying on Apps Script's wrapped HTML POST response.
+ * Native Elaneeru V8.3.8 — public read-only diagnostics endpoint.
+ * Uses JSONP so the GitHub Pages PWAs can fetch safe read-only catalogue and
+ * order-engine health data without relying on Apps Script's wrapped POST UI.
  */
 const V838_ORIGINAL_DO_GET = doGet;
 
@@ -18,7 +18,8 @@ doGet = function(e){
     const method=String(request.method||'');
     const allowed={
       getAppConfig:getAppConfig,
-      getB2COrderEngineHealthV901:getB2COrderEngineHealthV901
+      getB2COrderEngineHealthV901:getB2COrderEngineHealthV901,
+      getB2BOrderEngineHealthV904:getB2BOrderEngineHealthV904
     };
     if(!allowed[method]) throw new Error('Method not allowed.');
     response = {
