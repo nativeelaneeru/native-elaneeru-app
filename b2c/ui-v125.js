@@ -5,7 +5,7 @@
 
   function el(id){return document.getElementById(id)}
   function money(v){return '₹'+Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:2})}
-  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})}
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[m]})}
 
   function style(){
     if(el('nel125Style'))return;
@@ -39,7 +39,7 @@
   }
   function productCard(p,meta){
     var id=String(p.productId||'').replace(/'/g,"\\'");
-    var im=p.imageUrl?'<img src="'+esc(p.imageUrl)+'" alt="'+esc(p.productName)+'" loading="lazy" decoding="async" onerror="this.remove();this.parentNode.textContent=\'🥥\'">':'🥥';
+    var im=p.imageUrl?'<img src="'+esc(p.imageUrl)+'" alt="'+esc(p.productName)+'" loading="lazy" decoding="async" onerror="if(this.parentNode)this.parentNode.textContent=\'🥥\'">':'🥥';
     return '<div class="fav"><div class="favVisual">'+im+'</div><div class="favBody"><b>'+esc(p.productName)+'</b><div class="nel125-card-meta">'+esc(meta||'Live catalogue')+'</div><div class="price">'+money(p.price)+' / '+esc(p.unit||'pc')+'</div><button class="add" onclick="add(\''+id+'\')">ADD</button></div></div>';
   }
   function realOrders(d){
