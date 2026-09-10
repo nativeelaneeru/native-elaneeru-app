@@ -3,7 +3,7 @@ import vm from 'node:vm';
 
 function ok(value,message){if(!value)throw new Error(message);console.log('✓',message)}
 
-for(const file of ['b2c/cart-visibility-v10320.js','b2c/customer-growth-v10330.js','b2b/production-fixes-v990.js']){
+for(const file of ['b2c/cart-visibility-v10320.js','b2c/customer-growth-v10330.js','b2c/referral-reward-v10340.js','b2b/production-fixes-v990.js']){
   const source=fs.readFileSync(file,'utf8');
   new Function(source);
   ok(true,`${file} parses`);
@@ -67,6 +67,22 @@ const growth=fs.readFileSync('b2c/customer-growth-v10330.js','utf8');
 ok(/saveB2CSubscriptionV910/.test(growth),'B2C subscription UI is wired to subscription backend');
 ok(/registerB2CReferralV910/.test(growth),'B2C Refer & Earn UI is wired to referral backend');
 ok(!/saveOrder\s*\(/.test(growth)&&!/placeOrder\s*\(/.test(growth),'B2C growth module cannot place a production order');
+
+const rewardUi=fs.readFileSync('b2c/referral-reward-v10340.js','utf8');
+ok(/2 FREE Tender Coconuts/.test(rewardUi),'B2C referral UI states the approved 2-free-coconut reward');
+ok(/first delivered order/i.test(rewardUi),'B2C referral UI states the delivered-order qualification rule');
+ok(!/saveOrder\s*\(/.test(rewardUi)&&!/placeOrder\s*\(/.test(rewardUi),'B2C referral reward UI cannot place a production order');
+
+const rewardBackend=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZ_V911_ReferralRewards.gs','utf8');
+ok(/V911_REFERRER_FREE_QTY\s*=\s*2/.test(rewardBackend),'Referral backend grants exactly 2 free coconuts to the referrer');
+ok(/V911_REFERRED_FREE_QTY\s*=\s*0/.test(rewardBackend),'Referral backend grants no separate reward to the referred customer');
+ok(/FIRST_DELIVERED_ORDER/.test(rewardBackend),'Referral backend qualifies only on the first delivered-order rule');
+ok(/getB2CCustomerGrowthV910\s*=\s*getB2CCustomerGrowthV911_/.test(rewardBackend),'Referral reward rule owns the existing customer-growth API');
+ok(/registerB2CReferralV910\s*=\s*registerB2CReferralV911_/.test(rewardBackend),'Referral registration uses the protected new-customer rule');
+ok(!/saveOrder\s*=/.test(rewardBackend),'Referral backend does not override production checkout');
+
+const config=fs.readFileSync('b2c/config.js','utf8');
+ok(/referral-reward-v10340\.js/.test(config),'B2C production config loads the 2-coconut referral reward UI');
 
 const b2b=fs.readFileSync('b2b/production-fixes-v990.js','utf8');
 ok(/Need B2B access\?/.test(b2b),'B2B login explains vendor approval/PIN access');
