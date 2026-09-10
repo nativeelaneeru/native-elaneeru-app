@@ -7,6 +7,12 @@
 function submitVendorOnboardingV840(mobile,pin,p){
   const u=staffLoginV81_(mobile,pin,'SALES');
   p=p||{};
+  const vendorMobile=digits_(p.mobile);
+  if(!/^[6-9]\d{9}$/.test(vendorMobile)) throw new Error('Enter a valid vendor mobile number.');
+  const activeVendor=rows_(V8.SHEETS.B2B_VENDORS).find(x=>digits_(x.Mobile)===vendorMobile&&active_(x.Status));
+  if(activeVendor) throw new Error('This mobile is already active as B2B vendor '+s_(activeVendor['Vendor ID'])+'.');
+  const pendingVendor=rows_(V8.SHEETS.VENDOR_ONBOARD).find(x=>digits_(x.Mobile)===vendorMobile&&s_(x.Status).toUpperCase()==='PENDING');
+  if(pendingVendor) throw new Error('A vendor onboarding is already pending for this mobile: '+s_(pendingVendor['Onboarding ID'])+'.');
   const liveProducts=b2bProducts_('');
   const product=liveProducts.find(x=>s_(x.productId)===s_(p.productId));
   if(!product) throw new Error('Please select a LIVE B2B product.');
@@ -33,8 +39,11 @@ function uploadOnboardingPhotoV840_(dataUrl,fileName,onboardingId,kind){
   if(!match) throw new Error('Invalid '+kind+' photo.');
   const bytes=Utilities.base64Decode(match[2]);
   if(bytes.length>4*1024*1024) throw new Error('Please use a smaller '+kind+' photo.');
-  const folderId='1GAk4K3NlWpCabU_jjy68nevXn8PhY_Oj';
-  const folder=folderId?DriveApp.getFolderById(folderId):DriveApp.getRootFolder();
+  const props=PropertiesService.getScriptProperties();
+  const folderId=s_(props.getProperty('VENDOR_ONBOARDING_PHOTO_FOLDER_ID'))||'1GAk4K3NlWpCabU_jjy68nevXn8PhY_Oj';
+  let folder;
+  try{folder=folderId?DriveApp.getFolderById(folderId):DriveApp.getRootFolder();}
+  catch(err){throw new Error('Vendor onboarding photo folder is not accessible. Check VENDOR_ONBOARDING_PHOTO_FOLDER_ID in Script Properties.');}
   const safe=String(fileName||kind+'.jpg').replace(/[^a-zA-Z0-9._-]/g,'_');
   const file=folder.createFile(Utilities.newBlob(bytes,match[1],onboardingId+'_'+kind+'_'+safe));
   return file.getUrl();
@@ -56,6 +65,9 @@ function approveVendorOnboardingV840(email,pin,onboardingId,initialPin,targetQty
   const row=rows_(V8.SHEETS.VENDOR_ONBOARD).find(r=>s_(r['Onboarding ID'])===s_(onboardingId));
   if(!row) throw new Error('Onboarding not found.');
   if(s_(row.Status).toUpperCase()!=='PENDING') throw new Error('Only PENDING onboarding records can be approved.');
+  const vendorMobile=digits_(row.Mobile);
+  const existingVendor=rows_(V8.SHEETS.B2B_VENDORS).find(x=>digits_(x.Mobile)===vendorMobile&&active_(x.Status));
+  if(existingVendor) throw new Error('An active B2B vendor already exists for this mobile: '+s_(existingVendor['Vendor ID'])+'.');
   initialPin=String(initialPin||'').trim();
   if(!/^\d{4,8}$/.test(initialPin)) throw new Error('Set a 4–8 digit initial PIN.');
   const productId=s_(row['Product ID']);
@@ -70,7 +82,7 @@ function approveVendorOnboardingV840(email,pin,onboardingId,initialPin,targetQty
   const reward=s_(rewardText)||('Reach '+finalTarget.toLocaleString('en-IN')+' coconuts in 30 days to unlock a partner reward.');
   append_(V8.SHEETS.B2B_VENDORS,{
     'Vendor ID':vendorId,'Business Name':s_(row['Business Name']),'Owner Name':s_(row['Owner Name']),
-    Mobile:digits_(row.Mobile),WhatsApp:digits_(row.WhatsApp||row.Mobile),'Vendor Type':s_(row['Vendor Type']),
+    Mobile:vendorMobile,WhatsApp:digits_(row.WhatsApp||row.Mobile),'Vendor Type':s_(row['Vendor Type']),
     Area:s_(row.Area),Address:s_(row.Address),Pincode:s_(row.Pincode),Latitude:n_(row.Latitude),Longitude:n_(row.Longitude),
     'Payment Type':s_(row['Payment Mode'])||'COD','Credit Days':n_(row['Credit Days']),'Credit Limit':n_(row['Credit Limit']),
     Outstanding:0,MOQ:n_(row.MOQ)||n_(product.moq)||1,'Delivery Frequency':s_(row['Delivery Frequency']),
