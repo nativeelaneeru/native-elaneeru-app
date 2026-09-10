@@ -6,5 +6,5 @@ window.NEL_B2B_CONFIG={
   company:'Sri Govindadri Ventures'
 };
 if(!window.NEL_B2B_UI_V113){
-  document.write('<script src="./ui-v113.js?v=940"><\\/script>');
+  document.write('<script src="./ui-v113.js?v=940"></script>');
 }
