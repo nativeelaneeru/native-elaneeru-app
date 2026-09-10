@@ -34,6 +34,9 @@ function doGetV912_(e){
   if(page!=='index'){
     try{out.append(HtmlService.createTemplateFromFile('SharedUX').evaluate().getContent());}catch(err){}
   }
+  if(page==='Admin'){
+    try{out.append(HtmlService.createTemplateFromFile('AdminFixesV915').evaluate().getContent());}catch(err){}
+  }
   return out
     .setTitle(V8.BRAND+' - '+(page==='index'?'B2C':page))
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
