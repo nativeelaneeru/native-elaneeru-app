@@ -112,6 +112,7 @@ doPost=function(e){
       saveOrder:saveOrder,
       getB2COrderEngineHealthV901:getB2COrderEngineHealthV901,
       getB2COrderEngineHealthV905:getB2COrderEngineHealthV905,
+      getB2COrderEngineHealthV906:getB2COrderEngineHealthV906,
       getCustomerDashboard:getCustomerDashboard,
       getCustomerLiveTracking:getCustomerLiveTracking,
       getB2CInvoiceV91:getB2CInvoiceV91,
