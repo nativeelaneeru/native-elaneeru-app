@@ -91,15 +91,14 @@ jobs:
         run: |
           node <<'NODE'
           (async()=>{
-            async function health(){
-              const form=new URLSearchParams();form.set('payload',JSON.stringify({method:'getB2BOrderEngineHealthV904',args:[],requestId:'b2b-health-'+Date.now()}));
-              const r=await fetch(process.env.API_URL+'?bridge=1',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8'},body:form.toString(),redirect:'follow'});
-              return {status:r.status,text:await r.text()};
-            }
+            const callback='__nelB2BHealth';
             let last;
             for(let i=1;i<=6;i++){
-              const r=await health();console.log(JSON.stringify({attempt:i,status:r.status,text:r.text.slice(0,500)}));
-              if(r.status===200&&r.text.includes('"canonicalOrderHandler":true')&&r.text.includes('"idempotency":true')&&r.text.includes('"serverControlledDeliveryCharge":true'))return;
+              const req={method:'getB2BOrderEngineHealthV904',args:[],requestId:'b2b-health-'+Date.now()};
+              const url=process.env.API_URL+'?jsonp=1&callback='+callback+'&payload='+encodeURIComponent(JSON.stringify(req))+'&_='+Date.now();
+              const r=await fetch(url,{redirect:'follow',cache:'no-store'});const text=await r.text();const m=text.match(/^__nelB2BHealth\(([\s\S]*)\);?$/);const p=m?JSON.parse(m[1]):null;
+              console.log(JSON.stringify({attempt:i,status:r.status,payload:p}));
+              if(r.status===200&&p&&p.ok&&p.result&&p.result.canonicalOrderHandler===true&&p.result.idempotency===true&&p.result.serverControlledDeliveryCharge===true)return;
               last=new Error('B2B idempotent order engine is not live yet.');await new Promise(r=>setTimeout(r,2500));
             }
             throw last;
