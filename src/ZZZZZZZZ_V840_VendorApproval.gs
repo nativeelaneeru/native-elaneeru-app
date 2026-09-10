@@ -1,11 +1,11 @@
 /**
  * Native Elaneeru V8.4.0 — Vendor onboarding approval workflow.
- * Sales submits only PENDING records. Admin approval creates the live B2B account,
+ * Authorized staff submits only PENDING records. Admin approval creates the live B2B account,
  * agreed product price, and an actionable first 30-day target.
  */
 
 function submitVendorOnboardingV840(mobile,pin,p){
-  const u=staffLoginV81_(mobile,pin,'SALES');
+  const u=staffAppLoginV917_(mobile,pin,'VENDOR_ONBOARDING');
   p=p||{};
   const paymentMode=s_(p.paymentMode||'COD').toUpperCase();
   if(!['COD','UPI','CREDIT'].includes(paymentMode))throw new Error('Payment mode must be COD, UPI or CREDIT.');
