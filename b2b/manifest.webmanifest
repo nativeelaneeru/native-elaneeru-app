@@ -1,0 +1,12 @@
+{
+  "id":"./",
+  "name":"Native Elaneeru Business",
+  "short_name":"Elaneeru B2B",
+  "description":"Bulk tender coconut ordering for business customers.",
+  "start_url":"./",
+  "scope":"./",
+  "display":"standalone",
+  "background_color":"#f2f5f8",
+  "theme_color":"#123a5a",
+  "icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
