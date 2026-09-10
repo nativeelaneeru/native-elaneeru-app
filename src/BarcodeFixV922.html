@@ -1,0 +1,61 @@
+<script>
+(function(){
+  if(window.NEL_BARCODE_FIX_V922)return;window.NEL_BARCODE_FIX_V922=true;
+  function q(id){return document.getElementById(id)}
+  function text(e){return e&&e.message?e.message:String(e||'Something went wrong')}
+  function renderRows(){
+    var host=q('rows');if(!host)return;
+    var list=Array.isArray(BATCHES)?BATCHES:[];
+    host.innerHTML=list.map(function(b,i){
+      b=b&&typeof b==='object'?b:{};
+      return '<tr><td><b>'+esc(b['Batch ID']||'')+'</b></td><td>'+esc(b.Barcode||'')+'</td><td>'+esc(b['Product Name']||'')+'</td><td>'+Number(b['Available Qty']||0)+'</td><td>'+Number(b['Reserved Qty']||0)+'</td><td>'+Number(b['Delivered Qty']||0)+'</td><td><span class="pill">'+esc(b.Status||'')+'</span></td><td><button class="btn alt small" type="button" onclick="printBatchIndex('+i+')">🖨️ Print</button></td></tr>';
+    }).join('')||'<tr><td colspan="8">No batches yet.</td></tr>';
+  }
+
+  async function safeLoadConsole(){
+    try{
+      var c=creds();if(!c.email||c.pin.length<4)throw new Error('Enter your Admin email and PIN.');
+      showMsg('Loading products and batches…',true);
+      var raw=await rpcCall('getBarcodeConsoleV922',[c.email,c.pin]);
+      var d=raw&&typeof raw==='object'?raw:{};
+      var products=Array.isArray(d.products)?d.products:[];
+      BATCHES=Array.isArray(d.batches)?d.batches:[];
+      var product=q('product');
+      if(product){
+        if(products.length){
+          product.innerHTML=products.map(function(p){return '<option value="'+esc(p&&p.id||'')+'">'+esc(p&&p.name||p&&p.id||'Product')+'</option>'}).join('');
+          product.disabled=false;
+        }else{
+          product.innerHTML='<option value="">No products available</option>';
+          product.disabled=true;
+        }
+      }
+      renderRows();
+      if(!products.length)throw new Error('No products are available in the Products sheet. Tender Coconut should be LIVE; refresh after checking the product master.');
+      showMsg('Batch console ready · '+products.length+' product'+(products.length===1?'':'s')+' loaded.',true);
+    }catch(e){renderRows();showMsg(text(e),false)}
+  }
+
+  var previousCreate=typeof window.createBatch==='function'?window.createBatch:null;
+  async function safeCreateBatch(){
+    try{
+      var product=q('product');
+      if(!product||!product.value){
+        await safeLoadConsole();
+        product=q('product');
+      }
+      if(!product||!product.value)throw new Error('Select a product.');
+      if(typeof previousCreate!=='function')throw new Error('Batch creation is unavailable. Reload the page.');
+      return await previousCreate();
+    }catch(e){showMsg(text(e),false)}
+  }
+
+  window.loadConsole=safeLoadConsole;
+  try{loadConsole=safeLoadConsole}catch(e){}
+  window.createBatch=safeCreateBatch;
+  try{createBatch=safeCreateBatch}catch(e){}
+
+  var product=q('product');
+  if(product&&!product.options.length)product.innerHTML='<option value="">Open batch console to load products</option>';
+})();
+</script>
