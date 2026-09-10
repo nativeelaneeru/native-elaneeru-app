@@ -22,6 +22,7 @@ function doGetV912_(e){
   const routes={
     '':'index','home':'index','b2c':'index','b2b':'B2B',
     'admin':'Admin','dashboard':'CumulativeDashboard','cumulative':'CumulativeDashboard','controltower':'CumulativeDashboard',
+    'payments':'PaymentVerification','paymentverification':'PaymentVerification','upiverification':'PaymentVerification',
     'sales':'Sales','picker':'Picker','barcode':'Barcode','inventory':'Inventory',
     'vendor':'VendorOnboardingV910','vendoronboarding':'VendorOnboardingV910',
     'approvals':'VendorApproval','vendorapproval':'VendorApproval',
