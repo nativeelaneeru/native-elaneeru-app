@@ -21,7 +21,8 @@ doGet = function(e){
       getB2COrderEngineHealthV901:getB2COrderEngineHealthV901,
       getB2COrderEngineHealthV905:getB2COrderEngineHealthV905,
       getB2COrderEngineHealthV906:getB2COrderEngineHealthV906,
-      getB2BOrderEngineHealthV904:getB2BOrderEngineHealthV904
+      getB2BOrderEngineHealthV904:getB2BOrderEngineHealthV904,
+      getB2CReferralRuleV911:getB2CReferralRuleV911
     };
     if(!allowed[method]) throw new Error('Method not allowed.');
     response = {
