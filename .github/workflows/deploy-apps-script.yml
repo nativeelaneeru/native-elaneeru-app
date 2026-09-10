@@ -108,12 +108,22 @@ jobs:
             for(let attempt=1;attempt<=5;attempt++){
               try{
                 const compliance=await call('getCompliancePublicV91',[]);
-                const authProbe=await call('getB2BAppDataV9',['__invalid_smoke_token__']);
-                const complianceOk=compliance.status===200 && /\"ok\"\s*:\s*true/.test(compliance.text);
-                const bridgeExposed=authProbe.status===200 && /Session has expired/i.test(authProbe.text) && !/Method not allowed/i.test(authProbe.text);
-                console.log(JSON.stringify({attempt,complianceOk,bridgeExposed,complianceStatus:compliance.status,authStatus:authProbe.status}));
-                if(complianceOk&&bridgeExposed)return;
-                lastError=new Error('B2B bridge is not exposing the expected authenticated methods.');
+                const dataProbe=await call('getB2BAppDataV9',['__invalid_smoke_token__']);
+                const loginProbe=await call('vendorLogin',['0000000000','__bad_pin__']);
+
+                const complianceOk=compliance.status===200 &&
+                  /Sri Govindadri Ventures/i.test(compliance.text) &&
+                  !/Method not allowed/i.test(compliance.text);
+                const dataBridgeOk=dataProbe.status===200 &&
+                  /Session has expired/i.test(dataProbe.text) &&
+                  !/Method not allowed/i.test(dataProbe.text);
+                const loginBridgeOk=loginProbe.status===200 &&
+                  /Invalid mobile or PIN/i.test(loginProbe.text) &&
+                  !/Method not allowed/i.test(loginProbe.text);
+
+                console.log(JSON.stringify({attempt,complianceOk,dataBridgeOk,loginBridgeOk,complianceStatus:compliance.status,dataStatus:dataProbe.status,loginStatus:loginProbe.status}));
+                if(complianceOk&&dataBridgeOk&&loginBridgeOk)return;
+                lastError=new Error('B2B bridge compatibility verification failed.');
               }catch(error){
                 lastError=error;
                 console.error('Attempt '+attempt+': '+error.message);
