@@ -121,6 +121,7 @@ doPost=function(e){
       saveB2CSubscriptionV910:saveB2CSubscriptionV910,
       setB2CSubscriptionStatusV910:setB2CSubscriptionStatusV910,
       registerB2CReferralV910:registerB2CReferralV910,
+      getB2CReferralRuleV911:getB2CReferralRuleV911,
       vendorLogin:vendorLogin,
       vendorLogout:vendorLogout,
       getB2BAppDataV9:getB2BAppDataV9,
