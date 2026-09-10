@@ -1,4 +1,4 @@
-const CACHE='native-elaneeru-b2c-v10.24.0';
+const CACHE='native-elaneeru-b2c-v10.25.0';
 const SHELL=[
   './',
   './index.html',
@@ -10,6 +10,7 @@ const SHELL=[
   './ui-v111.js',
   './ui-v112.js',
   './ui-v113.js',
+  './ui-v125.js',
   './separate-links.js',
   './i18n-v102.js',
   './i18n-v104.js',
@@ -79,7 +80,7 @@ self.addEventListener('fetch',event=>{
     return;
   }
 
-  const critical=/\/(?:config|ui-v108|ui-v110|ui-v111|ui-v112|ui-v113|separate-links|i18n-v102|i18n-v104)\.js$/;
+  const critical=/\/(?:config|ui-v108|ui-v110|ui-v111|ui-v112|ui-v113|ui-v125|separate-links|i18n-v102|i18n-v104)\.js$/;
   if(critical.test(url.pathname)||url.pathname.endsWith('/manifest.webmanifest')){
     event.respondWith(networkFirst(request));
     return;
