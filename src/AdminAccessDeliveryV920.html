@@ -1,0 +1,41 @@
+<script>
+(function(){
+  if(window.NEL_ADMIN_DELIVERY_ACCESS_V920)return;window.NEL_ADMIN_DELIVERY_ACCESS_V920=true;
+  const MAIN='https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec';
+  function q(s){return document.querySelector(s)}
+  function addOption(select,value,label){if(!select||select.querySelector('option[value="'+value+'"]'))return;const o=document.createElement('option');o.value=value;o.textContent=label;select.appendChild(o)}
+  function addApp(host,value,label){if(!host||host.querySelector('input[value="'+value+'"]'))return;const l=document.createElement('label');l.innerHTML='<input type="checkbox" name="acApp" value="'+value+'"> '+label;host.appendChild(l)}
+  function patchForm(){
+    const role=document.getElementById('acRole');
+    addOption(role,'DELIVERY_PARTNER','B2C Delivery Partner');
+    addOption(role,'DRIVER','B2B Driver');
+    addOption(role,'DELIVERY_DRIVER','B2C + B2B Delivery');
+    const apps=q('#accessV917 .appChecks');
+    addApp(apps,'B2C_DELIVERY','B2C Delivery');
+    addApp(apps,'B2B_DRIVER','B2B Driver');
+  }
+  function patchList(){
+    const host=document.getElementById('acList');if(!host)return;
+    host.querySelectorAll('.badge').forEach(function(b){
+      if(b.textContent==='App: B2C_DELIVERY')b.textContent='App: B2C Delivery';
+      if(b.textContent==='App: B2B_DRIVER')b.textContent='App: B2B Driver';
+    });
+    host.querySelectorAll('.accessUser').forEach(function(row){
+      const actions=row.querySelector('.accessActions');if(!actions)return;
+      const badges=Array.from(row.querySelectorAll('.accessMeta .badge')).map(function(x){return x.textContent||''});
+      if(badges.some(function(x){return /B2C Delivery/.test(x)})&&!actions.querySelector('[data-v920="delivery"]')){
+        const a=document.createElement('a');a.className='waLink';a.style.marginTop='0';a.target='_top';a.href=MAIN+'?page=delivery';a.dataset.v920='delivery';a.textContent='Open B2C Delivery';actions.appendChild(a);
+      }
+      if(badges.some(function(x){return /B2B Driver/.test(x)})&&!actions.querySelector('[data-v920="driver"]')){
+        const a=document.createElement('a');a.className='waLink';a.style.marginTop='0';a.target='_top';a.href=MAIN+'?page=driver';a.dataset.v920='driver';a.textContent='Open B2B Driver';actions.appendChild(a);
+      }
+    });
+  }
+  function start(){
+    patchForm();patchList();
+    const root=document.getElementById('accessV917');if(!root)return;
+    new MutationObserver(function(){patchForm();patchList()}).observe(root,{childList:true,subtree:true});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(start,0)},{once:true});else setTimeout(start,0);
+})();
+</script>
