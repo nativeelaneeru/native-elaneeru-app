@@ -9,6 +9,7 @@
  *   before order creation.
  * - UPI orders are VERIFICATION_PENDING until an Admin verifies the UTR.
  * - Direct UPI is never auto-marked PAID and never changes vendor outstanding.
+ * - Unverified/rejected UPI orders are excluded from B2B route fulfilment.
  */
 
 const V916_B2B_PAYMENT_VERSION='9.1.6';
@@ -22,7 +23,7 @@ function v916B2BPaymentConfig_(){
   const upiName=s_(props.getProperty('NEL_B2B_UPI_NAME'))||s_(props.getProperty('NEL_B2C_UPI_NAME'))||V8.COMPANY;
   const dedicatedFlag=s_(props.getProperty('NEL_B2B_UPI_ENABLED')).toUpperCase();
   const sharedFlag=s_(props.getProperty('NEL_B2C_UPI_ENABLED')).toUpperCase();
-  const flag=dedicatedFlag||sharedFlag;
+  const flag=dedicatedId?dedicatedFlag:sharedFlag;
   const enabled=v913ValidUpiId_(upiId)&&!['NO','FALSE','0'].includes(flag);
   return {enabled:enabled,upiId:upiId,upiName:upiName};
 }
@@ -49,7 +50,8 @@ function getB2BPaymentEngineHealthV916(){
     ok:true,engineVersion:V916_B2B_PAYMENT_VERSION,codPreserved:true,creditPreserved:true,
     directUpiSupported:true,upiConfigured:cfg.enabled,serverCalculatedAmount:true,
     paymentIntentBeforeOrder:true,manualVerificationRequired:true,autoMarkPaid:false,
-    negotiatedPricing:true,serverControlledDeliveryCharge:true,
+    negotiatedPricing:true,serverControlledDeliveryCharge:true,duplicateUtrProtected:true,
+    fulfillmentRequiresPaidUpi:true,
     storageWorkbook:'Native Elaneeru V8 - Fresh Operations',storageSheet:'Payment_Ledger',separatePaymentDatabase:false
   };
 }
@@ -109,6 +111,13 @@ function prepareB2BUpiPaymentV916(token,payload){
     upiUri:v913UpiUri_(cfg,paymentId,quote.total),expiresAt:expires,paymentStatus:'INTENT_CREATED',manualVerificationRequired:true};
 }
 
+function v916UtrAlreadyUsed_(sh,utr,currentRow){
+  const m=map_(sh),last=sh.getLastRow();
+  if(!m.UTR||last<2)return false;
+  const matches=sh.getRange(2,m.UTR,last-1,1).createTextFinder(s_(utr)).matchEntireCell(true).matchCase(false).findAll();
+  return matches.some(function(cell){return cell.getRow()!==Number(currentRow||0);});
+}
+
 function v916PatchB2BPaymentStatus_(orderId,status){
   const sh=sh_(V8.SHEETS.B2B_ORDERS),m=map_(sh),last=sh.getLastRow();
   if(last<2||!m['Order ID'])throw new Error('B2B order database is unavailable.');
@@ -160,6 +169,7 @@ function submitB2BUpiOrderV916(token,paymentId,utr,payload){
       return {success:true,orderId:existingOrder,amount:n_(record.Amount),status:'Order Received',paymentType:'UPI',paymentStatus:existingStatus,duplicatePrevented:true};
     }
     if(existingStatus!=='INTENT_CREATED')throw new Error('This UPI payment request cannot be submitted again.');
+    if(v916UtrAlreadyUsed_(sh,utr,found.row))throw new Error('This UPI transaction/UTR is already linked to another payment.');
     const expiry=record['Intent Expires At'] instanceof Date?record['Intent Expires At']:new Date(record['Intent Expires At']);
     if(!expiry||isNaN(expiry.getTime())||expiry.getTime()<Date.now())throw new Error('UPI payment request expired. Please prepare a new payment.');
     const quote=v916B2BQuote_(vendor,payload);
@@ -193,4 +203,16 @@ getB2BAppDataV9=function(token){
   (data.orders||[]).forEach(function(o){o.paymentStatus=byId[s_(o.orderId)]||'';});
   data.payment=getB2BPaymentConfigV916(token);
   return data;
+};
+
+const V916_PREVIOUS_ROUTE_CANDIDATES_=routeCandidates_;
+routeCandidates_=function(date,routeType){
+  const candidates=V916_PREVIOUS_ROUTE_CANDIDATES_(date,routeType);
+  if(s_(routeType).toUpperCase()!=='B2B')return candidates;
+  return candidates.filter(function(candidate){
+    const order=candidate&&candidate.order||{};
+    const type=s_(order['Payment Type']).toUpperCase();
+    const status=s_(order['Payment Status']).toUpperCase();
+    return type!=='UPI'||status==='PAID';
+  });
 };
