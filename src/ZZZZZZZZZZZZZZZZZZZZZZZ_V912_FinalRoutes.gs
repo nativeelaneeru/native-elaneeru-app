@@ -4,6 +4,9 @@
  * Older compatibility files also touched doGet(). This late wrapper makes the
  * current Vendor Onboarding and Vendor Approval routes deterministic while
  * preserving the existing JSONP catalogue/health endpoint.
+ *
+ * Important: HtmlOutput.addMetaTag() only supports Apps Script's permitted
+ * meta names. Page-specific theme-color tags belong inside each HTML template.
  */
 const V912_PREVIOUS_DO_GET = doGet;
 
@@ -34,8 +37,7 @@ function doGetV912_(e){
   return out
     .setTitle(V8.BRAND+' - '+(page==='index'?'B2C':page))
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .addMetaTag('viewport','width=device-width, initial-scale=1, viewport-fit=cover')
-    .addMetaTag('theme-color','#137333');
+    .addMetaTag('viewport','width=device-width, initial-scale=1, viewport-fit=cover');
 }
 
 doGet=doGetV912_;
