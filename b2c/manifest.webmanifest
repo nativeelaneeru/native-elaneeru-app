@@ -1,0 +1,12 @@
+{
+  "id":"./",
+  "name":"Native Elaneeru Customer",
+  "short_name":"Elaneeru",
+  "description":"Fresh tender coconut ordering for retail customers.",
+  "start_url":"./",
+  "scope":"./",
+  "display":"standalone",
+  "background_color":"#f5f7f5",
+  "theme_color":"#075b34",
+  "icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}
