@@ -4,6 +4,36 @@
   const q=id=>document.getElementById(id);
   function normalise(raw){const d=raw&&typeof raw==='object'?raw:{};d.route=d.route&&typeof d.route==='object'?d.route:null;d.stops=Array.isArray(d.stops)?d.stops:[];d.driver=d.driver&&typeof d.driver==='object'?d.driver:{};d.hub=d.hub&&typeof d.hub==='object'?d.hub:{};return d}
   function text(e){return e&&e.message?e.message:String(e||'Something went wrong')}
+  function setFooter(kind){
+    const gps=q('gpsState'),sync=q('syncState');
+    if(kind==='route'){
+      if(sync)sync.textContent='Route loaded';
+      return;
+    }
+    if(kind==='error'){
+      if(gps){gps.classList.remove('live');const s=gps.querySelector('span');if(s)s.textContent='GPS waiting'}
+      if(sync)sync.textContent='Route sync failed';
+      return;
+    }
+    if(gps){gps.classList.remove('live');const s=gps.querySelector('span');if(s)s.textContent='GPS waiting · no active stop'}
+    if(sync)sync.textContent='No B2C route assigned today';
+  }
+  function paintNoRoute(){
+    const hero=q('hero'),journey=q('journey'),active=q('active'),queue=q('queue');
+    if(hero)hero.innerHTML='<div class="big">No route assigned today</div><div class="muted">You are signed in successfully. A delivery route will appear here after Operations Admin assigns or generates it.</div>';
+    if(journey)journey.innerHTML='<b>Waiting for assignment</b><div class="muted" style="margin-top:5px">GPS tracking starts only when there is an active route/stop. Use Refresh after the route is assigned.</div>';
+    if(active)active.innerHTML='';
+    if(queue)queue.innerHTML='<div class="muted">No upcoming B2C deliveries assigned.</div>';
+    setFooter('empty');
+  }
+  function paintError(e){
+    const hero=q('hero'),journey=q('journey'),active=q('active'),queue=q('queue'),m=text(e);
+    if(hero)hero.innerHTML='<div class="big">Unable to load today’s route</div><div class="muted">'+(typeof esc==='function'?esc(m):m)+'</div>';
+    if(journey)journey.innerHTML='<b>Route sync needs attention</b><div class="muted" style="margin-top:5px">Your login is active. Tap Refresh to retry. If this continues, Operations Admin should check today’s B2C route assignment.</div>';
+    if(active)active.innerHTML='';
+    if(queue)queue.innerHTML='<div class="muted">Deliveries could not be loaded.</div>';
+    setFooter('error');
+  }
 
   async function safeLogin(){
     if(typeof BUSY!=='undefined'&&BUSY)return;
@@ -14,11 +44,12 @@
       if(!/^\d{10}$/.test(MOB)||PIN.length<4)throw new Error('Enter your delivery mobile number and PIN.');
       const r=await call('driverLoginV8',[MOB,PIN,'B2C']);if(!r||r.success!==true)throw new Error(r&&r.error||'Delivery login failed.');
       q('login')&&q('login').classList.add('hidden');q('app')&&q('app').classList.remove('hidden');q('sticky')&&q('sticky').classList.remove('hidden');
-      // Login owns BUSY while authentication is running. Force the first route
-      // refresh instead of letting the BUSY guard skip it and leave blank cards.
       await safeRefresh(true);
     }catch(e){if(msg)msg.textContent=text(e);if(typeof toast==='function')toast(text(e))}
-    finally{if(typeof setBusy==='function')setBusy(false)}
+    finally{
+      if(typeof setBusy==='function')setBusy(false);
+      setTimeout(function(){if(DATA&&DATA.route)setFooter('route');else if(q('app')&&!q('app').classList.contains('hidden'))setFooter('empty')},0);
+    }
   }
 
   async function safeRefresh(force){
@@ -27,10 +58,16 @@
     try{
       DATA=normalise(await call('getDriverDayRouteV8',[MOB,PIN,'B2C',today()]));
       if(typeof render==='function')render();
+      if(!DATA.route)paintNoRoute();
       const a=typeof currentStop==='function'?currentStop():null;
       if(DATA.route&&DATA.route.hubPickedUp&&a&&!['COMPLETED','CANCELLED'].includes(String(a.status||'').toUpperCase())&&typeof startGps==='function')startGps(a.stopId);
-    }catch(e){DATA=normalise(null);try{if(typeof render==='function')render()}catch(ignore){}if(typeof toast==='function')toast(text(e))}
-    finally{if(typeof setBusy==='function')setBusy(false)}
+      setFooter(DATA.route?'route':'empty');
+    }catch(e){
+      DATA=normalise(null);paintError(e);if(typeof toast==='function')toast(text(e));
+    }finally{
+      if(typeof setBusy==='function')setBusy(false);
+      setTimeout(function(){if(DATA&&DATA.route)setFooter('route');else if(q('hero')&&/Unable to load/.test(q('hero').textContent||''))setFooter('error');else setFooter('empty')},0);
+    }
   }
 
   function start(){
