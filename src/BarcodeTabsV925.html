@@ -1,0 +1,99 @@
+<style>
+.nel-barcode-tabs{display:flex;gap:8px;margin:10px 0 14px;padding:5px;background:#eaf1ec;border:1px solid #dbe6dd;border-radius:15px}
+.nel-barcode-tab{flex:1;border:0;background:transparent;color:#476052;font-weight:900;padding:12px 14px;border-radius:11px;cursor:pointer;min-height:46px}
+.nel-barcode-tab.active{background:#0b6b3a;color:#fff;box-shadow:0 5px 15px rgba(11,107,58,.18)}
+.nel-barcode-pane{display:none}.nel-barcode-pane.active{display:block}
+.nel-barcode-pane>.card{margin-bottom:12px}
+.nel-assign-help{background:#edf7f0;border:1px solid #cfe6d6;border-radius:14px;padding:12px 14px;margin-bottom:12px;color:#244a32;font-size:12px;line-height:1.45}
+.nel-row-actions{display:flex;gap:6px;flex-wrap:wrap}
+@media(max-width:600px){.nel-barcode-tabs{flex-direction:column}.nel-barcode-tab{width:100%}}
+</style>
+<script>
+(function(){
+  if(window.NEL_BARCODE_TABS_V925)return;window.NEL_BARCODE_TABS_V925=true;
+  function q(id){return document.getElementById(id)}
+  function openTab(name){
+    name=name==='assign'?'assign':'batch';
+    document.querySelectorAll('.nel-barcode-tab').forEach(function(b){b.classList.toggle('active',b.dataset.tab===name)});
+    document.querySelectorAll('.nel-barcode-pane').forEach(function(p){p.classList.toggle('active',p.dataset.pane===name)});
+    try{sessionStorage.setItem('nelBarcodeTab',name)}catch(e){}
+    if(name==='assign')setTimeout(function(){var el=q('barcode');if(el)el.focus()},60);
+  }
+  window.openBarcodeTab=openTab;
+
+  var grid=document.querySelector('main.wrap .grid');
+  if(!grid)return;
+  var cards=grid.querySelectorAll(':scope > .card');
+  if(cards.length<2)return;
+  var createCard=cards[0],assignCard=cards[1];
+  var label=q('labelBox');
+  var recent=document.querySelector('main.wrap .recent');
+  var msg=q('msg');
+
+  var tabs=document.createElement('div');
+  tabs.className='nel-barcode-tabs noPrint';
+  tabs.innerHTML='<button type="button" class="nel-barcode-tab active" data-tab="batch">1 · Batch & Print</button><button type="button" class="nel-barcode-tab" data-tab="assign">2 · Assign Barcode</button>';
+
+  var batchPane=document.createElement('section');
+  batchPane.className='nel-barcode-pane active';batchPane.dataset.pane='batch';
+  var assignPane=document.createElement('section');
+  assignPane.className='nel-barcode-pane';assignPane.dataset.pane='assign';
+  var help=document.createElement('div');
+  help.className='nel-assign-help noPrint';
+  help.innerHTML='<b>Assign a printed barcode to an order.</b><br>Scan or paste the barcode, choose B2C/B2B, enter the Order ID and quantity, then validate. You can also tap <b>Assign</b> beside any Recent Batch.';
+
+  if(msg&&msg.parentNode)msg.parentNode.insertBefore(tabs,msg.nextSibling);
+  else grid.parentNode.insertBefore(tabs,grid);
+  grid.parentNode.insertBefore(batchPane,grid);
+  grid.parentNode.insertBefore(assignPane,grid);
+  batchPane.appendChild(createCard);
+  if(label)batchPane.appendChild(label);
+  if(recent)batchPane.appendChild(recent);
+  assignPane.appendChild(help);
+  assignPane.appendChild(assignCard);
+  grid.remove();
+
+  tabs.addEventListener('click',function(e){var b=e.target.closest('.nel-barcode-tab');if(b)openTab(b.dataset.tab)});
+
+  window.useBatchForAssignment=function(i){
+    var list=Array.isArray(window.BATCHES)?window.BATCHES:(typeof BATCHES!=='undefined'&&Array.isArray(BATCHES)?BATCHES:[]);
+    var b=list[Number(i)];
+    if(!b){if(typeof showMsg==='function')showMsg('Batch not found. Refresh and try again.',false);return;}
+    var value=String(b.Barcode||b.barcode||b['Batch ID']||b.batchId||'').trim();
+    var input=q('barcode');if(input)input.value=value;
+    openTab('assign');
+    if(typeof showMsg==='function')showMsg('Barcode '+value+' selected for assignment.',true);
+    setTimeout(function(){var oid=q('oid');if(oid)oid.focus()},80);
+  };
+
+  function decorateRows(){
+    var host=q('rows');if(!host)return;
+    var rows=host.querySelectorAll('tr');
+    var list=(typeof BATCHES!=='undefined'&&Array.isArray(BATCHES))?BATCHES:[];
+    rows.forEach(function(tr,i){
+      if(i>=list.length)return;
+      var td=tr.lastElementChild;if(!td||td.querySelector('.nel-assign-batch'))return;
+      var wrap=td.querySelector('.nel-row-actions');
+      if(!wrap){wrap=document.createElement('span');wrap.className='nel-row-actions';while(td.firstChild)wrap.appendChild(td.firstChild);td.appendChild(wrap)}
+      var btn=document.createElement('button');btn.type='button';btn.className='btn small nel-assign-batch';btn.textContent='Assign';btn.onclick=function(){window.useBatchForAssignment(i)};wrap.appendChild(btn);
+    });
+  }
+  var rowsHost=q('rows');if(rowsHost){decorateRows();new MutationObserver(decorateRows).observe(rowsHost,{childList:true,subtree:true})}
+
+  var actions=label&&label.querySelector('.printActions');
+  if(actions&&!actions.querySelector('.nel-use-label-assign')){
+    var use=document.createElement('button');use.type='button';use.className='btn alt nel-use-label-assign';use.textContent='→ Assign this barcode';
+    use.onclick=function(){
+      var input=q('barcode');var value='';
+      try{value=String((typeof CURRENT_LABEL!=='undefined'&&CURRENT_LABEL&&CURRENT_LABEL.Barcode)||'')}catch(e){}
+      if(input&&value)input.value=value;
+      openTab('assign');
+      if(typeof showMsg==='function')showMsg(value?'Barcode '+value+' ready for assignment.':'Open a batch or create a barcode first.',!!value);
+    };
+    actions.insertBefore(use,actions.lastElementChild||null);
+  }
+
+  var saved='batch';try{saved=sessionStorage.getItem('nelBarcodeTab')||'batch'}catch(e){}
+  openTab(saved);
+})();
+</script>
