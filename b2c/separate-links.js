@@ -1,8 +1,8 @@
 (function(){
-  function fix(){
-    var a=document.getElementById('nel113Business')||document.querySelector('a[href="./business/"]');
-    if(a){a.href='../b2b/';a.setAttribute('aria-label','Open Native Elaneeru B2B Business app');}
+  function removeBusinessSwitch(){
+    var a=document.getElementById('nel113Business')||document.querySelector('.brandRow a[href="./business/"],.brandRow a[href="../b2b/"]');
+    if(a&&a.parentNode)a.parentNode.removeChild(a);
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix,{once:true});else fix();
-  var tries=0,t=setInterval(function(){fix();if(document.getElementById('nel113Business')||++tries>40)clearInterval(t);},100);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',removeBusinessSwitch,{once:true});else removeBusinessSwitch();
+  var tries=0,t=setInterval(function(){removeBusinessSwitch();if(++tries>40)clearInterval(t);},100);
 })();
