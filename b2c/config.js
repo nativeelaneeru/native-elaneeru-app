@@ -14,6 +14,7 @@ window.NEL_CONFIG = {
 
 window.NEL_RPC_V109 = true;
 
+document.write('<script src="./image-fallback-v918.js?v=918"></script>');
 document.write('<script src="./idb-v1.js?v=10350"></script>');
 if (!window.NEL_UI_V110) document.write('<script src="./ui-v110.js?v=10350"></script>');
 if (!window.NEL_UI_V111) document.write('<script src="./ui-v111.js?v=10350"></script>');
