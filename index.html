@@ -103,7 +103,7 @@ function openLocationHelp(){go('account');setTimeout(()=>$('area').focus(),100)}
 function toggleFulfilment(){const home=$('fulfilment').value==='Home Delivery';$('slotBox').style.display=home?'block':'none'}
 async function placeOrder(){
   const button=$('placeBtn'),p=JSON.parse(localStorage.getItem('nel_profile')||'{}');
-  const mobile=String($('mobile').value||p.mobile||'').replace(/\\D/g,'').slice(-10);
+  const mobile=String($('mobile').value||p.mobile||'').replace(/\D/g,'').slice(-10);
   const fulfilment=$('fulfilment').value,home=fulfilment==='Home Delivery';
   if(!mobile||!p.mobile){closeCart();go('account');return toast(t('Save your profile before ordering.'))}
   const address=$('address').value||p.address||'',area=$('area').value||p.area||'';
