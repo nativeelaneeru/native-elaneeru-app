@@ -1,10 +1,26 @@
 /**
- * Native Elaneeru V9.0.2 — direct B2C order engine.
+ * Native Elaneeru V9.0.3 — direct B2C order engine + idempotency.
  *
- * This version deliberately does NOT capture or delegate to another saveOrder
- * function. The public saveOrder symbol calls one uniquely named core function,
- * so Apps Script file evaluation order cannot create a recursive wrapper chain.
+ * saveOrder calls one uniquely named core function. A clientRequestId is stored
+ * in Orders.Source so a retry after a network timeout returns the same order
+ * instead of creating a duplicate.
  */
+
+function b2cRequestIdV903_(order){
+  return s_(order&&order.clientRequestId).replace(/[^A-Za-z0-9._:-]/g,'').slice(0,80);
+}
+
+function findExistingB2CRequestV903_(requestId){
+  requestId=s_(requestId);if(!requestId)return null;
+  const sh=sh_(V8.SHEETS.ORDERS),last=sh.getLastRow();if(last<2)return null;
+  const m=map_(sh);if(!m.Source||!m['Order ID'])return null;
+  const tag='REQ:'+requestId;
+  const cell=sh.getRange(2,m.Source,last-1,1).createTextFinder(tag).matchCase(true).findNext();
+  if(!cell)return null;
+  const row=cell.getRow();
+  const val=k=>m[k]?sh.getRange(row,m[k]).getValue():'';
+  return {orderId:s_(val('Order ID')),finalAmount:n_(val('Total Amount')),status:s_(val('Status'))||'Order Received'};
+}
 
 function upsertB2CCustomerForOrderV902_(order){
   order=order||{};
@@ -38,7 +54,12 @@ function upsertB2CCustomerForOrderV902_(order){
 function saveOrderV902Core_(o){
   o=o||{};
   return lockRun_(()=>{
-    const mobile=digits_(o.mobile);
+    const mobile=digits_(o.mobile),requestId=b2cRequestIdV903_(o);
+    if(requestId){
+      const prior=findExistingB2CRequestV903_(requestId);
+      if(prior)return {success:true,orderId:prior.orderId,finalAmount:prior.finalAmount,status:prior.status,duplicatePrevented:true,clientRequestId:requestId};
+    }
+
     const customer=rows_(V8.SHEETS.CUSTOMERS).find(x=>digits_(x.Mobile)===mobile);
     if(!customer) throw new Error('Customer profile could not be created. Please retry.');
 
@@ -76,7 +97,8 @@ function saveOrderV902Core_(o){
       Pincode:s_(o.pincode),Latitude:o.latitude===''?'':Number(o.latitude),Longitude:o.longitude===''?'':Number(o.longitude),
       'Payment Type':s_(o.payment)||'COD','Payment Status':'PENDING',Subtotal:subtotal,'Delivery Fee':0,
       Discount:0,'Cashback Used':cashback,'Total Amount':total,Status:'Order Received',
-      'Delivery OTP Hash':hashV8_(otp),'Delivery Slot':s_(o.timeSlot),'Source':'B2C WEB',
+      'Delivery OTP Hash':hashV8_(otp),'Delivery Slot':s_(o.timeSlot),
+      'Source':requestId?'B2C WEB|REQ:'+requestId:'B2C WEB',
       'Created At':now_(),'Updated At':now_()
     });
 
@@ -97,7 +119,7 @@ function saveOrderV902Core_(o){
       });
     }
 
-    return {success:true,orderId,finalAmount:total,status:'Order Received',deliveryOtp:otp,whatsappStatus:'Queued'};
+    return {success:true,orderId,finalAmount:total,status:'Order Received',deliveryOtp:otp,whatsappStatus:'Queued',clientRequestId:requestId};
   });
 }
 
@@ -121,11 +143,13 @@ function getB2COrderEngineHealthV901(){
   const coreSrc=String(saveOrderV902Core_||'');
   const direct=publicSrc.indexOf('saveOrderV902Core_')>=0;
   const capturesOld=/V839_ORIGINAL_SAVE_ORDER|V841_ORIGINAL_SAVE_ORDER|V901_CORE_SAVE_ORDER/.test(publicSrc+coreSrc);
+  const idempotent=coreSrc.indexOf('findExistingB2CRequestV903_')>=0;
   return {
-    ok:direct&&!capturesOld,
-    version:'9.0.2',
+    ok:direct&&!capturesOld&&idempotent,
+    version:'9.0.3',
     canonicalOrderHandler:direct,
     recursiveWrappers:capturesOld,
+    idempotency:idempotent,
     coreFunction:'saveOrderV902Core_'
   };
 }
