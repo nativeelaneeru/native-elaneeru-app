@@ -20,5 +20,6 @@ if (!window.NEL_UI_V113) document.write('<script src="./ui-v113.js?v=10290"></sc
 if (!window.NEL_UI_V125) document.write('<script src="./ui-v125.js?v=10290"></script>');
 if (!window.NEL_UI_V126) document.write('<script src="./ui-v126.js?v=10290"></script>');
 if (!window.NEL_UI_V127) document.write('<script src="./ui-v127.js?v=10290"></script>');
+document.write('<script src="./order-sync-v1.js?v=10290"></script>');
 document.write('<script src="./separate-links.js?v=10290"></script>');
 document.write('<script src="./update-notifier.js?v=10290"></script>');
