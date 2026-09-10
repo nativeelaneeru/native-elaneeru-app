@@ -18,7 +18,8 @@ function doGetV912_(e){
   const p=String(params.page||'').toLowerCase();
   const routes={
     '':'index','home':'index','b2c':'index','b2b':'B2B',
-    'admin':'Admin','sales':'Sales','picker':'Picker','barcode':'Barcode','inventory':'Inventory',
+    'admin':'Admin','dashboard':'CumulativeDashboard','cumulative':'CumulativeDashboard','controltower':'CumulativeDashboard',
+    'sales':'Sales','picker':'Picker','barcode':'Barcode','inventory':'Inventory',
     'vendor':'VendorOnboardingV910','vendoronboarding':'VendorOnboardingV910',
     'approvals':'VendorApproval','vendorapproval':'VendorApproval',
     'b2bdriver':'Driver','driver':'Driver',
