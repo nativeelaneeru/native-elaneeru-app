@@ -7,9 +7,9 @@
   }
   function retryable(err){return /timed out|timeout|network|failed to fetch|load failed|connection/i.test(String(err&&err.message||err||''))}
   async function prepare(payload){
-    if(!window.NEL_DB)return {payload:payload,requestId:payload.clientRequestId||rid(),fingerprint:fingerprint(payload)};
-    var fp=fingerprint(payload),old=null;
-    try{old=await window.NEL_DB.getPendingByFingerprint(fp)}catch(e){}
+    var fp=fingerprint(payload);
+    if(!window.NEL_DB){var fallbackId=payload.clientRequestId||rid();payload.clientRequestId=fallbackId;return {payload:payload,requestId:fallbackId,fingerprint:fp};}
+    var old=null;try{old=await window.NEL_DB.getPendingByFingerprint(fp)}catch(e){}
     var fresh=old&&Date.now()-Number(old.createdAt||0)<15*60*1000;
     var requestId=fresh?old.requestId:(payload.clientRequestId||rid());
     payload.clientRequestId=requestId;
