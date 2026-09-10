@@ -3,6 +3,11 @@ name: Deploy Native Elaneeru to Apps Script
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'src/**'
+      - '.github/workflows/deploy-apps-script.yml'
+      - 'package.json'
+      - 'package-lock.json'
   workflow_dispatch:
 
 permissions:
