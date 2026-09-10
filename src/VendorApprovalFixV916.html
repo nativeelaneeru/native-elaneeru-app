@@ -27,6 +27,25 @@
     }catch(e){}
   }
 
+  async function safeLoadPending(){
+    const host=q('pending');
+    if(host)host.innerHTML='<div class="muted" style="padding:14px 0">Loading pending vendors…</div>';
+    try{
+      const raw=await invoke('getPendingVendorOnboardingsV840',[E,P]);
+      LIST=Array.isArray(raw)?raw:[];
+      if(typeof render==='function')render();
+      else if(host)host.innerHTML='<div class="muted" style="padding:18px 0">No vendor approvals are pending.</div>';
+    }catch(e){
+      LIST=[];
+      if(q('count'))q('count').textContent='0 pending';
+      if(host)host.innerHTML='<div class="msg">'+String(e&&e.message?e.message:e)+'</div>';
+    }
+  }
+
+  function bindPendingGuard(){
+    try{window.loadPending=safeLoadPending;loadPending=safeLoadPending}catch(e){window.loadPending=safeLoadPending}
+  }
+
   async function fixedLogin(){
     const email=q('email'),pin=q('pin'),btn=q('loginBtn'),msg=q('loginMsg');
     E=String(email&&email.value||'').trim().toLowerCase();
@@ -38,14 +57,15 @@
       if(ok!==true)throw new Error('Invalid admin credentials.');
       q('login').classList.add('hidden');q('app').classList.remove('hidden');
       installRuleCard();
-      await Promise.all([loadPending(),loadRule()]);
-    }catch(e){if(msg)msg.textContent=e.message||String(e)}
+      await Promise.all([safeLoadPending(),loadRule()]);
+    }catch(e){if(msg)msg.textContent=e&&e.message?e.message:String(e)}
     finally{if(btn){btn.disabled=false;btn.textContent='Login'}}
   }
 
   function start(){
     installRuleCard();
-    try{window.login=fixedLogin;login=fixedLogin}catch(e){}
+    bindPendingGuard();
+    try{window.login=fixedLogin;login=fixedLogin}catch(e){window.login=fixedLogin}
     const email=q('email'),pin=q('pin');
     if(email)email.setAttribute('autocomplete','username');
     if(pin){pin.setAttribute('autocomplete','current-password');pin.addEventListener('keydown',e=>{if(e.key==='Enter')fixedLogin()})}
