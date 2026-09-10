@@ -33,20 +33,29 @@
     }catch(e){}
   }
 
-  function patchLogin(){
-    var base=window.login;
-    if(typeof base!=='function'||base.__nelVendorGuard)return typeof base==='function';
-    var wrapped=async function(){
-      var entered=digits(document.getElementById('mobile')&&document.getElementById('mobile').value),previous=owner();
-      if(entered&&((previous&&previous!==entered)||(!previous&&hasCart())))await clearBusinessState();
-      var result=await base.apply(this,arguments);
-      if(entered)setOwner(entered);
-      rememberActiveVendor();
-      return result;
+  /*
+   * Guard cart ownership at the authentication boundary, not at button click.
+   * vendorLogin rejects for bad credentials. That means a failed login must
+   * never clear an existing vendor cart or change the remembered cart owner.
+   * On a successful vendorLogin, clear stale business state before the base
+   * login flow receives the token and renders the newly authenticated vendor.
+   */
+  function patchRpc(){
+    var base=window.rpc;
+    if(typeof base!=='function'||base.__nelVendorAuthGuard)return typeof base==='function';
+    var wrapped=function(method,args){
+      var ctx=this,callArgs=arguments;
+      if(String(method||'')!=='vendorLogin')return base.apply(ctx,callArgs);
+      var entered=digits(args&&args[0]),previous=owner(),hadCart=hasCart();
+      return Promise.resolve(base.apply(ctx,callArgs)).then(async function(result){
+        if(!result||!result.token)return result;
+        if(entered&&((previous&&previous!==entered)||(!previous&&hadCart)))await clearBusinessState();
+        if(entered)setOwner(entered);
+        return result;
+      });
     };
-    wrapped.__nelVendorGuard=true;wrapped.__base=base;
-    window.login=wrapped;try{login=wrapped}catch(e){}
-    var btn=document.getElementById('loginBtn');if(btn)btn.onclick=wrapped;
+    wrapped.__nelVendorAuthGuard=true;wrapped.__base=base;
+    window.rpc=wrapped;try{rpc=wrapped}catch(e){}
     return true;
   }
 
@@ -65,7 +74,7 @@
 
   var tries=0;
   (function install(){
-    var a=patchLogin(),b=patchLogout();
+    var a=patchRpc(),b=patchLogout();
     rememberActiveVendor();
     if(!(a&&b)&&++tries<240)setTimeout(install,75);
   })();
