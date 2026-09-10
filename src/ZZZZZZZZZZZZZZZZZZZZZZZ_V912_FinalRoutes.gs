@@ -2,8 +2,8 @@
  * Native Elaneeru V9.1.2 — final Apps Script route owner.
  *
  * Older compatibility files also touched doGet(). This late wrapper makes the
- * current Vendor Onboarding and Vendor Approval routes deterministic while
- * preserving the existing JSONP catalogue/health endpoint.
+ * current production routes deterministic while preserving the existing JSONP
+ * catalogue/health endpoint.
  *
  * Important: HtmlOutput.addMetaTag() only supports Apps Script's permitted
  * meta names. Page-specific theme-color tags belong inside each HTML template.
@@ -41,6 +41,12 @@ function doGetV912_(e){
   }
   if(page==='VendorApproval'){
     try{out.append(HtmlService.createTemplateFromFile('VendorApprovalFixV916').evaluate().getContent());}catch(err){}
+  }
+  if(page==='VendorOnboardingV910'){
+    try{out.append(HtmlService.createTemplateFromFile('VendorOnboardingFixV918').evaluate().getContent());}catch(err){}
+  }
+  if(page==='Delivery'){
+    try{out.append(HtmlService.createTemplateFromFile('DeliveryFixV918').evaluate().getContent());}catch(err){}
   }
   return out
     .setTitle(V8.BRAND+' - '+(page==='index'?'B2C':page))
