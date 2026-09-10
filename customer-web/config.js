@@ -16,14 +16,14 @@ window.NEL_CONFIG = {
 window.NEL_RPC_V109 = true;
 
 if (!window.NEL_UI_V110) {
-  document.write('<script src="./ui-v110.js?v=10220"><\\/script>');
+  document.write('<script src="./ui-v110.js?v=10220"></script>');
 }
 if (!window.NEL_UI_V111) {
-  document.write('<script src="./ui-v111.js?v=10220"><\\/script>');
+  document.write('<script src="./ui-v111.js?v=10220"></script>');
 }
 if (!window.NEL_UI_V112) {
-  document.write('<script src="./ui-v112.js?v=10220"><\\/script>');
+  document.write('<script src="./ui-v112.js?v=10220"></script>');
 }
 if (!window.NEL_UI_V113) {
-  document.write('<script src="./ui-v113.js?v=10220"><\\/script>');
+  document.write('<script src="./ui-v113.js?v=10220"></script>');
 }
