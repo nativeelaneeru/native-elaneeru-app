@@ -127,9 +127,23 @@ async function checkManifest(page, app){
 async function testRoot(){
   const page=await CdpPage.create();
   try{
-    await page.navigate(`${BASE}?e2e=${Date.now()}`);
-    await page.waitFor(`location.pathname.includes('/b2c/')`,10000,'root redirect to B2C');
-    assert((await page.evaluate('location.pathname')).includes('/b2c/'), 'root: redirects into the current B2C PWA flow');
+    let last;
+    for(let attempt=1;attempt<=4;attempt++){
+      try{
+        await page.navigate(`${BASE}?e2e=root-${Date.now()}-${attempt}`);
+        await page.waitFor(`location.pathname.includes('/b2c/')`,12000,'root redirect to B2C');
+        const path=await page.evaluate('location.pathname');
+        assert(path.includes('/b2c/'), 'root: redirects into the current B2C PWA flow');
+        return;
+      }catch(error){
+        last=error;
+        let diag=null;
+        try{diag=await page.evaluate(`({href:location.href,title:document.title,body:(document.body&&document.body.innerText||'').slice(0,180)})`)}catch{}
+        console.error(`Root readiness attempt ${attempt} failed: ${error.message}${diag?' '+JSON.stringify(diag):''}`);
+        if(attempt<4)await sleep(2000*attempt);
+      }
+    }
+    throw last||new Error('Root redirect to B2C never became ready after deployment.');
   }finally{await page.close()}
 }
 
