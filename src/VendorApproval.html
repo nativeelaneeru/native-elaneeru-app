@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#155b2b">
+  <title>Native Elaneeru · Vendor Approvals</title>
+  <style>
+    :root{--g:#155b2b;--g2:#0b7b3a;--bg:#f4f7f3;--line:#dfe8e1;--ink:#17231b;--muted:#68766d;--soft:#eef6ef;--warn:#fff5d9}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:var(--ink)}
+    header{background:linear-gradient(135deg,#0b4a25,#178140);color:#fff;padding:15px 17px}.head{max-width:980px;margin:auto}.head b{font-size:20px}.head div{font-size:11px;opacity:.82;margin-top:3px}
+    main{max-width:980px;margin:auto;padding:14px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:12px;box-shadow:0 5px 18px #173d2410}.login{max-width:440px;margin:36px auto}.field{width:100%;border:1px solid #d5ded6;border-radius:11px;padding:12px;font:inherit;background:#fff}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{border:0;border-radius:11px;padding:11px 13px;background:var(--g);color:#fff;font-weight:900;cursor:pointer}.btn.alt{background:var(--soft);color:var(--g);border:1px solid #d3e4d5}.btn:disabled{opacity:.55}.muted{font-size:11px;color:var(--muted);line-height:1.45}.hidden{display:none!important}.badge{display:inline-flex;padding:5px 8px;border-radius:999px;background:var(--soft);color:var(--g);font-size:9px;font-weight:900}.pending{border-top:1px solid #edf1ee;padding:14px 0}.pending:first-child{border-top:0}.title{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.title h3{margin:0;font-size:16px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:10px 0}.metric{background:#f7faf7;border:1px solid #e5ece6;border-radius:11px;padding:9px}.metric small{display:block;font-size:8px;color:var(--muted)}.metric b{font-size:13px}.photos{display:grid;grid-template-columns:1fr 1fr;gap:8px}.photos a{display:block;border:1px solid var(--line);border-radius:10px;padding:9px;text-decoration:none;color:var(--g);font-size:11px;font-weight:800}.approval{background:#f8fbf8;border:1px solid #e4ece5;border-radius:13px;padding:11px;margin-top:10px}.credential{background:#eaf7ef;border:1px solid #bfdfc9;border-radius:14px;padding:12px;margin-top:10px}.credential strong{font-size:19px;color:var(--g)}.config{background:linear-gradient(135deg,#f7fff9,#fff8e8)}.msg{font-size:11px;color:#9a3412;margin-top:8px;min-height:16px}@media(max-width:650px){.grid2,.photos{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+<header><div class="head"><b>🥥 Native Elaneeru — Vendor Approvals</b><div>Approve B2B partners, set their initial PIN and configure referral rewards.</div></div></header>
+<main>
+  <section id="login" class="card login">
+    <h2 style="margin-top:0">Admin login</h2>
+    <input id="email" class="field" type="email" placeholder="Admin email">
+    <input id="pin" class="field" type="password" placeholder="Admin PIN" style="margin-top:8px">
+    <button id="loginBtn" class="btn" style="width:100%;margin-top:9px" onclick="login()">Login</button>
+    <div id="loginMsg" class="msg"></div>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="card config">
+      <div class="title"><div><h3>🎁 B2C Refer & Earn rewards</h3><div class="muted">Set the cashback value shown to customers. Use 0 to keep that side of the reward hidden.</div></div><span class="badge">ADMIN</span></div>
+      <div class="grid2" style="margin-top:10px">
+        <div><div class="muted">Referrer reward ₹</div><input id="referrerReward" class="field" type="number" min="0" max="1000" step="1"></div>
+        <div><div class="muted">Friend reward ₹</div><input id="referredReward" class="field" type="number" min="0" max="1000" step="1"></div>
+      </div>
+      <button class="btn" style="margin-top:9px" onclick="saveRewards()">Save referral rewards</button>
+    </div>
+
+    <div class="card">
+      <div class="title"><div><h3>Pending B2B vendor approvals</h3><div id="count" class="muted">Loading…</div></div><button class="btn alt" onclick="loadPending()">Refresh</button></div>
+      <div id="pending"></div>
+    </div>
+  </section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const call=(fn,args=[])=>new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve).withFailureHandler(e=>reject(new Error(e&&e.message?e.message:String(e))))[fn](...args));
+let E='',P='',LIST=[];
+function msg(t){$('loginMsg').textContent=t||''}
+function money(v){return '₹'+Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:2})}
+function randomPin(){return String(Math.floor(1000+Math.random()*9000))}
+
+async function login(){
+  E=$('email').value.trim().toLowerCase();P=$('pin').value.trim();
+  const b=$('loginBtn');b.disabled=true;b.textContent='Checking…';msg('');
+  try{
+    await call('adminLogin',[E,P]);
+    $('login').classList.add('hidden');$('app').classList.remove('hidden');
+    await Promise.all([loadPending(),loadRewards()]);
+  }catch(e){msg(e.message)}finally{b.disabled=false;b.textContent='Login'}
+}
+
+async function loadRewards(){
+  try{const r=await call('getB2CGrowthAdminConfigV910',[E,P]);$('referrerReward').value=Number(r.referrerReward||0);$('referredReward').value=Number(r.referredReward||0)}catch(e){}
+}
+async function saveRewards(){
+  try{
+    const r=await call('setB2CGrowthAdminConfigV910',[E,P,$('referrerReward').value,$('referredReward').value]);
+    alert('Referral rewards saved: referrer '+money(r.referrerReward)+' · friend '+money(r.referredReward));
+  }catch(e){alert(e.message)}
+}
+
+async function loadPending(){
+  $('pending').innerHTML='<div class="muted" style="padding:14px 0">Loading pending vendors…</div>';
+  try{LIST=await call('getPendingVendorOnboardingsV840',[E,P]);render()}catch(e){$('pending').innerHTML='<div class="msg">'+esc(e.message)+'</div>'}
+}
+function render(){
+  $('count').textContent=LIST.length+' pending';
+  if(!LIST.length){$('pending').innerHTML='<div class="muted" style="padding:18px 0">No vendor approvals are pending.</div>';return}
+  $('pending').innerHTML=LIST.map((v,i)=>{
+    const suggested=Math.max(1,Number(v.expectedDailyQty||0))*20;
+    return '<div class="pending" id="vendor_'+i+'"><div class="title"><div><h3>'+esc(v.businessName||'Vendor')+'</h3><div class="muted">'+esc(v.ownerName)+' · '+esc(v.mobile)+' · '+esc(v.area)+'</div></div><span class="badge">PENDING</span></div>'+ 
+      '<div class="metrics"><div class="metric"><small>PRODUCT</small><b>'+esc(v.productName||v.productId)+'</b></div><div class="metric"><small>AGREED PRICE</small><b>'+money(v.agreedPrice)+'</b></div><div class="metric"><small>MOQ</small><b>'+Number(v.moq||0)+'</b></div><div class="metric"><small>DAILY DEMAND</small><b>'+Number(v.expectedDailyQty||0)+'</b></div></div>'+ 
+      '<div class="muted">Payment: '+esc(v.paymentMode||'COD')+' · Onboarding ID: '+esc(v.onboardingId)+'</div>'+ 
+      '<div class="photos" style="margin-top:9px">'+(v.ownerPhotoUrl?'<a target="_blank" href="'+esc(v.ownerPhotoUrl)+'">👤 Open owner photo</a>':'<div class="muted">Owner photo unavailable</div>')+(v.shopPhotoUrl?'<a target="_blank" href="'+esc(v.shopPhotoUrl)+'">🏪 Open shop photo</a>':'<div class="muted">Shop photo unavailable</div>')+'</div>'+ 
+      '<div class="approval"><div class="grid2"><div><div class="muted">Initial B2B PIN (4–8 digits)</div><div class="row"><input id="vpin_'+i+'" class="field" inputmode="numeric" maxlength="8" value="'+randomPin()+'" style="flex:1"><button class="btn alt" type="button" onclick="document.getElementById(\'vpin_'+i+'\').value=randomPin()">New PIN</button></div></div><div><div class="muted">First 30-day target</div><input id="target_'+i+'" class="field" type="number" min="1" value="'+suggested+'"></div></div><div class="muted" style="margin-top:8px">Reward message (optional)</div><input id="reward_'+i+'" class="field" placeholder="e.g. Hit target and unlock partner reward"><button id="approve_'+i+'" class="btn" style="margin-top:9px;width:100%" onclick="approve('+i+')">Approve & activate B2B login</button><div id="result_'+i+'"></div></div></div>';
+  }).join('');
+}
+
+async function approve(i){
+  const v=LIST[i],pin=$('vpin_'+i).value.trim(),target=$('target_'+i).value,reward=$('reward_'+i).value.trim();
+  if(!/^\d{4,8}$/.test(pin))return alert('Set a 4–8 digit PIN.');
+  if(!confirm('Approve '+(v.businessName||v.mobile)+' and activate B2B access?'))return;
+  const b=$('approve_'+i);b.disabled=true;b.textContent='Approving…';
+  try{
+    const r=await call('approveVendorOnboardingV840',[E,P,v.onboardingId,pin,target,reward]);
+    const text='Native Elaneeru Business login\nMobile: '+v.mobile+'\nPIN: '+pin+'\nApp: https://nativeelaneeru.github.io/native-elaneeru-app/b2b/';
+    $('result_'+i).innerHTML='<div class="credential"><div class="muted">B2B account activated</div><strong>'+esc(v.mobile)+' / '+esc(pin)+'</strong><div class="muted" style="margin-top:5px">Vendor ID: '+esc(r.vendorId)+'</div><div class="row" style="margin-top:9px"><button class="btn alt" id="copy_'+i+'">Copy login</button><a class="btn" style="text-decoration:none" target="_blank" href="https://wa.me/91'+esc(v.mobile)+'?text='+encodeURIComponent(text)+'">WhatsApp credentials</a></div></div>';
+    $('copy_'+i).onclick=()=>navigator.clipboard?navigator.clipboard.writeText(text).then(()=>alert('Login copied')):alert(text);
+    b.classList.add('hidden');
+    setTimeout(loadPending,1800);
+  }catch(e){alert(e.message);b.disabled=false;b.textContent='Approve & activate B2B login'}
+}
+</script>
+</body>
+</html>
