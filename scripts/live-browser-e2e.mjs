@@ -8,7 +8,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 const rawBase = process.env.SITE_URL || process.argv[2] || '';
 if (!rawBase) throw new Error('SITE_URL or base URL argument is required.');
 const BASE = rawBase.endsWith('/') ? rawBase : rawBase + '/';
-const PORT = Number(process.env.NEL_CDP_PORT || 9222);
+let PORT = Number(process.env.NEL_CDP_PORT || 0);
 const failures = [];
 const passes = [];
 
@@ -26,8 +26,19 @@ function findChrome(){
   throw new Error('Chrome/Chromium is not installed on the runner.');
 }
 
-async function waitForDebugger(){
+async function waitForDebugger(profileDir){
   let last;
+  if(!PORT){
+    const portFile=path.join(profileDir,'DevToolsActivePort');
+    for(let i=0;i<80;i++){
+      if(fs.existsSync(portFile)){
+        PORT=Number(fs.readFileSync(portFile,'utf8').split(/\r?\n/)[0]);
+        if(PORT)break;
+      }
+      await sleep(250);
+    }
+    if(!PORT)throw new Error('Chrome did not publish a DevTools port.');
+  }
   for(let i=0;i<80;i++){
     try{
       const response = await fetch(`http://127.0.0.1:${PORT}/json/version`);
@@ -207,7 +218,7 @@ const browser=spawn(chrome,[
 let stderr='';browser.stderr.on('data',b=>{stderr+=String(b)});
 
 try{
-  await waitForDebugger();
+  await waitForDebugger(profileDir);
   await testRoot();
   await testB2C();
   await testB2B();
