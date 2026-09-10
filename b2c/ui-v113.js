@@ -11,30 +11,17 @@
   function addBusinessSwitch(){
     if(document.getElementById('nel113Business'))return;
     var row=document.querySelector('.brandRow');if(!row)return;
-    var a=document.createElement('a');a.id='nel113Business';a.className='nel113-business';a.href='./business/';a.setAttribute('aria-label','Open Native Elaneeru Business');a.textContent='🏪 Business';
+    var a=document.createElement('a');a.id='nel113Business';a.className='nel113-business';a.href='../b2b/';a.setAttribute('aria-label','Open Native Elaneeru Business');a.textContent='🏪 Business';
     var support=row.querySelector('.support');if(support)row.insertBefore(a,support);else row.appendChild(a);
   }
 
   function networkBadge(){
     var el=document.getElementById('nel113Net');
     if(!el){el=document.createElement('div');el.id='nel113Net';el.className='nel113-net';document.body.appendChild(el)}
-    var online=navigator.onLine!==false;el.classList.toggle('off',!online);el.classList.toggle('ok',online);el.textContent=online?'● Online':'● Offline — cart is kept on this device';
-    if(online)setTimeout(function(){if(el&&navigator.onLine!==false)el.style.display='none'},1800);else el.style.display='block';
-  }
-
-  function patchPlaceOrder(){
-    var base=window.placeOrder;if(typeof base!=='function'||base.__nel113)return typeof base==='function';
-    var wrapped=async function(){
-      var btn=document.getElementById('placeBtn');if(btn&&btn.disabled)return;
-      var oldText=btn?btn.textContent:'';
-      if(btn){btn.disabled=true;btn.setAttribute('aria-busy','true');btn.textContent='Placing order…'}
-      try{return await base.apply(this,arguments)}finally{
-        var current=document.getElementById('placeBtn');
-        if(current){current.disabled=false;current.removeAttribute('aria-busy');if(oldText)current.textContent=oldText}
-      }
-    };
-    wrapped.__nel113=true;window.placeOrder=wrapped;try{placeOrder=wrapped}catch(e){}
-    return true;
+    var online=navigator.onLine!==false;
+    el.classList.toggle('off',!online);el.classList.toggle('ok',online);
+    el.textContent=online?'● Online':'● Offline — cart is kept on this device';
+    if(online){el.style.display='block';setTimeout(function(){if(el&&navigator.onLine!==false)el.style.display='none'},1800)}else el.style.display='block';
   }
 
   function patchSaveProfile(){
@@ -44,16 +31,16 @@
       buttons.forEach(function(b){b.disabled=true;b.setAttribute('aria-busy','true')});
       try{return await base.apply(this,arguments)}finally{buttons.forEach(function(b){b.disabled=false;b.removeAttribute('aria-busy')})}
     };
-    wrapped.__nel113=true;window.saveProfile=wrapped;try{saveProfile=wrapped}catch(e){}
+    wrapped.__nel113=true;wrapped.__base=base;window.saveProfile=wrapped;try{saveProfile=wrapped}catch(e){}
     return true;
   }
 
   function start(){
     addStyle();addBusinessSwitch();networkBadge();
-    var tries=0;(function patch(){var a=patchPlaceOrder(),b=patchSaveProfile();if((!a||!b)&&++tries<120)setTimeout(patch,100)})();
+    var tries=0;(function patch(){if(!patchSaveProfile()&&++tries<120)setTimeout(patch,100)})();
   }
 
-  window.addEventListener('online',function(){var e=document.getElementById('nel113Net');if(e)e.style.display='block';networkBadge();if(typeof window.toast==='function')try{toast('Back online')}catch(x){}});
+  window.addEventListener('online',function(){networkBadge();if(typeof window.toast==='function')try{toast('Back online')}catch(x){}});
   window.addEventListener('offline',function(){networkBadge();if(typeof window.toast==='function')try{toast('You are offline. Your cart stays on this device.')}catch(x){}});
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',start,{once:true}):start();
 })();
