@@ -1,0 +1,40 @@
+<script>
+(function(){
+  if(window.NEL_DELIVERY_FIX_V918)return;window.NEL_DELIVERY_FIX_V918=true;
+  const q=id=>document.getElementById(id);
+  function normalise(raw){const d=raw&&typeof raw==='object'?raw:{};d.route=d.route&&typeof d.route==='object'?d.route:null;d.stops=Array.isArray(d.stops)?d.stops:[];d.driver=d.driver&&typeof d.driver==='object'?d.driver:{};d.hub=d.hub&&typeof d.hub==='object'?d.hub:{};return d}
+  function text(e){return e&&e.message?e.message:String(e||'Something went wrong')}
+
+  async function safeLogin(){
+    if(typeof BUSY!=='undefined'&&BUSY)return;
+    MOB=String(q('mobile')&&q('mobile').value||'').replace(/\D/g,'').slice(-10);PIN=String(q('pin')&&q('pin').value||'').trim();
+    if(typeof setBusy==='function')setBusy(true,'Signing in…');
+    const msg=q('msg');if(msg)msg.textContent='';
+    try{
+      if(!/^\d{10}$/.test(MOB)||PIN.length<4)throw new Error('Enter your delivery mobile number and PIN.');
+      const r=await call('driverLoginV8',[MOB,PIN,'B2C']);if(!r||r.success!==true)throw new Error(r&&r.error||'Delivery login failed.');
+      q('login')&&q('login').classList.add('hidden');q('app')&&q('app').classList.remove('hidden');q('sticky')&&q('sticky').classList.remove('hidden');
+      await safeRefresh();
+    }catch(e){if(msg)msg.textContent=text(e);if(typeof toast==='function')toast(text(e))}
+    finally{if(typeof setBusy==='function')setBusy(false)}
+  }
+
+  async function safeRefresh(){
+    if(typeof BUSY!=='undefined'&&BUSY)return;
+    if(typeof setBusy==='function')setBusy(true,'Syncing route…');
+    try{
+      DATA=normalise(await call('getDriverDayRouteV8',[MOB,PIN,'B2C',today()]));
+      if(typeof render==='function')render();
+      const a=typeof currentStop==='function'?currentStop():null;
+      if(DATA.route&&DATA.route.hubPickedUp&&a&&!['COMPLETED','CANCELLED'].includes(String(a.status||'').toUpperCase())&&typeof startGps==='function')startGps(a.stopId);
+    }catch(e){DATA=normalise(null);try{if(typeof render==='function')render()}catch(ignore){}if(typeof toast==='function')toast(text(e))}
+    finally{if(typeof setBusy==='function')setBusy(false)}
+  }
+
+  function start(){
+    try{window.login=safeLogin;login=safeLogin}catch(e){window.login=safeLogin}
+    try{window.refresh=safeRefresh;refresh=safeRefresh}catch(e){window.refresh=safeRefresh}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
