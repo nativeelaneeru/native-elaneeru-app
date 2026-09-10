@@ -1,11 +1,11 @@
 /**
  * Native Elaneeru V8.3.9 — faster customer dashboard and reorder history.
  *
- * A short per-customer server cache avoids repeatedly scanning Orders and
- * Order_Items. The cache is invalidated immediately after a successful order.
+ * Dashboard caching remains here, but saveOrder is no longer wrapped in this
+ * file. Order cache invalidation is handled by the single canonical V9.0.1
+ * order wrapper to avoid recursive wrapper chains after Apps Script deploys.
  */
 const V839_DASHBOARD_TTL_SECONDS = 45;
-const V839_ORIGINAL_SAVE_ORDER = saveOrder;
 
 function b2cDashboardCacheKeyV839_(mobile){
   return 'NEL_B2C_DASH_V839_'+hashV8_(digits_(mobile)).slice(0,24);
@@ -88,10 +88,4 @@ getCustomerDashboard = function(mobile){
     if(json.length<95000)cache.put(key,json,V839_DASHBOARD_TTL_SECONDS);
   }catch(err){}
   return out;
-};
-
-saveOrder = function(order){
-  const result=V839_ORIGINAL_SAVE_ORDER(order);
-  clearB2CDashboardCacheV839_(order&&order.mobile);
-  return result;
 };
