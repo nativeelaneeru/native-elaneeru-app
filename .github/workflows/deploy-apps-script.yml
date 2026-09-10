@@ -52,7 +52,7 @@ jobs:
         shell: bash
         env:
           B2C_DEPLOYMENT_ID: AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3
-        run: npx clasp deploy -i "$B2C_DEPLOYMENT_ID" -d "B2C order engine fix $GITHUB_SHA"
+        run: npx clasp deploy -i "$B2C_DEPLOYMENT_ID" -d "B2C IndexedDB sync $GITHUB_SHA"
       - name: Verify main catalogue and B2B bridge
         env:
           API_URL: https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec
@@ -66,7 +66,7 @@ jobs:
             console.log(JSON.stringify({products,b2bData:true,b2bLogin:true}));
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
-      - name: Verify B2C canonical order engine
+      - name: Verify B2C canonical idempotent order engine
         env:
           API_URL: https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec
         run: |
@@ -79,8 +79,8 @@ jobs:
               const url=process.env.API_URL+'?jsonp=1&callback='+callback+'&payload='+encodeURIComponent(JSON.stringify(req))+'&_='+Date.now();
               const r=await fetch(url,{redirect:'follow',cache:'no-store'});const text=await r.text();const m=text.match(/^__nelOrderHealth\(([\s\S]*)\);?$/);const p=m?JSON.parse(m[1]):null;
               console.log(JSON.stringify({attempt:i,status:r.status,payload:p}));
-              if(r.status===200&&p&&p.ok&&p.result&&p.result.canonicalOrderHandler===true&&p.result.recursiveWrappers===false)return;
-              last=new Error('B2C canonical order engine is not live yet.');await new Promise(r=>setTimeout(r,2500));
+              if(r.status===200&&p&&p.ok&&p.result&&p.result.canonicalOrderHandler===true&&p.result.recursiveWrappers===false&&p.result.idempotency===true)return;
+              last=new Error('B2C idempotent order engine is not live yet.');await new Promise(r=>setTimeout(r,2500));
             }
             throw last;
           })().catch(e=>{console.error(e);process.exit(1)});
