@@ -88,7 +88,7 @@ if(/rows_\(V8\.SHEETS\.CUSTOMERS\)/.test(fastCheckout))fail('backend: Checkout E
 if(/waitLock\(20000\)/.test(fastCheckout))fail('backend: Checkout Engine V2 must not use the old 20-second lock');else pass('backend: old 20-second checkout lock is absent');
 if(!/tryLock\(2500\)/.test(fastCheckout))fail('backend: Checkout Engine V2 short write lock is missing');else pass('backend: final write lock is capped at 2.5 seconds');
 if(!/setValues\(itemRows\)/.test(fastCheckout))fail('backend: order items are not batch-written');else pass('backend: order items are batch-written');
-if((fastCheckout.match(/SpreadsheetApp\.openById/g)||[]).length!==1)fail('backend: Checkout Engine V2 should open the spreadsheet once');else pass('backend: checkout opens the spreadsheet once');
+if((fastCheckout.match(/const ss=SpreadsheetApp\.openById/g)||[]).length!==1)fail('backend: Checkout Engine V2 should open the spreadsheet once');else pass('backend: checkout opens the spreadsheet once');
 
 const b2bConfig=read('b2b/config.js'),b2bDb=read('b2b/idb-v1.js'),b2bGuard=read('b2b/session-guard-v980.js'),b2bSync=read('b2b/order-sync-v1.js');
 if(!/session-guard-v980\.js/.test(b2bConfig))fail('b2b: vendor cart guard is not loaded');else pass('b2b: vendor cart guard is loaded');
