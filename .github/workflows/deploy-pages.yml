@@ -81,6 +81,7 @@ jobs:
             async function jsonp(method){
               let lastError;
               for(let attempt=1;attempt<=4;attempt++){
+                const started=Date.now();
                 try{
                   const callback='__nelPagesHealth';
                   const request={method,args:[],requestId:'pages-health-'+method+'-'+attempt+'-'+Date.now()};
@@ -95,21 +96,24 @@ jobs:
                   const match=text.match(/^__nelPagesHealth\(([\s\S]*)\);?$/);
                   const payload=match?JSON.parse(match[1]):null;
                   if(response.status===200&&payload&&payload.ok===true){
-                    console.log(JSON.stringify({method,attempt,status:response.status,ok:true}));
+                    console.log(JSON.stringify({method,attempt,status:response.status,ok:true,elapsedMs:Date.now()-started}));
                     return payload.result;
                   }
-                  lastError=new Error(method+' returned an invalid structured response (HTTP '+response.status+').');
-                }catch(error){lastError=error;console.error(method+' attempt '+attempt+': '+error.message)}
+                  lastError=new Error(method+' returned an invalid structured response (HTTP '+response.status+', '+(Date.now()-started)+'ms).');
+                }catch(error){lastError=error;console.error(method+' attempt '+attempt+' after '+(Date.now()-started)+'ms: '+error.message)}
                 if(attempt<4)await new Promise(resolve=>setTimeout(resolve,1500*attempt));
               }
               throw lastError||new Error(method+' health check failed.');
             }
-            const config=await jsonp('getAppConfig');
+            // Pure runtime/code health first: this does not open the spreadsheet.
             const health=await jsonp('getB2COrderEngineHealthV906');
+            if(!health||health.ok!==true||health.engineVersion!=='9.0.5'||health.canonicalOrderHandler!==true||health.idempotency!==true||health.serverControlledPayment!==true) throw new Error('B2C Checkout Engine V2 health is not ready.');
+
+            // Spreadsheet-backed catalogue second, so runtime vs workbook stalls are distinguishable.
+            const config=await jsonp('getAppConfig');
             const products=config&&Array.isArray(config.products)?config.products:[];
             const tender=products.some(p=>String(p.id||p.productId||p['Product ID']||'').toUpperCase()==='TC'||/tender coconut/i.test(String(p.name||p.productName||p['Product Name']||'')));
             if(products.length<1||!tender) throw new Error('B2C live catalogue is missing Tender Coconut.');
-            if(!health||health.ok!==true||health.engineVersion!=='9.0.5'||health.canonicalOrderHandler!==true||health.idempotency!==true||health.serverControlledPayment!==true) throw new Error('B2C Checkout Engine V2 health is not ready.');
             console.log(JSON.stringify({products:products.length,tenderCoconut:true,checkoutEngine:health.engineVersion}));
           })().catch(error=>{console.error(error);process.exit(1)});
           NODE
