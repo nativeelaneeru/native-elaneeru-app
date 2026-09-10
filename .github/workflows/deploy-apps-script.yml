@@ -1,0 +1,89 @@
+name: Deploy Native Elaneeru to Apps Script
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - '.github/workflows/deploy-apps-script.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Configure clasp project
+        shell: bash
+        run: |
+          cat > .clasp.json <<JSON
+          {
+            "scriptId": "${{ secrets.APPS_SCRIPT_ID }}",
+            "rootDir": "src"
+          }
+          JSON
+
+      - name: Configure Google auth
+        shell: bash
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+
+      - name: Push files to Apps Script
+        run: npx clasp push -f
+
+      - name: Update existing web app deployment
+        shell: bash
+        env:
+          DEPLOYMENT_ID: ${{ secrets.APPS_SCRIPT_DEPLOYMENT_ID }}
+        run: |
+          npx clasp deploy -i "$DEPLOYMENT_ID" -d "GitHub auto deploy $GITHUB_SHA"
+
+      - name: Verify anonymous B2C products and banners
+        env:
+          API_URL: https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec
+        run: |
+          node <<'NODE'
+          (async () => {
+            const callback = '__nelSmokeCatalog';
+            const request = {method: 'getAppConfig', args: [], requestId: 'smoke-' + Date.now()};
+            const url = process.env.API_URL + '?jsonp=1&callback=' + callback + '&payload=' + encodeURIComponent(JSON.stringify(request));
+            let lastError;
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              try {
+                const response = await fetch(url + '&_=' + Date.now(), {redirect: 'follow'});
+                const text = await response.text();
+                const match = text.match(/^__nelSmokeCatalog\(([\s\S]*)\);?$/);
+                const payload = match ? JSON.parse(match[1]) : null;
+                const products = payload && payload.ok && payload.result && Array.isArray(payload.result.products) ? payload.result.products.length : 0;
+                const banners = payload && payload.ok && payload.result && Array.isArray(payload.result.banners) ? payload.result.banners.length : 0;
+                console.log(JSON.stringify({attempt, status: response.status, ok: !!(payload && payload.ok), error: payload && payload.error, products, banners}));
+                if (response.status === 200 && products > 0 && banners > 0) return;
+                lastError = new Error('Catalogue counts were empty.');
+              } catch (error) {
+                lastError = error;
+                console.error('Attempt ' + attempt + ': ' + error.message);
+              }
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            throw lastError || new Error('B2C catalogue verification failed.');
+          })().catch(error => { console.error(error); process.exit(1); });
+          NODE
