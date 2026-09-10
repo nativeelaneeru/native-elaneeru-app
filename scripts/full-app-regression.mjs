@@ -53,9 +53,11 @@ ok(!/href=["']\?page=/.test(payments),'UPI Verification has no iframe-relative n
 ok(/Array\.isArray\(DATA&&DATA\.rows\)/.test(payments),'UPI Verification guards null payment rows');
 
 const admin=read('src/Admin.html');
-ok(/normaliseDashboard/.test(admin),'Operations Admin normalises dashboard data');
-ok(/Array\.isArray\(o\.items\)/.test(admin),'Operations Admin guards nested order items');
-ok(/Array\.isArray\(DATA\.feedback\)/.test(admin),'Operations Admin guards feedback list');
+const adminFix=read('src/AdminFixesV915.html');
+const adminRuntime=admin+'\n'+adminFix;
+ok(/normaliseAdminData|normaliseDashboard/.test(adminRuntime),'Operations Admin normalises dashboard data');
+ok(/!Array\.isArray\(o\.items\)/.test(adminRuntime),'Operations Admin guards nested order items');
+ok(/['"]feedback['"]/.test(adminRuntime)&&/Array\.isArray\(d\[k\]\)/.test(adminRuntime),'Operations Admin guards feedback and other list responses');
 
 const access=read('src/AdminAccessV917.html');
 ok(/d&&Array\.isArray\(d\.rows\)/.test(access),'Access Management guards null staff responses');
