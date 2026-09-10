@@ -3,7 +3,7 @@
   "name":"Native Elaneeru Business",
   "short_name":"Elaneeru B2B",
   "description":"Bulk tender coconut ordering for Native Elaneeru business customers.",
-  "start_url":"./v96.html",
+  "start_url":"./",
   "scope":"./",
   "display":"standalone",
   "background_color":"#f2f5f8",
