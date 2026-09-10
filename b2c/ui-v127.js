@@ -77,7 +77,7 @@
 
   async function placeOrderV127(){
     var btn=el('placeBtn');if(btn&&btn.dataset.nel127Busy==='1')return;
-    var stage='cart',startedAt=Date.now(),slowTimer=null,verySlowTimer=null;
+    var stage='cart',startedAt=Date.now(),slowTimer=null,verySlowTimer=null,paymentChoice={method:'COD'};
     if(btn){btn.dataset.nel127Busy='1';btn.disabled=true;btn.setAttribute('aria-busy','true');btn.textContent='Placing order…'}
     clearStatus();
     try{
@@ -116,10 +116,28 @@
         timeSlot:home&&el('slot')?el('slot').value:'Pickup'
       };
 
-      stage='server order';status('Confirming stock, delivery, price and order…');
-      slowTimer=setTimeout(function(){status('Still confirming your order… please keep the app open.')},4000);
-      verySlowTimer=setTimeout(function(){status('Confirmation is taking longer than usual. Your request is protected from duplicate orders.')},8000);
-      var result=await window.rpc('saveOrder',[payload]);
+      if(window.NEL_PAYMENT&&typeof window.NEL_PAYMENT.beforeOrder==='function'){
+        stage='payment';status('Checking payment method…');
+        paymentChoice=await window.NEL_PAYMENT.beforeOrder(payload)||{method:'COD'};
+        if(paymentChoice.stop){
+          status('UPI payment is ready. Complete the payment, enter the UTR / transaction ID and tap “I’ve paid · Submit order”.');
+          return;
+        }
+      }
+      payload.payment=String(paymentChoice.method||'COD').toUpperCase();
+
+      var result;
+      if(payload.payment==='UPI'){
+        stage='UPI payment';status('Submitting your UPI reference and creating the order…');
+        slowTimer=setTimeout(function(){status('Still confirming the UPI order… please do not pay again.')},4000);
+        verySlowTimer=setTimeout(function(){status('Confirmation is taking longer than usual. Your UPI reference is protected from duplicate orders.')},8000);
+        result=await window.rpc('submitB2CUpiOrderV913',[paymentChoice.paymentId,paymentChoice.utr,payload]);
+      }else{
+        stage='server order';status('Confirming stock, delivery, price and order…');
+        slowTimer=setTimeout(function(){status('Still confirming your order… please keep the app open.')},4000);
+        verySlowTimer=setTimeout(function(){status('Confirmation is taking longer than usual. Your request is protected from duplicate orders.')},8000);
+        result=await window.rpc('saveOrder',[payload]);
+      }
       clearTimeout(slowTimer);clearTimeout(verySlowTimer);slowTimer=verySlowTimer=null;
       if(!result||!result.orderId)throw new Error('The server did not return an order number. Please retry before paying anyone.');
 
@@ -127,15 +145,18 @@
         orderId:result.orderId,
         totalMs:Date.now()-startedAt,
         serverMs:Number(result.processingMs||0),
-        engineVersion:String(result.engineVersion||'')
+        engineVersion:String(result.engineVersion||''),
+        paymentType:String(result.paymentType||payload.payment||'COD'),
+        paymentStatus:String(result.paymentStatus||'PENDING')
       };
 
       try{S.cart={}}catch(e){}
       try{localStorage.removeItem('nel_cart_v9')}catch(e){}
       try{if(window.NEL_DB&&typeof window.NEL_DB.clearCart==='function')await window.NEL_DB.clearCart()}catch(e){}
+      if(window.NEL_PAYMENT&&typeof window.NEL_PAYMENT.reset==='function')try{window.NEL_PAYMENT.reset()}catch(e){}
       if(typeof window.updateCartBar==='function')window.updateCartBar();
       if(el('cartSheet'))el('cartSheet').classList.remove('show');
-      if(typeof window.toast==='function')window.toast('Order '+result.orderId+' placed ✓');
+      if(typeof window.toast==='function')window.toast(payload.payment==='UPI'?'Order '+result.orderId+' submitted · UPI verification pending':'Order '+result.orderId+' placed ✓');
 
       // Do not make the customer wait for the slower order-history/dashboard refresh.
       if(typeof window.go==='function')window.go('orders');
@@ -153,8 +174,12 @@
       var current=el('placeBtn');
       if(current){
         current.dataset.nel127Busy='0';current.disabled=false;current.removeAttribute('aria-busy');
-        var total=typeof window.cartTotal==='function'?window.cartTotal():0;
-        current.textContent='Place order · '+money(total);
+        if(window.NEL_PAYMENT&&typeof window.NEL_PAYMENT.refreshButton==='function'){
+          try{window.NEL_PAYMENT.refreshButton()}catch(e){current.textContent='Place order · '+money(typeof window.cartTotal==='function'?window.cartTotal():0)}
+        }else{
+          var total=typeof window.cartTotal==='function'?window.cartTotal():0;
+          current.textContent='Place order · '+money(total);
+        }
       }
     }
   }
