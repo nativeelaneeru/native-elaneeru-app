@@ -26,40 +26,30 @@ jobs:
       - name: Validate B2C and B2B PWAs
         run: node scripts/smoke-check.mjs
 
-      - name: Verify live B2C ordering bridge
+      - name: Verify live B2C backend health (read-only)
         env:
           API_URL: https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec
         run: |
           node <<'NODE'
           (async () => {
-            async function call(method,args){
-              const form=new URLSearchParams();
-              form.set('payload',JSON.stringify({method,args,requestId:'b2c-smoke-'+Date.now()}));
-              const response=await fetch(process.env.API_URL+'?bridge=1',{
-                method:'POST',
-                headers:{'content-type':'application/x-www-form-urlencoded;charset=UTF-8'},
-                body:form.toString(),
-                redirect:'follow'
-              });
-              return {status:response.status,text:await response.text()};
+            async function jsonp(method){
+              const callback='__nelPagesHealth';
+              const request={method,args:[],requestId:'pages-health-'+method+'-'+Date.now()};
+              const url=process.env.API_URL+'?jsonp=1&callback='+callback+'&payload='+encodeURIComponent(JSON.stringify(request))+'&_='+Date.now();
+              const response=await fetch(url,{redirect:'follow',cache:'no-store'});
+              const text=await response.text();
+              const match=text.match(/^__nelPagesHealth\(([\s\S]*)\);?$/);
+              const payload=match?JSON.parse(match[1]):null;
+              if(response.status!==200||!payload||payload.ok!==true) throw new Error(method+' did not return a valid structured response.');
+              return payload.result;
             }
-            function exposed(x){
-              return x.status===200 && !/Method not allowed|Unknown endpoint|POST required/i.test(x.text);
-            }
-            let lastError;
-            for(let attempt=1;attempt<=4;attempt++){
-              try{
-                const config=await call('getAppConfig',[]);
-                const profileProbe=await call('saveCustomerProfile',[{mobile:'123',name:'',address:'',area:''}]);
-                const orderProbe=await call('saveOrder',[{mobile:'123',items:[]}]);
-                const ok=exposed(config)&&exposed(profileProbe)&&exposed(orderProbe);
-                console.log(JSON.stringify({attempt,ok,configStatus:config.status,profileStatus:profileProbe.status,orderStatus:orderProbe.status,profileText:profileProbe.text.slice(0,180),orderText:orderProbe.text.slice(0,180)}));
-                if(ok)return;
-                lastError=new Error('The configured B2C backend does not expose the required order methods.');
-              }catch(error){lastError=error;console.error('Attempt '+attempt+': '+error.message)}
-              await new Promise(resolve=>setTimeout(resolve,2500));
-            }
-            throw lastError||new Error('B2C ordering bridge verification failed.');
+            const config=await jsonp('getAppConfig');
+            const health=await jsonp('getB2COrderEngineHealthV906');
+            const products=config&&Array.isArray(config.products)?config.products:[];
+            const tender=products.some(p=>String(p.id||p.productId||p['Product ID']||'').toUpperCase()==='TC'||/tender coconut/i.test(String(p.name||p.productName||p['Product Name']||'')));
+            if(products.length<1||!tender) throw new Error('B2C live catalogue is missing Tender Coconut.');
+            if(!health||health.ok!==true||health.engineVersion!=='9.0.5'||health.canonicalOrderHandler!==true||health.idempotency!==true||health.serverControlledPayment!==true) throw new Error('B2C Checkout Engine V2 health is not ready.');
+            console.log(JSON.stringify({products:products.length,tenderCoconut:true,checkoutEngine:health.engineVersion}));
           })().catch(error=>{console.error(error);process.exit(1)});
           NODE
 
@@ -74,3 +64,8 @@ jobs:
       - name: Deploy GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify live B2C and B2B PWAs in Chrome
+        env:
+          SITE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: node scripts/live-browser-e2e.mjs
