@@ -1,0 +1,134 @@
+<style>
+#adminBarcodeV926 .abSubtabs{display:flex;gap:8px;margin:10px 0 14px;padding:5px;background:#eaf1ec;border:1px solid #dbe6dd;border-radius:14px}
+#adminBarcodeV926 .abSubtab{flex:1;background:transparent;color:#476052;border:0;font-weight:900;padding:11px 14px;border-radius:10px;cursor:pointer;min-height:44px}
+#adminBarcodeV926 .abSubtab.active{background:#155b2b;color:#fff;box-shadow:0 5px 15px rgba(21,91,43,.18)}
+#adminBarcodeV926 .abPane{display:none}#adminBarcodeV926 .abPane.active{display:block}
+#adminBarcodeV926 .abGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#adminBarcodeV926 .abField{width:100%;min-height:44px}
+#adminBarcodeV926 .abHelp{background:#eef6ef;border:1px solid #d3e4d5;border-radius:12px;padding:10px 12px;margin-bottom:12px;color:#2f553b;font-size:12px;line-height:1.5}
+#adminBarcodeV926 .abLabelWrap{display:flex;justify-content:center;background:#eef2ee;border-radius:14px;padding:16px;margin-top:12px}
+#adminBarcodeV926 .abLabel{width:100mm;min-height:50mm;border:1px solid #cfd8d1;border-radius:5mm;padding:5mm;background:#fff;color:#111;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center}
+#adminBarcodeV926 .abLabelBrand{font-size:14px;font-weight:950}.abLabelMeta{font-size:10px;margin-top:2px}
+#adminBarcodeV926 .abLabel svg{display:block;width:92mm;max-width:100%;height:23mm;margin:3mm auto 1mm}
+#adminBarcodeV926 .abBarcodeText{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:1px;word-break:break-all}
+#adminBarcodeV926 .abLabelBottom{display:flex;gap:12px;justify-content:center;font-size:10px;font-weight:800;margin-top:2px}
+#adminBarcodeV926 .abActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+#adminBarcodeV926 .abScroll{overflow:auto}#adminBarcodeV926 table{min-width:850px}
+@media(max-width:760px){#adminBarcodeV926 .abGrid{grid-template-columns:1fr}#adminBarcodeV926 .abSubtabs{flex-direction:column}#adminBarcodeV926 .abLabel{width:100%;min-height:46mm}}
+@media print{
+  body *{visibility:hidden!important}
+  #abPrintArea,#abPrintArea *{visibility:visible!important}
+  #abPrintArea{display:block!important;position:absolute!important;left:0!important;top:0!important;width:100%!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:#fff!important}
+  #abPrintArea .abLabelWrap{padding:0!important;background:#fff!important}
+  #abPrintLabel{width:100mm!important;min-height:50mm!important;border:1px solid #111!important;border-radius:0!important;margin:0 auto!important;padding:4mm!important}
+}
+</style>
+<script>
+(function(){
+  if(window.NEL_ADMIN_BARCODE_V926)return;window.NEL_ADMIN_BARCODE_V926=true;
+  const OLD_PANELS=['orders','customers','feedback','tickets','delivery','routeplan','access'];
+  let AB_BATCHES=[],AB_CURRENT_LABEL=null,AB_LOADED=false;
+  function q(id){return document.getElementById(id)}
+  function safe(v){return String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+  function admin(){return {email:String(typeof E!=='undefined'?E:'').trim(),pin:String(typeof P!=='undefined'?P:'').trim()}}
+  function msg(text,ok){const el=q('abMsg');if(!el)return;el.style.color=ok?'#155b2b':'#9a3412';el.textContent=text||''}
+  function barcodeCall(method,args){
+    return new Promise((resolve,reject)=>{
+      try{
+        if(!window.google||!google.script||!google.script.run)throw new Error('Apps Script connection is unavailable. Reload Admin.');
+        google.script.run.withSuccessHandler(v=>{
+          if(v==null){reject(new Error('Barcode backend returned no response.'));return}
+          resolve(v);
+        }).withFailureHandler(e=>reject(new Error(e&&e.message?e.message:String(e)))).barcodeRpcV924(method,Array.isArray(args)?args:[]);
+      }catch(e){reject(e instanceof Error?e:new Error(String(e)))}
+    });
+  }
+  const CODE39={
+    '0':0x034,'1':0x121,'2':0x061,'3':0x160,'4':0x031,'5':0x130,'6':0x070,'7':0x025,'8':0x124,'9':0x064,
+    'A':0x109,'B':0x049,'C':0x148,'D':0x019,'E':0x118,'F':0x058,'G':0x00D,'H':0x10C,'I':0x04C,'J':0x01C,
+    'K':0x103,'L':0x043,'M':0x142,'N':0x013,'O':0x112,'P':0x052,'Q':0x007,'R':0x106,'S':0x046,'T':0x016,
+    'U':0x181,'V':0x0C1,'W':0x1C0,'X':0x091,'Y':0x190,'Z':0x0D0,
+    '-':0x085,'.':0x184,' ':0x0C4,'$':0x0A8,'/':0x0A2,'+':0x08A,'%':0x02A,'*':0x094
+  };
+  function code39Svg(raw){
+    const value=String(raw||'').trim().toUpperCase();if(!value)throw new Error('Barcode value is empty.');
+    for(const c of value)if(CODE39[c]==null)throw new Error('Barcode contains unsupported character: '+c);
+    const encoded='*'+value+'*',unit=2,wide=5,quiet=12;let x=quiet,bars=[];
+    for(let ci=0;ci<encoded.length;ci++){
+      const pattern=CODE39[encoded[ci]];
+      for(let i=0;i<9;i++){const w=((pattern>>(8-i))&1)?wide:unit;if(i%2===0)bars.push('<rect x="'+x+'" y="0" width="'+w+'" height="52" fill="#000"/>');x+=w}
+      if(ci<encoded.length-1)x+=unit;
+    }
+    const total=x+quiet;
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+total+' 68" preserveAspectRatio="xMidYMid meet"><rect width="100%" height="100%" fill="#fff"/>'+bars.join('')+'<text x="'+(total/2)+'" y="65" text-anchor="middle" font-family="monospace" font-size="9" fill="#000">'+safe(value)+'</text></svg>';
+  }
+  function field(b,n,alt){return b&&b[n]!=null?b[n]:(alt&&b&&b[alt]!=null?b[alt]:'')}
+  function renderLabel(batch){
+    batch=batch&&typeof batch==='object'?batch:{};
+    const barcode=String(field(batch,'Barcode','barcode')||'').trim(),batchId=String(field(batch,'Batch ID','batchId')||'').trim();
+    const product=String(field(batch,'Product Name','productName')||'Tender Coconut').trim();
+    const qty=Number(field(batch,'Original Qty','qty')||field(batch,'Available Qty'))||0,location=String(field(batch,'Location','location')||'HUB').trim();
+    if(!barcode)throw new Error('This batch has no barcode value.');
+    q('abName').textContent=product;q('abBatch').textContent='Batch: '+batchId;q('abBarcode').textContent=barcode;q('abQtyLabel').textContent='Qty: '+qty;q('abLocationLabel').textContent='Location: '+location;q('abSvg').innerHTML=code39Svg(barcode);q('abPrintArea').classList.remove('hidden');
+    AB_CURRENT_LABEL={Barcode:barcode,'Batch ID':batchId,'Product Name':product,'Original Qty':qty,Location:location};
+  }
+  function renderRows(){
+    const host=q('abRows');if(!host)return;
+    host.innerHTML=AB_BATCHES.length?AB_BATCHES.map((b,i)=>'<tr><td><b>'+safe(b&&b['Batch ID'])+'</b></td><td>'+safe(b&&b.Barcode)+'</td><td>'+safe(b&&b['Product Name'])+'</td><td>'+Number(b&&b['Available Qty']||0)+'</td><td>'+Number(b&&b['Reserved Qty']||0)+'</td><td>'+Number(b&&b['Delivered Qty']||0)+'</td><td><span class="badge">'+safe(b&&b.Status||'')+'</span></td><td><div class="abActions"><button class="secondary" type="button" onclick="adminBarcodePrintBatchV926('+i+')">Print</button><button type="button" onclick="adminBarcodeUseBatchV926('+i+')">Assign</button></div></td></tr>').join(''):'<tr><td colspan="8" class="muted">No batches yet.</td></tr>';
+  }
+  window.adminBarcodeSubtabV926=function(name){
+    name=name==='assign'?'assign':'batch';
+    document.querySelectorAll('#adminBarcodeV926 .abSubtab').forEach(b=>b.classList.toggle('active',b.dataset.abtab===name));
+    document.querySelectorAll('#adminBarcodeV926 .abPane').forEach(p=>p.classList.toggle('active',p.dataset.abpane===name));
+    if(name==='assign')setTimeout(()=>{const x=q('abAssignBarcode');if(x)x.focus()},60);
+  };
+  window.loadAdminBarcodeV926=async function(silent){
+    const a=admin();if(!a.email||!a.pin){msg('Admin session is required. Sign in again.',false);return}
+    if(!silent)msg('Loading products and batches…',true);
+    try{
+      const d=await barcodeCall('getBarcodeConsoleV922',[a.email,a.pin]);
+      const products=d&&Array.isArray(d.products)?d.products:[];AB_BATCHES=d&&Array.isArray(d.batches)?d.batches:[];
+      const sel=q('abProduct');if(sel){sel.innerHTML=products.length?products.map(p=>'<option value="'+safe(p&&p.id||'')+'">'+safe(p&&p.name||p&&p.id||'Product')+'</option>').join(''):'<option value="">No products available</option>';sel.disabled=!products.length}
+      renderRows();AB_LOADED=true;
+      if(!products.length)throw new Error('No selectable products returned from the Barcode backend.');
+      if(!silent)msg('Barcode ready · '+products.length+' product'+(products.length===1?'':'s')+' loaded · backend '+String(d.version||'')+'.',true);
+    }catch(e){AB_LOADED=false;renderRows();msg(e&&e.message?e.message:String(e),false)}
+  };
+  window.adminBarcodeCreateV926=async function(){
+    const a=admin(),product=q('abProduct'),qty=Number(q('abQty')&&q('abQty').value||0),location=String(q('abLocation')&&q('abLocation').value||'HUB').trim()||'HUB';
+    if(!a.email||!a.pin)return msg('Admin session is required.',false);if(!product||!product.value)return msg('Select a product.',false);if(!(qty>0))return msg('Quantity must be greater than 0.',false);
+    const btn=q('abCreate');if(btn){btn.disabled=true;btn.textContent='Generating…'}
+    try{
+      const r=await barcodeCall('createBatchV81',[a.email,a.pin,{productId:product.value,qty,location}]);
+      let b=r&&r.batch;if(!b&&r&&r.batchId)b={'Batch ID':r.batchId,Barcode:r.barcode,'Product Name':r.productName,'Original Qty':r.qty,Location:location};
+      if(!b)throw new Error('Batch was created but barcode details were not returned.');
+      renderLabel(b);q('abAssignBarcode').value=b.Barcode||b.barcode||'';msg('Batch created. Barcode is ready to print.',true);await window.loadAdminBarcodeV926(true);
+    }catch(e){msg(e&&e.message?e.message:String(e),false)}finally{if(btn){btn.disabled=false;btn.textContent='Generate batch & barcode'}}
+  };
+  window.adminBarcodeAssignV926=async function(){
+    const a=admin(),key=String(q('abAssignBarcode')&&q('abAssignBarcode').value||'').trim(),orderId=String(q('abOrderId')&&q('abOrderId').value||'').trim(),qty=Number(q('abAssignQty')&&q('abAssignQty').value||0),orderType=String(q('abOrderType')&&q('abOrderType').value||'B2B');
+    if(!a.email||!a.pin)return msg('Admin session is required.',false);if(!key||!orderId||!(qty>0))return msg('Barcode/Batch ID, Order ID and quantity are required.',false);
+    const btn=q('abAssignBtn');if(btn){btn.disabled=true;btn.textContent='Assigning…'}
+    try{const r=await barcodeCall('assignBatchV81',[a.email,a.pin,{barcodeOrBatch:key,orderType,orderId,qty}]);if(!r||r.success===false)throw new Error(r&&r.error||'Batch assignment failed.');msg('Assigned '+Number(r.assignedQty||qty)+'. Batch remaining '+Number(r.remainingAfter||0)+'.',true);await window.loadAdminBarcodeV926(true)}catch(e){msg(e&&e.message?e.message:String(e),false)}finally{if(btn){btn.disabled=false;btn.textContent='Validate & assign'}}
+  };
+  window.adminBarcodeUseBatchV926=function(i){const b=AB_BATCHES[Number(i)];if(!b)return msg('Batch not found. Refresh and try again.',false);const value=String(b.Barcode||b['Batch ID']||'').trim();q('abAssignBarcode').value=value;window.adminBarcodeSubtabV926('assign');msg('Barcode '+value+' selected for assignment.',true);setTimeout(()=>{const x=q('abOrderId');if(x)x.focus()},70)};
+  window.adminBarcodePrintBatchV926=function(i){const b=AB_BATCHES[Number(i)];if(!b)return msg('Batch not found. Refresh and try again.',false);try{renderLabel(b);window.adminBarcodeSubtabV926('batch');setTimeout(()=>window.print(),120)}catch(e){msg(e&&e.message?e.message:String(e),false)}};
+  window.adminBarcodePrintCurrentV926=function(){if(!AB_CURRENT_LABEL)return msg('Create or select a batch first.',false);window.print()};
+  window.adminBarcodeAssignCurrentV926=function(){if(!AB_CURRENT_LABEL)return msg('Create or select a batch first.',false);q('abAssignBarcode').value=AB_CURRENT_LABEL.Barcode||'';window.adminBarcodeSubtabV926('assign');msg('Barcode '+(AB_CURRENT_LABEL.Barcode||'')+' ready for assignment.',true)};
+  window.openAdminBarcodeV926=function(){
+    OLD_PANELS.concat(['adminBarcodePanel']).forEach(id=>{const x=q(id);if(x)x.classList.add('hidden')});
+    const dash=q('dash'),tabs=dash&&dash.querySelector('.tabs');if(!tabs)return;tabs.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    const t=q('tAdminBarcode'),p=q('adminBarcodePanel');if(t)t.classList.add('active');if(p)p.classList.remove('hidden');
+    if(!AB_LOADED)window.loadAdminBarcodeV926();
+  };
+  function install(){
+    const dash=q('dash'),tabs=dash&&dash.querySelector('.tabs');if(!dash||!tabs||q('tAdminBarcode'))return;
+    const btn=document.createElement('button');btn.id='tAdminBarcode';btn.type='button';btn.textContent='Barcode';btn.onclick=window.openAdminBarcodeV926;tabs.appendChild(btn);
+    const panel=document.createElement('div');panel.id='adminBarcodePanel';panel.className='card hidden';
+    panel.innerHTML='<div id="adminBarcodeV926"><div class="row" style="justify-content:space-between"><div><h3 style="margin:0">Barcode & Batch Control</h3><div class="muted">Create and print a barcode first, then assign that barcode to a B2C or B2B order.</div></div><button class="secondary" type="button" onclick="loadAdminBarcodeV926()">Refresh</button></div><div id="abMsg" class="muted" style="margin-top:8px"></div><div class="abSubtabs"><button type="button" class="abSubtab active" data-abtab="batch" onclick="adminBarcodeSubtabV926(\'batch\')">1 · Batch & Print</button><button type="button" class="abSubtab" data-abtab="assign" onclick="adminBarcodeSubtabV926(\'assign\')">2 · Assign Barcode</button></div><section class="abPane active" data-abpane="batch"><div class="abHelp"><b>Batch & Print</b><br>Select a product, quantity and location. Generate the batch, then print the scannable Code 39 label.</div><div class="card" style="box-shadow:none"><div class="abGrid"><select id="abProduct" class="abField"><option>Open Barcode tab to load products</option></select><input id="abQty" class="abField" type="number" min="1" value="100" placeholder="Quantity"><input id="abLocation" class="abField" value="HUB" placeholder="Location"><button id="abCreate" type="button" onclick="adminBarcodeCreateV926()">Generate batch & barcode</button></div></div><div id="abPrintArea" class="card hidden"><div class="abLabelWrap"><div id="abPrintLabel" class="abLabel"><div class="abLabelBrand">🥥 NATIVE ELANEERU</div><div id="abName" class="abLabelMeta"></div><div id="abSvg"></div><div id="abBarcode" class="abBarcodeText"></div><div class="abLabelBottom"><span id="abBatch"></span><span id="abQtyLabel"></span><span id="abLocationLabel"></span></div></div></div><div class="abActions"><button type="button" onclick="adminBarcodePrintCurrentV926()">🖨️ Print Barcode Label</button><button class="secondary" type="button" onclick="adminBarcodeAssignCurrentV926()">→ Assign this barcode</button></div></div><div class="card" style="box-shadow:none"><div class="row" style="justify-content:space-between"><div><b>Recent batches</b><div class="muted">Reprint or send any batch straight to assignment.</div></div></div><div class="abScroll"><table><thead><tr><th>Batch</th><th>Barcode</th><th>Product</th><th>Available</th><th>Reserved</th><th>Delivered</th><th>Status</th><th>Actions</th></tr></thead><tbody id="abRows"></tbody></table></div></div></section><section class="abPane" data-abpane="assign"><div class="abHelp"><b>Assign Barcode</b><br>Scan or paste the printed barcode, choose B2C/B2B, enter the Order ID and quantity, then validate and assign.</div><div class="card" style="box-shadow:none"><input id="abAssignBarcode" class="abField" placeholder="Scan / paste barcode or batch ID"><div style="height:8px"></div><div class="abGrid"><select id="abOrderType" class="abField"><option>B2B</option><option>B2C</option></select><input id="abOrderId" class="abField" placeholder="Order ID"><input id="abAssignQty" class="abField" type="number" min="1" placeholder="Quantity to assign"><button id="abAssignBtn" type="button" onclick="adminBarcodeAssignV926()">Validate & assign</button></div></div></section></div>';
+    tabs.insertAdjacentElement('afterend',panel);
+    tabs.querySelectorAll('button:not(#tAdminBarcode)').forEach(b=>b.addEventListener('click',()=>{panel.classList.add('hidden');btn.classList.remove('active')}));
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})();
+</script>
