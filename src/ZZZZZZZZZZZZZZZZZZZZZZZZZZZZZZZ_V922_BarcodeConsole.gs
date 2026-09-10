@@ -1,8 +1,66 @@
-/** Native Elaneeru V9.2.2 — resilient Barcode console catalogue. */
-const V922_BARCODE_CONSOLE_VERSION='9.2.2';
+/** Native Elaneeru V9.2.3 — resilient Barcode console catalogue. */
+const V922_BARCODE_CONSOLE_VERSION='9.2.3';
+
+function v923EnsureProductHeaders_(){
+  const sh=sh_(V8.SHEETS.PRODUCTS);
+  const required=[
+    'Product ID','Product Name','Category','Unit','B2C Price','B2B Default Price',
+    'B2C MOQ','B2B MOQ','Qty Step','Bundle Qty 1','Bundle Price 1',
+    'Bundle Qty 2','Bundle Price 2','Barcode Required','B2C Status','B2B Status',
+    'Sort Order','Image URL','Description','Created At','Updated At'
+  ];
+  if(sh.getLastColumn()===0||sh.getLastRow()===0){
+    sh.getRange(1,1,1,required.length).setValues([required]);
+    sh.setFrozenRows(1);
+    return sh;
+  }
+  const existing=sh.getRange(1,1,1,Math.max(1,sh.getLastColumn())).getValues()[0].map(s_);
+  required.forEach(function(h){
+    if(existing.indexOf(h)===-1){
+      sh.getRange(1,sh.getLastColumn()+1).setValue(h);
+      existing.push(h);
+    }
+  });
+  return sh;
+}
+
+function v923EnsureTenderCoconut_(){
+  return lockRun_(function(){
+    v923EnsureProductHeaders_();
+    const all=productRows_();
+    const tc=all.find(function(p){return s_(p['Product ID']).toUpperCase()==='TC';});
+    if(tc){
+      const patch={};
+      if(!s_(tc['Product Name']))patch['Product Name']='Tender Coconut';
+      if(!s_(tc.Category))patch.Category='Coconuts';
+      if(!s_(tc.Unit))patch.Unit='pc';
+      if(!n_(tc['B2C MOQ']))patch['B2C MOQ']=1;
+      if(!n_(tc['B2B MOQ']))patch['B2B MOQ']=20;
+      if(!n_(tc['Qty Step']))patch['Qty Step']=1;
+      if(!s_(tc['Barcode Required']))patch['Barcode Required']='YES';
+      if(s_(tc['B2C Status']).toUpperCase()!=='LIVE')patch['B2C Status']='LIVE';
+      if(s_(tc['B2B Status']).toUpperCase()!=='LIVE')patch['B2B Status']='LIVE';
+      if(!n_(tc['Sort Order']))patch['Sort Order']=1;
+      if(Object.keys(patch).length){
+        patch['Updated At']=now_();
+        updateObj_(V8.SHEETS.PRODUCTS,tc._row,patch);
+      }
+      return {created:false,repaired:Object.keys(patch).length>0};
+    }
+    append_(V8.SHEETS.PRODUCTS,{
+      'Product ID':'TC','Product Name':'Tender Coconut','Category':'Coconuts','Unit':'pc',
+      'B2C Price':50,'B2B Default Price':39,'B2C MOQ':1,'B2B MOQ':20,'Qty Step':1,
+      'Bundle Qty 1':5,'Bundle Price 1':240,'Bundle Qty 2':10,'Bundle Price 2':475,
+      'Barcode Required':'YES','B2C Status':'LIVE','B2B Status':'LIVE','Sort Order':1,
+      'Created At':now_(),'Updated At':now_()
+    });
+    return {created:true,repaired:true};
+  });
+}
 
 function getBarcodeConsoleV922(email,pin){
   requireAdmin_(email,pin);
+  const repair=v923EnsureTenderCoconut_();
   const all=productRows_();
   let products=all.filter(function(p){
     const id=s_(p['Product ID']).toUpperCase();
@@ -26,6 +84,7 @@ function getBarcodeConsoleV922(email,pin){
   return {
     ok:true,
     version:V922_BARCODE_CONSOLE_VERSION,
+    productMasterRepair:repair,
     products:products,
     batches:Array.isArray(batches)?batches.slice(-250).reverse():[],
     assignments:Array.isArray(assignments)?assignments.slice(-250).reverse():[]
@@ -33,6 +92,7 @@ function getBarcodeConsoleV922(email,pin){
 }
 
 function getBarcodeConsoleHealthV922(){
+  v923EnsureProductHeaders_();
   const all=productRows_();
   const selectable=all.filter(function(p){
     const id=s_(p['Product ID']).toUpperCase();
