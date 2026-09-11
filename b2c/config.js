@@ -1,6 +1,6 @@
 window.NEL_CONFIG = {
   apiUrl: 'https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec',
-  appVersion: '10.40.0-pwa',
+  appVersion: '10.41.0-pwa',
   paymentRelease: '10.35.0-pwa',
   supportPhone: '7411807675',
   supportWhatsApp: '917411807675',
@@ -17,7 +17,7 @@ window.NEL_RPC_V109 = true;
 /* Runs before the main inline app boot so stale/corrupt browser state cannot blank the PWA. */
 document.write('<script src="./boot-recovery-v10360.js?v=10360"></script>');
 document.write('<script src="./image-fallback-v918.js?v=10380"></script>');
-document.write('<script src="./product-images-v10380.js?v=10380"></script>');
+document.write('<script src="./product-images-v10380.js?v=10390"></script>');
 document.write('<script src="./idb-v1.js?v=10350"></script>');
 if (!window.NEL_UI_V110) document.write('<script src="./ui-v110.js?v=10350"></script>');
 if (!window.NEL_UI_V111) document.write('<script src="./ui-v111.js?v=10350"></script>');
