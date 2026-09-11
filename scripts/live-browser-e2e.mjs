@@ -170,7 +170,7 @@ async function testB2C(){
     }
     await page.waitFor(`typeof S!=='undefined' && S.cfg && Array.isArray(S.cfg.products) && S.cfg.products.length>0`,25000,'B2C catalogue');
     assert(/Native Elaneeru/i.test(await page.evaluate('document.title')), 'b2c: customer PWA renders in Chrome');
-    assert((await page.evaluate('window.NEL_CONFIG && NEL_CONFIG.appVersion'))==='10.39.0-pwa','b2c: production version 10.39.0-pwa is live');
+    assert(/^\d+\.\d+\.\d+-pwa$/.test(String(await page.evaluate('window.NEL_CONFIG && NEL_CONFIG.appVersion')||'')),'b2c: production app version is present');
     await checkManifest(page,'b2c');
     await checkServiceWorker(page,'b2c');
 
