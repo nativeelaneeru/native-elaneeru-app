@@ -44,6 +44,7 @@ function doGetV912_(e){
   }
   if(page==='VendorApproval'){
     try{out.append(HtmlService.createTemplateFromFile('VendorApprovalFixV916').evaluate().getContent());}catch(err){}
+    try{out.append(HtmlService.createTemplateFromFile('VendorApprovalFixV932').evaluate().getContent());}catch(err){}
   }
   if(page==='VendorOnboardingV910'){
     try{out.append(HtmlService.createTemplateFromFile('VendorOnboardingFixV918').evaluate().getContent());}catch(err){}
