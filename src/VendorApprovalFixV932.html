@@ -1,0 +1,26 @@
+<script>
+(function(){
+  if(window.NEL_VENDOR_APPROVAL_FIX_V932)return;window.NEL_VENDOR_APPROVAL_FIX_V932=true;
+  const q=id=>document.getElementById(id);
+  const invoke=(fn,args)=>new Promise((resolve,reject)=>{try{const r=google.script.run.withSuccessHandler(resolve).withFailureHandler(e=>reject(new Error(e&&e.message?e.message:String(e))));r[fn](...(Array.isArray(args)?args:[]));}catch(e){reject(e)}});
+  function errorText(e){return String(e&&e.message?e.message:e||'Approval could not be completed.');}
+  async function approveSafe(i){
+    const vendor=Array.isArray(LIST)?LIST[i]:null;
+    if(!vendor)return;
+    const pin=String(q('vpin_'+i)&&q('vpin_'+i).value||'').trim(),target=String(q('target_'+i)&&q('target_'+i).value||''),reward=String(q('reward_'+i)&&q('reward_'+i).value||'').trim(),out=q('result_'+i),button=q('approve_'+i);
+    if(!/^\d{4,8}$/.test(pin)){if(out)out.innerHTML='<div class="msg">Enter a 4–8 digit initial PIN.</div>';return;}
+    if(!E||!P){if(out)out.innerHTML='<div class="msg">Your Admin session has expired. Please log in again.</div>';return;}
+    if(button){button.disabled=true;button.textContent='Approving…'}
+    if(out)out.innerHTML='<div class="muted" style="margin-top:8px">Creating B2B account…</div>';
+    try{
+      const r=await invoke('approveVendorOnboardingV840',[E,P,vendor.onboardingId,pin,target,reward]);
+      if(!r||r.success===false||!r.vendorId)throw new Error(r&&r.error||'Vendor account was not created.');
+      if(out)out.innerHTML='<div class="credential"><div class="muted">B2B account activated</div><strong>'+String(vendor.mobile||'')+' / '+pin+'</strong><div class="muted" style="margin-top:5px">Vendor ID: '+String(r.vendorId)+'</div></div>';
+      if(button)button.classList.add('hidden');
+      setTimeout(function(){if(typeof window.loadPending==='function')window.loadPending();},700);
+    }catch(e){if(out)out.innerHTML='<div class="msg">'+errorText(e).replace(/[&<>]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[x]))+'</div>';if(button){button.disabled=false;button.textContent='Approve & activate B2B login';}}
+  }
+  function install(){try{window.approve=approveSafe;approve=approveSafe;}catch(e){window.approve=approveSafe;}}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})();
+</script>
