@@ -1,0 +1,97 @@
+<style>
+#adminProductsV928 .pmToolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+#adminProductsV928 .pmLayout{display:grid;grid-template-columns:minmax(320px,430px) 1fr;gap:14px;align-items:start}
+#adminProductsV928 .pmForm{border:1px solid #e1e8e2;border-radius:14px;padding:13px;background:#fbfdfb;position:sticky;top:74px}
+#adminProductsV928 .pmGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#adminProductsV928 .pmGrid .full{grid-column:1/-1}
+#adminProductsV928 input,#adminProductsV928 select,#adminProductsV928 textarea{width:100%}
+#adminProductsV928 .pmLabel{font-size:11px;color:#68766d;font-weight:800;margin:1px 0 4px}
+#adminProductsV928 .pmPreview{height:180px;border:1px dashed #cbd8ce;border-radius:13px;background:#f1f6f2;display:grid;place-items:center;overflow:hidden;color:#76827a;font-size:12px}
+#adminProductsV928 .pmPreview img{width:100%;height:100%;object-fit:contain;background:#fff}
+#adminProductsV928 .pmActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+#adminProductsV928 .pmList{display:grid;gap:9px}
+#adminProductsV928 .pmItem{border:1px solid #e1e8e2;border-radius:14px;padding:11px;background:#fff;display:grid;grid-template-columns:86px 1fr auto;gap:11px;align-items:center}
+#adminProductsV928 .pmThumb{width:86px;height:86px;border-radius:12px;background:#eff5f0;display:grid;place-items:center;overflow:hidden;font-size:34px}
+#adminProductsV928 .pmThumb img{width:100%;height:100%;object-fit:cover}
+#adminProductsV928 .pmName{font-weight:900;font-size:14px}.pmCode{font-size:11px;color:#68766d;margin-top:2px}
+#adminProductsV928 .pmMeta{font-size:11px;color:#68766d;margin-top:4px;line-height:1.45}
+#adminProductsV928 .pmStatus{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+#adminProductsV928 .pmSide{display:grid;gap:6px;min-width:96px}
+#adminProductsV928 .pmSide button{font-size:11px;padding:8px}
+#adminProductsV928 .pmLive{background:#e9f7ee;color:#155b2b;border:1px solid #cfe5d5}.pmOff{background:#f6f6f6;color:#67736b;border:1px solid #e4e7e4}
+#adminProductsV928 .pmNote{background:#eef6ef;border:1px solid #d3e4d5;border-radius:12px;padding:10px;font-size:11px;color:#3f5747;margin-bottom:10px}
+@media(max-width:980px){#adminProductsV928 .pmLayout{grid-template-columns:1fr}#adminProductsV928 .pmForm{position:static}}
+@media(max-width:620px){#adminProductsV928 .pmGrid{grid-template-columns:1fr}#adminProductsV928 .pmGrid .full{grid-column:auto}#adminProductsV928 .pmItem{grid-template-columns:70px 1fr}#adminProductsV928 .pmThumb{width:70px;height:70px}#adminProductsV928 .pmSide{grid-column:1/-1;grid-template-columns:repeat(3,1fr)}}
+</style>
+<script>
+(function(){
+  if(window.NEL_ADMIN_PRODUCTS_V928)return;window.NEL_ADMIN_PRODUCTS_V928=true;
+  var PRODUCTS=[],LOADED=false,EDITING='';
+  var OLD=['orders','customers','feedback','tickets','delivery','routeplan','access','adminBarcodePanel'];
+  function q(id){return document.getElementById(id)}
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})}
+  function admin(){return {email:String(typeof E!=='undefined'?E:'').trim(),pin:String(typeof P!=='undefined'?P:'').trim()}}
+  function msg(text,ok){var x=q('pmMsg');if(!x)return;x.style.color=ok?'#155b2b':'#9a3412';x.textContent=text||''}
+  function num(id){return Number(q(id)&&q(id).value||0)}
+  function val(id){return String(q(id)&&q(id).value||'').trim()}
+  function checked(id){return !!(q(id)&&q(id).checked)}
+  function callGet(a){return new Promise(function(resolve,reject){google.script.run.withSuccessHandler(resolve).withFailureHandler(function(e){reject(new Error(e&&e.message?e.message:String(e)))}).getProductsAdminV928(a.email,a.pin)})}
+  function callSave(a,p){return new Promise(function(resolve,reject){google.script.run.withSuccessHandler(resolve).withFailureHandler(function(e){reject(new Error(e&&e.message?e.message:String(e)))}).saveProductAdminV928(a.email,a.pin,p)})}
+  function callUpload(a,p){return new Promise(function(resolve,reject){google.script.run.withSuccessHandler(resolve).withFailureHandler(function(e){reject(new Error(e&&e.message?e.message:String(e)))}).uploadProductImageAdminV928(a.email,a.pin,p)})}
+  function callStatus(a,id,ch,status){return new Promise(function(resolve,reject){google.script.run.withSuccessHandler(resolve).withFailureHandler(function(e){reject(new Error(e&&e.message?e.message:String(e)))}).setProductChannelStatusAdminV928(a.email,a.pin,id,ch,status)})}
+  function preview(url){var host=q('pmPreview');if(!host)return;url=String(url||'').trim();host.innerHTML=url?'<img src="'+esc(url)+'" alt="Product image" onerror="this.parentNode.textContent=\'Image could not be loaded. Use another public URL or upload a file.\'">':'No product image selected'}
+  function resetForm(){
+    EDITING='';['pmId','pmName','pmCategory','pmUnit','pmImage','pmDescription'].forEach(function(id){if(q(id))q(id).value='' });
+    [['pmB2cPrice',''],['pmB2bPrice',''],['pmB2cMoq','1'],['pmB2bMoq','1'],['pmStep','1'],['pmBq1',''],['pmBp1',''],['pmBq2',''],['pmBp2',''],['pmSort','']].forEach(function(x){if(q(x[0]))q(x[0]).value=x[1]});
+    if(q('pmBarcode'))q('pmBarcode').checked=true;if(q('pmB2cLive'))q('pmB2cLive').checked=true;if(q('pmB2bLive'))q('pmB2bLive').checked=true;if(q('pmFile'))q('pmFile').value='';
+    if(q('pmId'))q('pmId').disabled=false;preview('');msg('New product mode.',true);var h=q('pmFormTitle');if(h)h.textContent='Add Product';
+  }
+  function payload(){
+    return {productId:val('pmId').toUpperCase(),productName:val('pmName'),category:val('pmCategory'),unit:val('pmUnit')||'pc',b2cPrice:num('pmB2cPrice'),b2bPrice:num('pmB2bPrice'),b2cMoq:num('pmB2cMoq')||1,b2bMoq:num('pmB2bMoq')||1,qtyStep:num('pmStep')||1,bundleQty1:num('pmBq1'),bundlePrice1:num('pmBp1'),bundleQty2:num('pmBq2'),bundlePrice2:num('pmBp2'),barcodeRequired:checked('pmBarcode')?'YES':'NO',imageUrl:val('pmImage'),b2cStatus:checked('pmB2cLive')?'LIVE':'NOT LIVE',b2bStatus:checked('pmB2bLive')?'LIVE':'NOT LIVE',sortOrder:num('pmSort'),description:val('pmDescription')};
+  }
+  function productImage(p){return p&&p.imageUrl?'<img src="'+esc(p.imageUrl)+'" alt="'+esc(p.productName||'Product')+'" loading="lazy" onerror="this.remove();this.parentNode.textContent=\'📦\'">':'📦'}
+  function filtered(){var s=val('pmSearch').toLowerCase();if(!s)return PRODUCTS;return PRODUCTS.filter(function(p){return [p.productId,p.productName,p.category].some(function(x){return String(x||'').toLowerCase().includes(s)})})}
+  function render(){
+    var host=q('pmList');if(!host)return;var list=filtered();q('pmCount').textContent=list.length+' / '+PRODUCTS.length+' products';
+    host.innerHTML=list.length?list.map(function(p){
+      var b2c=p.b2cStatus==='LIVE',b2b=p.b2bStatus==='LIVE';
+      return '<div class="pmItem"><div class="pmThumb">'+productImage(p)+'</div><div><div class="pmName">'+esc(p.productName)+'</div><div class="pmCode">'+esc(p.productId)+' · '+esc(p.category)+' · '+esc(p.unit||'pc')+'</div><div class="pmMeta">B2C ₹'+Number(p.b2cPrice||0)+' · MOQ '+Number(p.b2cMoq||1)+' &nbsp;|&nbsp; B2B ₹'+Number(p.b2bPrice||0)+' · MOQ '+Number(p.b2bMoq||1)+' · Sort '+Number(p.sortOrder||0)+'</div><div class="pmStatus"><span class="badge '+(b2c?'pmLive':'pmOff')+'">B2C '+(b2c?'LIVE':'NOT LIVE')+'</span><span class="badge '+(b2b?'pmLive':'pmOff')+'">B2B '+(b2b?'LIVE':'NOT LIVE')+'</span></div></div><div class="pmSide"><button type="button" onclick="editProductAdminV928(\''+esc(p.productId)+'\')">Edit</button><button class="secondary" type="button" onclick="toggleProductAdminV928(\''+esc(p.productId)+'\',\'B2C\',\''+(b2c?'NOT LIVE':'LIVE')+'\')">B2C '+(b2c?'Off':'Live')+'</button><button class="secondary" type="button" onclick="toggleProductAdminV928(\''+esc(p.productId)+'\',\'B2B\',\''+(b2b?'NOT LIVE':'LIVE')+'\')">B2B '+(b2b?'Off':'Live')+'</button></div></div>';
+    }).join(''):'<div class="muted" style="padding:16px">No products match your search.</div>';
+  }
+  window.loadProductsAdminV928=async function(){
+    var a=admin();if(!a.email||!a.pin)return msg('Admin session is required.',false);msg('Loading product master…',true);
+    try{var d=await callGet(a);PRODUCTS=d&&Array.isArray(d.products)?d.products:[];LOADED=true;render();msg('Product master ready · '+PRODUCTS.length+' products.',true)}catch(e){LOADED=false;msg(e.message,false)}
+  };
+  window.editProductAdminV928=function(id){
+    var p=PRODUCTS.find(function(x){return x.productId===id});if(!p)return;EDITING=id;
+    var map={pmId:p.productId,pmName:p.productName,pmCategory:p.category,pmUnit:p.unit,pmB2cPrice:p.b2cPrice,pmB2bPrice:p.b2bPrice,pmB2cMoq:p.b2cMoq,pmB2bMoq:p.b2bMoq,pmStep:p.qtyStep,pmBq1:p.bundleQty1,pmBp1:p.bundlePrice1,pmBq2:p.bundleQty2,pmBp2:p.bundlePrice2,pmSort:p.sortOrder,pmImage:p.imageUrl,pmDescription:p.description};Object.keys(map).forEach(function(k){if(q(k))q(k).value=map[k]==null?'':map[k]});
+    q('pmBarcode').checked=p.barcodeRequired==='YES';q('pmB2cLive').checked=p.b2cStatus==='LIVE';q('pmB2bLive').checked=p.b2bStatus==='LIVE';q('pmId').disabled=true;preview(p.imageUrl);q('pmFormTitle').textContent='Edit '+p.productName;msg('Editing '+p.productId+'.',true);q('pmForm').scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  window.toggleProductAdminV928=async function(id,ch,status){
+    if(id==='TC'&&status!=='LIVE')return msg('Tender Coconut must remain LIVE in B2C and B2B.',false);var a=admin();
+    try{await callStatus(a,id,ch,status);msg(id+' '+ch+' changed to '+status+'.',true);await window.loadProductsAdminV928()}catch(e){msg(e.message,false)}
+  };
+  function readFile(file){return new Promise(function(resolve,reject){var r=new FileReader();r.onload=function(){resolve(String(r.result||''))};r.onerror=function(){reject(new Error('Unable to read image file.'))};r.readAsDataURL(file)})}
+  window.saveProductAdminV928=async function(){
+    var a=admin(),p=payload(),btn=q('pmSave');if(!p.productId||!p.productName||!p.category)return msg('Product ID, Product Name and Category are required.',false);btn.disabled=true;btn.textContent='Saving…';
+    try{
+      var file=q('pmFile')&&q('pmFile').files&&q('pmFile').files[0];
+      if(file){if(file.size>3*1024*1024)throw new Error('Image must be 3 MB or smaller.');msg('Uploading product image…',true);var data=await readFile(file);var up=await callUpload(a,{productId:p.productId,fileName:file.name,mimeType:file.type,base64:data});if(!up||!up.url)throw new Error('Image upload did not return a public URL.');p.imageUrl=up.url;q('pmImage').value=up.url;preview(up.url)}
+      var r=await callSave(a,p);if(!r||r.success===false)throw new Error(r&&r.error||'Product could not be saved.');msg((r.created?'Product created: ':'Product updated: ')+(r.product&&r.product.productName||p.productName),true);await window.loadProductsAdminV928();window.editProductAdminV928(p.productId);
+    }catch(e){msg(e.message,false)}finally{btn.disabled=false;btn.textContent='Save Product'}
+  };
+  window.resetProductAdminV928=resetForm;
+  window.previewProductImageV928=function(){preview(val('pmImage'))};
+  window.productAdminSearchV928=render;
+  window.openAdminProductsV928=function(){
+    OLD.concat(['adminProductsPanel']).forEach(function(id){var x=q(id);if(x)x.classList.add('hidden')});var dash=q('dash'),tabs=dash&&dash.querySelector('.tabs');if(!tabs)return;tabs.querySelectorAll('button').forEach(function(b){b.classList.remove('active')});var t=q('tAdminProducts'),p=q('adminProductsPanel');if(t)t.classList.add('active');if(p)p.classList.remove('hidden');if(!LOADED)window.loadProductsAdminV928();
+  };
+  function install(){
+    var dash=q('dash'),tabs=dash&&dash.querySelector('.tabs');if(!dash||!tabs||q('tAdminProducts'))return;
+    var btn=document.createElement('button');btn.id='tAdminProducts';btn.type='button';btn.textContent='Products';btn.onclick=window.openAdminProductsV928;tabs.appendChild(btn);
+    var panel=document.createElement('div');panel.id='adminProductsPanel';panel.className='card hidden';panel.innerHTML='<div id="adminProductsV928"><div class="row" style="justify-content:space-between"><div><h3 style="margin:0">Product Management</h3><div class="muted">One master for B2C + B2B. Add 10, 100 or more products without changing app code.</div></div><button class="secondary" type="button" onclick="loadProductsAdminV928()">Refresh</button></div><div class="pmNote"><b>Images:</b> upload an image here or paste a public image URL. The saved URL goes to the Products sheet and the customer/vendor apps read it dynamically. If an image fails, the apps show a neutral fallback instead of blocking the app.</div><div class="pmLayout"><div id="pmForm" class="pmForm"><div class="row" style="justify-content:space-between"><h4 id="pmFormTitle" style="margin:0">Add Product</h4><button class="secondary" type="button" onclick="resetProductAdminV928()">+ New</button></div><div class="pmGrid" style="margin-top:10px"><div><div class="pmLabel">Product ID *</div><input id="pmId" maxlength="30" placeholder="e.g. TC, APPLE-1"></div><div><div class="pmLabel">Product Name *</div><input id="pmName" placeholder="Product name"></div><div><div class="pmLabel">Category *</div><input id="pmCategory" placeholder="Coconuts / Fruits"></div><div><div class="pmLabel">Unit</div><input id="pmUnit" value="pc" placeholder="pc / kg / pack"></div><div><div class="pmLabel">B2C Price</div><input id="pmB2cPrice" type="number" min="0" step="0.01"></div><div><div class="pmLabel">B2B Default Price</div><input id="pmB2bPrice" type="number" min="0" step="0.01"></div><div><div class="pmLabel">B2C MOQ</div><input id="pmB2cMoq" type="number" min="1" value="1"></div><div><div class="pmLabel">B2B MOQ</div><input id="pmB2bMoq" type="number" min="1" value="1"></div><div><div class="pmLabel">Quantity Step</div><input id="pmStep" type="number" min="1" value="1"></div><div><div class="pmLabel">Sort Order</div><input id="pmSort" type="number" min="0"></div><div><div class="pmLabel">Bundle Qty 1</div><input id="pmBq1" type="number" min="0"></div><div><div class="pmLabel">Bundle Price 1</div><input id="pmBp1" type="number" min="0" step="0.01"></div><div><div class="pmLabel">Bundle Qty 2</div><input id="pmBq2" type="number" min="0"></div><div><div class="pmLabel">Bundle Price 2</div><input id="pmBp2" type="number" min="0" step="0.01"></div><div class="full"><div class="pmLabel">Image URL</div><input id="pmImage" placeholder="https://..." oninput="previewProductImageV928()"></div><div class="full"><div class="pmLabel">Or upload image (PNG/JPG/WEBP/GIF · max 3 MB)</div><input id="pmFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif"></div><div class="full"><div id="pmPreview" class="pmPreview">No product image selected</div></div><div class="full"><div class="pmLabel">Description</div><textarea id="pmDescription" rows="3" placeholder="Short product description"></textarea></div><div class="full row"><label><input id="pmBarcode" type="checkbox" checked style="width:auto"> Barcode required</label><label><input id="pmB2cLive" type="checkbox" checked style="width:auto"> B2C LIVE</label><label><input id="pmB2bLive" type="checkbox" checked style="width:auto"> B2B LIVE</label></div></div><div class="pmActions"><button id="pmSave" type="button" onclick="saveProductAdminV928()">Save Product</button><button class="secondary" type="button" onclick="resetProductAdminV928()">Clear</button></div><div id="pmMsg" class="muted" style="margin-top:8px"></div></div><div><div class="pmToolbar"><input id="pmSearch" placeholder="Search product ID, name or category" oninput="productAdminSearchV928()" style="flex:1;min-width:220px"><span id="pmCount" class="muted"></span></div><div id="pmList" class="pmList"><div class="muted">Open Products to load the master.</div></div></div></div></div>';
+    tabs.insertAdjacentElement('afterend',panel);tabs.querySelectorAll('button:not(#tAdminProducts)').forEach(function(b){b.addEventListener('click',function(){panel.classList.add('hidden');btn.classList.remove('active')})});resetForm();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})();
+</script>
