@@ -29,9 +29,9 @@
 
   async function safeLoadPending(){
     const host=q('pending');
-    if(host)host.innerHTML='<div class="muted" style="padding:14px 0">Loading pending vendors…</div>';
+    if(host)host.innerHTML='<div class="muted" style="padding:14px 0">Loading vendor approvals…</div>';
     try{
-      const raw=await invoke('getPendingVendorOnboardingsV840',[E,P]);
+      const raw=await invoke('getVendorApprovalQueueV933',[E,P]);
       LIST=Array.isArray(raw)?raw:[];
       if(typeof render==='function')render();
       else if(host)host.innerHTML='<div class="muted" style="padding:18px 0">No vendor approvals are pending.</div>';
