@@ -23,6 +23,8 @@ function repairVendorOnboardingV934(email,pin,onboardingId){
   if(idCol<0||statusCol<0)throw new Error('Vendor_Onboarding headers are missing Onboarding ID or Status.');
   const row=values.slice(1).findIndex(function(r){return s_(r[idCol])===id;});
   if(row<0)throw new Error('Onboarding '+id+' was not found in Vendor_Onboarding.');
+  const current=s_(values[row+1][statusCol]).toUpperCase();
+  if(['APPROVED','REJECTED','CANCELLED'].includes(current))throw new Error('This onboarding is already '+current+'.');
   sh.getRange(row+2,statusCol+1).setValue('PENDING');
   return {success:true,onboardingId:id,status:'PENDING'};
 }
