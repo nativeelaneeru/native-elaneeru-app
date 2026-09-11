@@ -23,7 +23,7 @@ function doGetV912_(e){
     '':'index','home':'index','b2c':'index','b2b':'B2B',
     'admin':'Admin','dashboard':'CumulativeDashboard','cumulative':'CumulativeDashboard','controltower':'CumulativeDashboard',
     'payments':'PaymentVerification','paymentverification':'PaymentVerification','upiverification':'PaymentVerification',
-    'sales':'Sales','picker':'Picker','barcode':'Barcode','inventory':'Inventory',
+    'sales':'Sales','picker':'Picker','barcode':'Barcode','inventory':'Inventory','purchaseorders':'PurchaseOrders','po':'PurchaseOrders',
     'vendor':'VendorOnboardingV910','vendoronboarding':'VendorOnboardingV910',
     'approvals':'VendorApproval','vendorapproval':'VendorApproval',
     'b2bdriver':'Driver','driver':'Driver',
@@ -41,7 +41,6 @@ function doGetV912_(e){
     try{out.append(HtmlService.createTemplateFromFile('AdminAccessDeliveryV920').evaluate().getContent());}catch(err){}
     try{out.append(HtmlService.createTemplateFromFile('AdminBarcodeV926').evaluate().getContent());}catch(err){}
     try{out.append(HtmlService.createTemplateFromFile('AdminProductsV928').evaluate().getContent());}catch(err){}
-    try{out.append(HtmlService.createTemplateFromFile('AdminOffersSubscriptionsV930').evaluate().getContent());}catch(err){}
   }
   if(page==='VendorApproval'){
     try{out.append(HtmlService.createTemplateFromFile('VendorApprovalFixV916').evaluate().getContent());}catch(err){}
