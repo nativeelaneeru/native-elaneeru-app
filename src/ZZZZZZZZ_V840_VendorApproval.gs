@@ -28,6 +28,8 @@ function submitVendorOnboardingV840(mobile,pin,p){
   if(!product) throw new Error('Please select a LIVE B2B product.');
   if(!s_(p.ownerPhotoData)||!s_(p.shopPhotoData)) throw new Error('Owner photo and shop-front photo are required.');
   p.salesExecutive=u.name+' ('+u.staffId+')';
+  const initialB2BPin=String(p.initialB2BPin||'').trim();
+  if(!/^\d{4,8}$/.test(initialB2BPin))throw new Error('Set a 4–8 digit B2B PIN for the vendor.');
   p.productId=product.productId;
   p.productName=product.productName;
   const r=submitV7VendorOnboarding(p);
@@ -42,7 +44,8 @@ function submitVendorOnboardingV840(mobile,pin,p){
     'Payment Mode':paymentMode,'Credit Days':p.creditDays,'Credit Limit':p.creditLimit,
     Status:'PENDING','Updated At':capturedAt
   });
-  return {success:true,onboardingId:r.onboardingId,productName:product.productName,salesExecutive:u.name,status:'PENDING',paymentMode:paymentMode};
+  const activation=activateVendorOnboardingV935_(r.onboardingId,initialB2BPin,u.name+' ('+u.staffId+')');
+  return {success:true,onboardingId:r.onboardingId,productName:product.productName,salesExecutive:u.name,status:'ACTIVE',vendorId:activation.vendorId,initialPin:initialB2BPin,paymentMode:paymentMode};
 }
 
 function uploadOnboardingPhotoV840_(dataUrl,fileName,onboardingId,kind){
