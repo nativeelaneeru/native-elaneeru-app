@@ -16,7 +16,7 @@
     if(!parent||!isVisual(parent))return;
     try{img.onerror=null;img.removeAttribute('onerror');}catch(e){}
     try{parent.removeChild(img);}catch(e){try{img.remove();}catch(ignore){}}
-    try{if(!parent.querySelector('img'))parent.textContent='📦';}catch(e){}
+    try{if(!parent.querySelector('img'))parent.textContent='🥥';}catch(e){}
   }
 
   function arm(img){
