@@ -16,7 +16,7 @@ window.NEL_RPC_V109 = true;
 
 /* Runs before the main inline app boot so stale/corrupt browser state cannot blank the PWA. */
 document.write('<script src="./boot-recovery-v10360.js?v=10360"></script>');
-document.write('<script src="./image-fallback-v918.js?v=919"></script>');
+document.write('<script src="./image-fallback-v918.js?v=10361"></script>');
 document.write('<script src="./idb-v1.js?v=10350"></script>');
 if (!window.NEL_UI_V110) document.write('<script src="./ui-v110.js?v=10350"></script>');
 if (!window.NEL_UI_V111) document.write('<script src="./ui-v111.js?v=10350"></script>');
