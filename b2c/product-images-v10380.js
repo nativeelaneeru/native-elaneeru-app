@@ -19,7 +19,7 @@
   function imageHtml(p){
     var url=directImageUrl(p&&p.imageUrl);
     if(!url)return fallback(p&&p.productName);
-    return '<img src="'+esc(url)+'" alt="'+esc(p&&p.productName||'Product')+'" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.outerHTML=\''+fallback(p&&p.productName).replace(/'/g,'&#39;')+'\'">';
+    return '<img src="'+esc(url)+'" alt="'+esc(p&&p.productName||'Product')+'" loading="lazy" decoding="async" referrerpolicy="no-referrer">';
   }
   function install(){
     if(typeof window.renderProducts!=='function')return false;
