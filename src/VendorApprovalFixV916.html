@@ -57,6 +57,7 @@
       if(ok!==true)throw new Error('Invalid admin credentials.');
       q('login').classList.add('hidden');q('app').classList.remove('hidden');
       installRuleCard();
+      try{await invoke('repairVendorOnboardingV934',[E,P,'ONB-260911170045-XT67']);}catch(ignore){}
       await Promise.all([safeLoadPending(),loadRule()]);
     }catch(e){if(msg)msg.textContent=e&&e.message?e.message:String(e)}
     finally{if(btn){btn.disabled=false;btn.textContent='Login'}}
