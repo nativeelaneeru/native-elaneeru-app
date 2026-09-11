@@ -41,6 +41,7 @@ function doGetV912_(e){
     try{out.append(HtmlService.createTemplateFromFile('AdminAccessDeliveryV920').evaluate().getContent());}catch(err){}
     try{out.append(HtmlService.createTemplateFromFile('AdminBarcodeV926').evaluate().getContent());}catch(err){}
     try{out.append(HtmlService.createTemplateFromFile('AdminProductsV928').evaluate().getContent());}catch(err){}
+    try{out.append(HtmlService.createTemplateFromFile('AdminOffersSubscriptionsV930').evaluate().getContent());}catch(err){}
   }
   if(page==='VendorApproval'){
     try{out.append(HtmlService.createTemplateFromFile('VendorApprovalFixV916').evaluate().getContent());}catch(err){}
