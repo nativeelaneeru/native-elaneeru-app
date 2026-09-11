@@ -22,7 +22,7 @@
   }
   async function loadQueueSafe(){
     const host=q('pending');if(host)host.innerHTML='<div class="muted" style="padding:14px 0">Loading vendor approvals…</div>';
-    try{const raw=await invoke('getVendorApprovalQueueV933',[E,P]);LIST=Array.isArray(raw)?raw:[];if(typeof render==='function')render();}catch(e){LIST=[];if(q('count'))q('count').textContent='0 pending';if(host)host.innerHTML='<div class="msg">'+errorText(e)+'</div>';}
+    try{const raw=await invoke('getVendorApprovalQueueV934',[E,P]);LIST=Array.isArray(raw)?raw:[];if(typeof render==='function')render();}catch(e){LIST=[];if(q('count'))q('count').textContent='0 pending';if(host)host.innerHTML='<div class="msg">'+errorText(e)+'</div>';}
   }
   function install(){try{window.approve=approveSafe;approve=approveSafe;window.loadPending=loadQueueSafe;loadPending=loadQueueSafe;}catch(e){window.approve=approveSafe;window.loadPending=loadQueueSafe;}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
