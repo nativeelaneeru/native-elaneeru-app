@@ -5,7 +5,7 @@ const V931_PO_HEADERS=['PO ID','PO Date','Supplier ID','Supplier Name','Supplier
 const V931_PO_ITEM_HEADERS=['PO ID','Line No','Product ID','Product Name','Quantity','Unit','Unit Price','Line Total','Received Qty'];
 
 function v931Ensure_(sheetName,headers){
-  const sh=sh_(sheetName),last=sh.getLastColumn();
+  const ss=SpreadsheetApp.getActive(),sh=ss.getSheetByName(sheetName)||ss.insertSheet(sheetName),last=sh.getLastColumn();
   if(last<1){sh.getRange(1,1,1,headers.length).setValues([headers]);return sh;}
   const have=sh.getRange(1,1,1,last).getValues()[0].map(s_);
   const missing=headers.filter(function(h){return !have.includes(h)});
