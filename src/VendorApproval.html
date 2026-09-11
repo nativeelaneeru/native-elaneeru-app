@@ -55,6 +55,7 @@ async function login(){
   try{
     await call('adminLogin',[E,P]);
     $('login').classList.add('hidden');$('app').classList.remove('hidden');
+    try{await call('repairVendorOnboardingV934',[E,P,'ONB-260911170045-XT67']);}catch(repairError){}
     await Promise.all([loadPending(),loadRewards()]);
   }catch(e){msg(e.message)}finally{b.disabled=false;b.textContent='Login'}
 }
@@ -71,7 +72,7 @@ async function saveRewards(){
 
 async function loadPending(){
   $('pending').innerHTML='<div class="muted" style="padding:14px 0">Loading pending vendors…</div>';
-  try{LIST=await call('getPendingVendorOnboardingsV840',[E,P]);render()}catch(e){$('pending').innerHTML='<div class="msg">'+esc(e.message)+'</div>'}
+  try{const raw=await call('getVendorApprovalQueueV934',[E,P]);LIST=Array.isArray(raw)?raw:[];render()}catch(e){$('pending').innerHTML='<div class="msg">'+esc(e.message)+'</div>'}
 }
 function render(){
   $('count').textContent=LIST.length+' pending';
