@@ -4,6 +4,7 @@
 
   var RULE='Refer a friend. Their first delivered order unlocks 2 FREE Tender Coconuts for you.';
   var SUPPORT='917411807675';
+  var SHARE_BASE='https://nativeelaneeru.github.io/native-elaneeru-app/';
 
   function text(el,value){if(el&&el.textContent!==value)el.textContent=value}
   function statValue(label){
@@ -16,7 +17,7 @@
     return strong?String(strong.textContent||'').trim().toUpperCase():'';
   }
   function shareUrl(code){
-    return location.origin+location.pathname.replace(/\/?$/,'/')+'?ref='+encodeURIComponent(code);
+    return SHARE_BASE+'?ref='+encodeURIComponent(code);
   }
   function shareText(code){
     return 'Order fresh Tender Coconuts from Native Elaneeru. Use my referral code '+code+'. After your first delivered order, I get 2 Tender Coconuts FREE. '+shareUrl(code);
