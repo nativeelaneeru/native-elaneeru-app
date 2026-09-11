@@ -13,14 +13,18 @@
     if(button){button.disabled=true;button.textContent='Approving…'}
     if(out)out.innerHTML='<div class="muted" style="margin-top:8px">Creating B2B account…</div>';
     try{
-      const r=await invoke('approveVendorOnboardingV840',[E,P,vendor.onboardingId,pin,target,reward]);
+      const r=await invoke('approveVendorOnboardingV933',[E,P,vendor.onboardingId,pin,target,reward]);
       if(!r||r.success===false||!r.vendorId)throw new Error(r&&r.error||'Vendor account was not created.');
       if(out)out.innerHTML='<div class="credential"><div class="muted">B2B account activated</div><strong>'+String(vendor.mobile||'')+' / '+pin+'</strong><div class="muted" style="margin-top:5px">Vendor ID: '+String(r.vendorId)+'</div></div>';
       if(button)button.classList.add('hidden');
       setTimeout(function(){if(typeof window.loadPending==='function')window.loadPending();},700);
     }catch(e){if(out)out.innerHTML='<div class="msg">'+errorText(e).replace(/[&<>]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[x]))+'</div>';if(button){button.disabled=false;button.textContent='Approve & activate B2B login';}}
   }
-  function install(){try{window.approve=approveSafe;approve=approveSafe;}catch(e){window.approve=approveSafe;}}
+  async function loadQueueSafe(){
+    const host=q('pending');if(host)host.innerHTML='<div class="muted" style="padding:14px 0">Loading vendor approvals…</div>';
+    try{LIST=await invoke('getVendorApprovalQueueV933',[E,P]);if(typeof render==='function')render();}catch(e){LIST=[];if(q('count'))q('count').textContent='0 pending';if(host)host.innerHTML='<div class="msg">'+errorText(e)+'</div>';}
+  }
+  function install(){try{window.approve=approveSafe;approve=approveSafe;window.loadPending=loadQueueSafe;loadPending=loadQueueSafe;}catch(e){window.approve=approveSafe;window.loadPending=loadQueueSafe;}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 </script>
