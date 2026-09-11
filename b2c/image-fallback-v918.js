@@ -16,17 +16,12 @@
     if(!parent||!isVisual(parent))return;
     try{img.onerror=null;img.removeAttribute('onerror');}catch(e){}
     try{parent.removeChild(img);}catch(e){try{img.remove();}catch(ignore){}}
-    try{if(!parent.querySelector('img'))parent.textContent='🥥';}catch(e){}
+    try{if(!parent.querySelector('img'))parent.textContent='📦';}catch(e){}
   }
 
   function arm(img){
     if(!img||!img.tagName||String(img.tagName).toUpperCase()!=='IMG'||img.__nelSafeImage)return;
     img.__nelSafeImage=true;
-
-    // The legacy main product renderer used:
-    //   this.remove(); this.parentNode.textContent='🥥'
-    // After remove(), parentNode is null. Strip any inline image error handler
-    // before the browser can execute it and use the safe handler below.
     try{
       if(img.hasAttribute&&img.hasAttribute('onerror')){
         img.onerror=null;
@@ -45,9 +40,6 @@
     }
   }
 
-  // Product cards are injected with innerHTML after catalogue load. A mutation
-  // observer removes the unsafe inline handler before its asynchronous error
-  // event can run.
   try{
     scan(document);
     var observer=new MutationObserver(function(records){
@@ -59,8 +51,6 @@
     observer.observe(document.documentElement||document,{childList:true,subtree:true});
   }catch(e){}
 
-  // Keep a document-level fallback as a second line of defence for browsers
-  // where image error events participate in capture.
   document.addEventListener('error',function(event){
     var img=event&&event.target;
     if(!img||!img.tagName||String(img.tagName).toUpperCase()!=='IMG')return;
