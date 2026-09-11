@@ -9,7 +9,7 @@ function sharedUxV835_(page){
   const apps=[
     ['B2C','home','🥥'],['B2B','b2b','🏪'],['Admin','admin','📊'],['Delivery','delivery','🛵'],
     ['Driver','driver','🚚'],['Sales','sales','💼'],['Picker','picker','🧺'],['Vendor','vendor','🤝'],
-    ['Barcode','barcode','▦'],['Inventory','inventory','📦']
+    ['Barcode','barcode','▦'],['Inventory','inventory','📦'],['Purchase Orders','purchaseorders','🧾']
   ];
   const items=apps.map(a=>'<a class="nel835-app" href="'+base+(a[1]==='home'?'':'?page='+a[1])+'"><span>'+a[2]+'</span><b>'+a[0]+'</b></a>').join('');
   return `
