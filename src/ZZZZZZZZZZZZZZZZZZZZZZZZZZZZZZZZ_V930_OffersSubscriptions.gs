@@ -9,7 +9,8 @@ function v930EnsureSheet_(name,headers){
 }
 function v930Rows_(sh){const lr=sh.getLastRow(),lc=sh.getLastColumn();if(lr<2)return [];const a=sh.getRange(1,1,lr,lc).getValues(),h=a[0].map(s_);return a.slice(1).map((r,i)=>{const o={_row:i+2};h.forEach((x,j)=>o[x]=r[j]);return o});}
 function v930OfferDto_(r){return {bannerId:s_(r['Banner ID']),title:s_(r.Title),subtitle:s_(r.Subtitle),offerText:s_(r['Offer Text']),imageUrl:s_(r['Image URL']),audience:s_(r.Audience)||'B2C',productId:s_(r['Product ID']),startDate:isoDate_(r['Start Date']),endDate:isoDate_(r['End Date']),displayOrder:n_(r['Display Order']),status:s_(r.Status).toUpperCase()==='LIVE'?'LIVE':'PAUSED',redirectType:s_(r['Redirect Type']),redirectValue:s_(r['Redirect Value'])};}
-function v930SubDto_(r){return {subscriptionId:s_(r['Subscription ID']),mobile:digits_(r.Mobile),productId:s_(r['Product ID']),quantity:n_(r.Quantity),frequency:s_(r.Frequency),startDate:isoDate_(r['Start Date']),preferredSlot:s_(r['Preferred Slot']),status:s_(r.Status),nextDeliveryDate:isoDate_(r['Next Delivery Date']),autoOrder:s_(r['Auto Order'])};}
+function v930SafeDate_(v){if(!v)return '';const d=v instanceof Date?v:new Date(v);return isNaN(d.getTime())?s_(v):Utilities.formatDate(d,'Asia/Kolkata','yyyy-MM-dd');}
+function v930SubDto_(r){return {subscriptionId:s_(r['Subscription ID']),mobile:digits_(r.Mobile),productId:s_(r['Product ID']),quantity:n_(r.Quantity),frequency:s_(r.Frequency),startDate:v930SafeDate_(r['Start Date']),preferredSlot:s_(r['Preferred Slot']),status:s_(r.Status),nextDeliveryDate:v930SafeDate_(r['Next Delivery Date']),autoOrder:s_(r['Auto Order'])};}
 
 function getOffersSubscriptionsAdminV930(email,pin){
   requireAdmin_(email,pin);
