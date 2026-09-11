@@ -67,7 +67,7 @@ img{max-width:100%}
   ];
   /* Onboarding staff receive only the Vendor Onboarding entry. Admin and other
      operational apps remain separate even though this common launcher is shared. */
-  if(page==='vendor')apps=apps.filter(a=>a[0]==='vendor');
+  if(page==='vendor'||page==='sales')apps=apps.filter(a=>a[0]==='vendor');
   const btn=document.createElement('button');btn.type='button';btn.className='nel-ux-launcher';btn.innerHTML='☰ <span>Apps</span>';
   const panel=document.createElement('div');panel.className='nel-ux-panel';
   panel.innerHTML='<div class="nel-ux-head"><div><b>Native Elaneeru Apps</b><div class="nel-ux-badge"><i class="nel-ux-dot"></i>Production</div></div><button type="button" class="nel-ux-close" aria-label="Close">×</button></div><div class="nel-ux-grid">'+apps.map(a=>'<a target="_top" rel="noopener" class="nel-ux-app '+(page===a[0]?'nel-ux-current':'')+'" href="'+a[3]+'"><span>'+a[1]+'</span>'+a[2]+'</a>').join('')+'</div>';
