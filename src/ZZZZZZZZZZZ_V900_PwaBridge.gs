@@ -39,7 +39,7 @@ function getB2BAppDataV9(token){
   }).map(function(r){
     return {
       productId:s_(r['Product ID']),productName:s_(r['Product Name']||r.Commodity),
-      market:s_(r.Market),area:s_(r.District||r.Market),
+      market:s_(r.Market),state:s_(r.State),district:s_(r.District),area:s_(r.District||r.Market),
       minPrice:n_(r['Estimated Per Piece']||r['Min Rate']||r['Min Price']),
       marketPrice:n_(r['Estimated Per Piece']||r['Modal Rate']||r['Modal Price']),
       maxPrice:n_(r['Estimated Per Piece']||r['Max Rate']||r['Max Price']),
