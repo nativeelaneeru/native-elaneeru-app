@@ -31,7 +31,7 @@ function getB2BAppDataV9(token){
   });
   const rates=rows_('Market_Rates').filter(function(r){
     const status=s_(r.Status).toUpperCase();
-    return (!status || status==='LIVE' || status==='ACTIVE') &&
+    return (!status || status==='LIVE' || status==='ACTIVE' || status==='REVIEW') &&
       n_(r['Estimated Per Piece']||r['Modal Rate']||r['Modal Price'])>0;
   }).sort(function(a,b){
     return new Date(b['Rate Date']||b['Source Date']||b['Captured At']||0)-
@@ -43,7 +43,7 @@ function getB2BAppDataV9(token){
       minPrice:n_(r['Estimated Per Piece']||r['Min Rate']||r['Min Price']),
       marketPrice:n_(r['Estimated Per Piece']||r['Modal Rate']||r['Modal Price']),
       maxPrice:n_(r['Estimated Per Piece']||r['Max Rate']||r['Max Price']),
-      unit:s_(r['Rate Unit']||r.Unit),source:s_(r.Source),dataQuality:s_(r['Data Quality']),
+      unit:s_(r['Rate Unit']||r.Unit),source:s_(r.Source),sourceUrl:s_(r['Source URL']),status:s_(r.Status),dataQuality:s_(r['Data Quality']),
       updatedAt:fmtDate_(r['Rate Date']||r['Source Date']||r['Captured At'])
     };
   });
