@@ -6,7 +6,7 @@ window.NEL_B2B_CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbx2s0l5A8
     base+'order-sync-v1.js?v=1',
     base+'payment-upi-v916.js?v=916',
     base+'runtime-guard-v918.js?v=918',
-    base+'vendor-growth-v100.js?v=105'
+    base+'vendor-growth-v100.js?v=106'
   ];
   scripts.forEach(function(src){var s=document.createElement('script');s.src=src;s.defer=true;document.head.appendChild(s)});
 })();
