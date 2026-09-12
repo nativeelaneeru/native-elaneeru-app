@@ -1,4 +1,4 @@
-const CACHE='native-elaneeru-business-demo-rate-v10.1.1';
+const CACHE='native-elaneeru-business-multi-mandi-v10.2.0';
 const SHELL=['./','./index.html','./config.js','./idb-v1.js','./ui-v113.js','./order-sync-v1.js','./separate-links.js','./session-v960.js','./session-guard-v980.js','./production-fixes-v990.js','./payment-upi-v916.js','./runtime-guard-v918.js','./vendor-growth-v100.js','./update-notifier.js','./manifest.webmanifest','../icons/icon-192.png','../icons/icon-512.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)))});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()))});
