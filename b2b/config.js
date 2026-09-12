@@ -1,4 +1,4 @@
-window.NEL_B2B_CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec',appVersion:'10.4.0',supportPhone:'7411807675',supportWhatsApp:'917411807675',company:'Sri Govindadri Ventures'};
+window.NEL_B2B_CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec',appVersion:'9.8.0',supportPhone:'7411807675',supportWhatsApp:'917411807675',company:'Sri Govindadri Ventures'};
 (function(){
   var base='./', scripts=[
     base+'idb-v1.js?v=1',
