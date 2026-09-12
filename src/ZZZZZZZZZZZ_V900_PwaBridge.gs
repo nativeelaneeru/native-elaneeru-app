@@ -19,7 +19,37 @@ function getCompliancePublicV91(){
 }
 
 function getB2BAppDataV9(token){
-  return getB2BAppData(token);
+  const data=getB2BAppData(token);
+  const banners=rows_('Offers_Banners').filter(function(r){
+    return s_(r.Audience).toUpperCase()==='B2B' && s_(r.Status).toUpperCase()==='LIVE';
+  }).sort(function(a,b){return n_(a['Display Order'])-n_(b['Display Order']);}).map(function(r){
+    return {
+      bannerId:s_(r['Banner ID']),title:s_(r.Title),offerText:s_(r['Offer Text']),
+      subtitle:s_(r.Subtitle),imageUrl:s_(r['Image URL']),
+      redirectType:s_(r['Redirect Type']),redirectValue:s_(r['Redirect Value'])
+    };
+  });
+  const rates=rows_('Market_Rates').filter(function(r){
+    const status=s_(r.Status).toUpperCase();
+    return (!status || status==='LIVE' || status==='ACTIVE') &&
+      n_(r['Estimated Per Piece']||r['Modal Rate']||r['Modal Price'])>0;
+  }).sort(function(a,b){
+    return new Date(b['Rate Date']||b['Source Date']||b['Captured At']||0)-
+      new Date(a['Rate Date']||a['Source Date']||a['Captured At']||0);
+  }).map(function(r){
+    return {
+      productId:s_(r['Product ID']),productName:s_(r['Product Name']||r.Commodity),
+      market:s_(r.Market),area:s_(r.District||r.Market),
+      minPrice:n_(r['Estimated Per Piece']||r['Min Rate']||r['Min Price']),
+      marketPrice:n_(r['Estimated Per Piece']||r['Modal Rate']||r['Modal Price']),
+      maxPrice:n_(r['Estimated Per Piece']||r['Max Rate']||r['Max Price']),
+      unit:s_(r['Rate Unit']||r.Unit),source:s_(r.Source),
+      updatedAt:fmtDate_(r['Rate Date']||r['Source Date']||r['Captured At'])
+    };
+  });
+  data.banners=banners;
+  data.marketPrices=rates;
+  return data;
 }
 
 function placeB2BOrderV9(token,payload){
