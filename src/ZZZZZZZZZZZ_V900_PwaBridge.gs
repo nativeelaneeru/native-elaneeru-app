@@ -43,7 +43,7 @@ function getB2BAppDataV9(token){
       minPrice:n_(r['Estimated Per Piece']||r['Min Rate']||r['Min Price']),
       marketPrice:n_(r['Estimated Per Piece']||r['Modal Rate']||r['Modal Price']),
       maxPrice:n_(r['Estimated Per Piece']||r['Max Rate']||r['Max Price']),
-      unit:s_(r['Rate Unit']||r.Unit),source:s_(r.Source),
+      unit:s_(r['Rate Unit']||r.Unit),source:s_(r.Source),dataQuality:s_(r['Data Quality']),
       updatedAt:fmtDate_(r['Rate Date']||r['Source Date']||r['Captured At'])
     };
   });
