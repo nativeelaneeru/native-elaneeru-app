@@ -19,12 +19,10 @@
   function track(event,meta){queue.push({event:event,app:'B2C',visitorId:id(),path:location.pathname,at:new Date().toISOString(),meta:meta||{}});schedule()}
   function schedule(){if(timer)return;timer=setTimeout(flush,1200)}
   function flush(){timer=0;if(!queue.length||typeof window.rpc!=='function')return;var batch=queue.splice(0,20);Promise.resolve(window.rpc('trackAppEventsV942',[batch])).catch(function(){queue=batch.concat(queue).slice(-60)})}
-  function patch(){
-    if(typeof window.renderProducts==='function'&&!window.renderProducts.__nelTracked){var r=window.renderProducts;window.renderProducts=function(){var out=r.apply(this,arguments);if(!seenPlv&&window.S&&S.cfg&&Array.isArray(S.cfg.products)&&S.cfg.products.length){seenPlv=true;track('PLV',{count:S.cfg.products.length})}return out};window.renderProducts.__nelTracked=true}
-    if(typeof window.add==='function'&&!window.add.__nelTracked){var a=window.add;window.add=function(productId){var out=a.apply(this,arguments);track('ATC',{productId:String(productId||'')});return out};window.add.__nelTracked=true}
-  }
+  function detectPlv(){if(!seenPlv&&window.S&&S.cfg&&Array.isArray(S.cfg.products)&&S.cfg.products.length){seenPlv=true;track('PLV',{count:S.cfg.products.length})}}
+  document.addEventListener('click',function(e){var b=e.target&&e.target.closest?e.target.closest('button.add'):null;if(!b)return;var m=String(b.getAttribute('onclick')||'').match(/add\(['"]([^'"]+)/);track('ATC',{productId:m?m[1]:''})},true);
   if('serviceWorker'in navigator)navigator.serviceWorker.register(location.pathname.indexOf('/login/')>=0?'../sw.js':'./sw.js').catch(function(){});
-  track('OPEN');installUi();patch();var tries=0,t=setInterval(function(){patch();if(++tries>80)clearInterval(t)},100);
+  track('OPEN');installUi();detectPlv();var tries=0,t=setInterval(function(){detectPlv();if(seenPlv||++tries>160)clearInterval(t)},100);
   addEventListener('pagehide',flush);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')flush()});
   window.NEL_TRACK_EVENT=track;
 })();
