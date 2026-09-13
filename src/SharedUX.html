@@ -18,6 +18,7 @@ img{max-width:100%}
 .nel-ux-panel{position:fixed;right:14px;bottom:76px;width:min(380px,calc(100vw - 28px));max-height:min(650px,76vh);overflow:auto;z-index:99999;background:#fff;border:1px solid var(--nel-line);border-radius:22px;box-shadow:0 22px 60px rgba(18,46,29,.2);padding:14px;display:none}
 .nel-ux-panel.open{display:block}.nel-ux-head{display:flex;justify-content:space-between;align-items:center;padding:6px 4px 12px}.nel-ux-head b{font-size:17px}.nel-ux-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.nel-ux-app{display:flex;align-items:center;gap:9px;padding:12px;border:1px solid var(--nel-line);border-radius:14px;text-decoration:none;color:var(--nel-text);background:#fff;font-weight:700;min-height:58px}.nel-ux-app:hover{background:var(--nel-mint);border-color:#b9dcc6}.nel-ux-app span{font-size:20px}.nel-ux-current{background:var(--nel-mint)!important;border-color:#9fd0b0!important}.nel-ux-close{width:38px;height:38px;min-height:38px;border:0;background:#eef2ef;color:#33423a;font-size:20px;cursor:pointer}
 .nel-ux-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:999px;background:var(--nel-mint);color:var(--nel-green-2);font-size:12px;font-weight:800}.nel-ux-dot{width:7px;height:7px;border-radius:50%;background:#22a447;box-shadow:0 0 0 3px rgba(34,164,71,.12)}
+.nel-shared-brand{display:flex;align-items:center;gap:11px;padding:10px 14px;background:#fff;border-bottom:1px solid var(--nel-line);box-shadow:0 4px 18px rgba(18,46,29,.06);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}.nel-shared-brand img{width:44px;height:44px;object-fit:contain;border-radius:12px;background:#fff}.nel-shared-brand b{display:block;color:var(--nel-green-2);font-size:17px;line-height:1.1}.nel-shared-brand small{display:block;color:var(--nel-muted);font-size:11px;font-weight:700;margin-top:4px}.nel-ux-logout{width:100%;margin-top:10px;border:1px solid #efc3c3;background:#fff5f5;color:#a61b1b;font-weight:800;cursor:pointer}
 @media(max-width:700px){body{padding-bottom:max(72px,env(safe-area-inset-bottom))}.nel-ux-launcher{right:12px;bottom:12px}.nel-ux-panel{right:10px;bottom:68px;width:calc(100vw - 20px)}.nel-ux-grid{grid-template-columns:1fr 1fr}button{min-height:46px}}
 @media(max-width:390px){.nel-ux-grid{grid-template-columns:1fr}}
 </style>
@@ -45,6 +46,8 @@ img{max-width:100%}
   const MAIN='https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec';
   const B2C='https://nativeelaneeru.github.io/native-elaneeru-app/b2c/';
   const B2B='https://nativeelaneeru.github.io/native-elaneeru-app/b2b/';
+  const LOGO='https://nativeelaneeru.github.io/native-elaneeru-app/icons/native-elaneeru.svg';
+  const SLOGAN='Grow Farmers • Empower Vendors • Serve Everyone';
   const q=new URLSearchParams(location.search);let page=(q.get('page')||'').toLowerCase();
   if(!page){
     const t=String(document.title||'').toLowerCase();
@@ -68,11 +71,13 @@ img{max-width:100%}
   /* Onboarding staff receive only the Vendor Onboarding entry. Admin and other
      operational apps remain separate even though this common launcher is shared. */
   if(page==='vendor'||page==='sales')apps=apps.filter(a=>a[0]==='vendor');
+  const brand=document.createElement('div');brand.className='nel-shared-brand';brand.innerHTML='<img src="'+LOGO+'" alt="Native Elaneeru logo"><div><b>Native Elaneeru</b><small>'+SLOGAN+'</small></div>';document.body.insertBefore(brand,document.body.firstChild);
   const btn=document.createElement('button');btn.type='button';btn.className='nel-ux-launcher';btn.innerHTML='☰ <span>Apps</span>';
   const panel=document.createElement('div');panel.className='nel-ux-panel';
-  panel.innerHTML='<div class="nel-ux-head"><div><b>Native Elaneeru Apps</b><div class="nel-ux-badge"><i class="nel-ux-dot"></i>Production</div></div><button type="button" class="nel-ux-close" aria-label="Close">×</button></div><div class="nel-ux-grid">'+apps.map(a=>'<a target="_top" rel="noopener" class="nel-ux-app '+(page===a[0]?'nel-ux-current':'')+'" href="'+a[3]+'"><span>'+a[1]+'</span>'+a[2]+'</a>').join('')+'</div>';
+  panel.innerHTML='<div class="nel-ux-head"><div><b>Native Elaneeru Apps</b><div class="nel-ux-badge"><i class="nel-ux-dot"></i>Production</div></div><button type="button" class="nel-ux-close" aria-label="Close">×</button></div><div class="nel-ux-grid">'+apps.map(a=>'<a target="_top" rel="noopener" class="nel-ux-app '+(page===a[0]?'nel-ux-current':'')+'" href="'+a[3]+'"><span>'+a[1]+'</span>'+a[2]+'</a>').join('')+'</div><button type="button" class="nel-ux-logout">Log out</button>';
   document.body.append(btn,panel);
   const close=()=>panel.classList.remove('open');btn.onclick=()=>panel.classList.toggle('open');panel.querySelector('.nel-ux-close').onclick=close;
+  panel.querySelector('.nel-ux-logout').onclick=()=>{try{Object.keys(localStorage).filter(k=>/token|session|auth|staff|admin/i.test(k)).forEach(k=>localStorage.removeItem(k));sessionStorage.clear()}catch(e){}location.replace(location.pathname+location.search)};
   document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
 })();
 </script>
