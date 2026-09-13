@@ -20,7 +20,7 @@ function doGetV912_(e){
 
   const p=String(params.page||'').toLowerCase();
   const routes={
-    '':'index','home':'index','b2c':'index','b2b':'B2B',
+    '':'index','home':'index','b2c':'DirectRedirect','b2b':'BusinessRedirect',
     'admin':'Admin','dashboard':'CumulativeDashboard','cumulative':'CumulativeDashboard','controltower':'CumulativeDashboard',
     'payments':'PaymentVerification','paymentverification':'PaymentVerification','upiverification':'PaymentVerification',
     'sales':'Sales','picker':'Picker','bunch':'Bunch','scanning':'Bunch','barcode':'Barcode','inventory':'Inventory','purchaseorders':'PurchaseOrders','po':'PurchaseOrders',
