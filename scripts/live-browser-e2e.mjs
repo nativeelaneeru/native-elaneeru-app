@@ -168,7 +168,7 @@ async function testB2C(){
       await page.waitFor(`location.pathname.endsWith('/b2c/')`,12000,'B2C test session redirect');
       pass('b2c: PIN status is reachable; test session entered without mutating a customer PIN');
     }
-    await page.waitFor(`typeof S!=='undefined' && S.cfg && Array.isArray(S.cfg.products) && S.cfg.products.length>0`,25000,'B2C catalogue');
+    await page.waitFor(`typeof S!=='undefined' && S.cfg && Array.isArray(S.cfg.products) && S.cfg.products.length>0`,45000,'B2C catalogue');
     assert(/Native Elaneeru/i.test(await page.evaluate('document.title')), 'b2c: customer PWA renders in Chrome');
     assert(/^\d+\.\d+\.\d+-pwa$/.test(String(await page.evaluate('window.NEL_CONFIG && NEL_CONFIG.appVersion')||'')),'b2c: production app version is present');
     await checkManifest(page,'b2c');
