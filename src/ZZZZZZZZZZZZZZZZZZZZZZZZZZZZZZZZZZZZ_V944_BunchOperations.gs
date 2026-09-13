@@ -57,9 +57,13 @@ function assignBunchToVendorV944(mobile,pin,barcode,orderId){
 }
 
 function getBunchStockV944(){
+  const cache=CacheService.getScriptCache(),hit=cache.get('V944:BUNCH_STOCK');
+  if(hit){try{return JSON.parse(hit)}catch(e){}}
   const batches=rows_(V8.SHEETS.BATCHES),sum={};
   batches.forEach(function(b){const id=s_(b['Product ID']);if(!id)return;if(!sum[id])sum[id]={productId:id,tracked:true,availableQty:0,reservedQty:0,deliveredQty:0};sum[id].availableQty+=n_(b['Available Qty']);sum[id].reservedQty+=n_(b['Reserved Qty']);sum[id].deliveredQty+=n_(b['Delivered Qty']);});
-  return Object.keys(sum).map(function(k){const x=sum[k];x.stockStatus=x.availableQty>0?'IN_STOCK':'OOS';return x;});
+  const out=Object.keys(sum).map(function(k){const x=sum[k];x.stockStatus=x.availableQty>0?'IN_STOCK':'OOS';return x;});
+  try{cache.put('V944:BUNCH_STOCK',JSON.stringify(out),20)}catch(e){}
+  return out;
 }
 
 function v944ApplyStock_(products){
