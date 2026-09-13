@@ -32,3 +32,4 @@ document.write('<script src="./customer-growth-v10330.js?v=10350"></script>');
 document.write('<script src="./referral-reward-v10340.js?v=10360"></script>');
 document.write('<script src="./payment-upi-v10350.js?v=10350"></script>');
 document.write('<script src="./update-notifier.js?v=10360"></script>');
+document.write('<script src="./install-analytics-v10420.js?v=10420"></script>');

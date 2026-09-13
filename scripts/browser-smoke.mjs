@@ -114,7 +114,7 @@ async function testB2B(port){
     await waitFor(()=>c.eval(`document.readyState==='complete'`),'B2B page load',15000);
     pass('B2B page loads in a real browser');
     const version=await waitFor(()=>c.eval(`window.NEL_B2B_CONFIG&&window.NEL_B2B_CONFIG.appVersion`),'B2B config',10000);
-    if(version!=='9.8.0')fail(`B2B production version mismatch: ${version}`);else pass('B2B version 9.8.0 is active');
+    if(version!=='9.8.1')fail(`B2B production version mismatch: ${version}`);else pass('B2B version 9.8.1 is active');
 
     const loginVisible=await c.eval(`!!document.getElementById('mobile')&&!!document.getElementById('pin')&&!!document.getElementById('loginBtn')&&!document.getElementById('login').classList.contains('hidden')`);
     if(!loginVisible)fail('B2B login screen is not usable');else pass('B2B login screen is usable');

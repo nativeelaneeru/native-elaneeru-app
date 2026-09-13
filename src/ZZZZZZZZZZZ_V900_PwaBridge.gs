@@ -165,7 +165,8 @@ doPost=function(e){
       getB2BPaymentConfigV916:getB2BPaymentConfigV916,
       getB2BPaymentEngineHealthV916:getB2BPaymentEngineHealthV916,
       prepareB2BUpiPaymentV916:prepareB2BUpiPaymentV916,
-      submitB2BUpiOrderV916:submitB2BUpiOrderV916
+      submitB2BUpiOrderV916:submitB2BUpiOrderV916,
+      trackAppEventsV942:trackAppEventsV942
     };
     if(!allowed[method]) throw new Error('Method not allowed.');
     const result=allowed[method].apply(null,args);

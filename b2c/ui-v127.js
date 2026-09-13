@@ -149,6 +149,7 @@
         paymentType:String(result.paymentType||payload.payment||'COD'),
         paymentStatus:String(result.paymentStatus||'PENDING')
       };
+      try{if(typeof window.NEL_TRACK_EVENT==='function')window.NEL_TRACK_EVENT('ORDER',{orderId:String(result.orderId),paymentType:String(result.paymentType||payload.payment||'COD')})}catch(e){}
 
       try{S.cart={}}catch(e){}
       try{localStorage.removeItem('nel_cart_v9')}catch(e){}

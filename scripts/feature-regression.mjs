@@ -126,4 +126,15 @@ ok(/'payments':'PaymentVerification'/.test(routes),'Admin router exposes the cen
 const cumulative=fs.readFileSync('src/CumulativeDashboard.html','utf8');
 ok(/\?page=payments/.test(cumulative),'Cumulative Control Tower links to UPI verification');
 
+const b2cAnalytics=fs.readFileSync('b2c/install-analytics-v10420.js','utf8');
+const b2bAnalytics=fs.readFileSync('b2b/analytics-v981.js','utf8');
+const analyticsBackend=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V942_AppAnalytics.gs','utf8');
+const bridge=fs.readFileSync('src/ZZZZZZZZZZZ_V900_PwaBridge.gs','utf8');
+const b2bSession=fs.readFileSync('b2b/session-v960.js','utf8');
+ok(/beforeinstallprompt/.test(b2cAnalytics)&&/Install App/.test(b2cAnalytics),'B2C exposes an install action with platform fallback');
+ok(/localStorage\.getItem\('nel_b2b_token'\)/.test(b2bSession)&&/30\*24\*60\*60\*1000/.test(b2bSession),'B2B restores a persisted refresh-safe session with bounded lifetime');
+ok(/trackAppEventsV942/.test(bridge)&&/OPEN:true,PLV:true,ATC:true,ORDER:true,INSTALL:true/.test(analyticsBackend),'PWA bridge accepts only the approved funnel events');
+ok(/setTimeout\(flush,1200\)/.test(b2cAnalytics)&&/setTimeout\(flush,1200\)/.test(b2bAnalytics),'Analytics is batched off the critical interaction path');
+ok(/App Funnel/.test(cumulative)&&/getAppAnalyticsV942/.test(cumulative),'Control Tower reports B2C and B2B funnel analytics');
+
 console.log('Feature regression checks passed.');

@@ -37,6 +37,7 @@
           }
           localStorage.removeItem('nel_b2b_cart_v113');
         }catch(e){}
+        try{if(typeof window.NEL_B2B_TRACK_EVENT==='function')window.NEL_B2B_TRACK_EVENT('ORDER',{orderId:String(result&&result.orderId||'')})}catch(e){}
         return result;
       }catch(err){
         if(!retryable(err)&&window.NEL_B2B_DB){

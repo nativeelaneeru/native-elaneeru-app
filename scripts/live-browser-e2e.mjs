@@ -205,7 +205,7 @@ async function testB2B(){
   try{
     await page.navigate(`${BASE}b2b/?e2e=${Date.now()}`);
     assert(/Native Elaneeru/i.test(await page.evaluate('document.title')), 'b2b: business PWA renders in Chrome');
-    assert((await page.evaluate('window.NEL_B2B_CONFIG && NEL_B2B_CONFIG.appVersion'))==='9.8.0','b2b: production version 9.8.0 is live');
+    assert((await page.evaluate('window.NEL_B2B_CONFIG && NEL_B2B_CONFIG.appVersion'))==='9.8.1','b2b: production version 9.8.1 is live');
     await checkManifest(page,'b2b');
     await checkServiceWorker(page,'b2b');
     assert(await page.evaluate(`!document.getElementById('login').classList.contains('hidden')`),'b2b: business login screen is visible');

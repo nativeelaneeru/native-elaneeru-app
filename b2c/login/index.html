@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#075b34">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../icons/icon-192.png">
 <title>Native Elaneeru Login</title>
 <style>
 *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:22px;background:linear-gradient(155deg,#053d25,#0a7a43 58%,#14a866);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#142019}.box{width:min(430px,100%);background:#fff;border-radius:26px;padding:21px;box-shadow:0 28px 80px #002b1b66}.head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.logo{width:76px;height:76px;border-radius:20px;object-fit:contain;background:#fff;box-shadow:0 8px 24px #0002}.lang{border:1px solid #d7e6dc;border-radius:11px;padding:8px 10px;background:#f7fbf8;color:#075b34;font-weight:900}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.55px;color:#0a7a43;font-weight:900;margin-top:15px}h1{font-size:29px;line-height:1.05;margin:5px 0 7px;color:#075b34}p{font-size:12px;line-height:1.55;color:#68766d;margin:0 0 15px}.field{width:100%;border:1px solid #d8e5dc;border-radius:13px;padding:13px;font:inherit;outline:0;margin-top:9px}.field:focus{border-color:#55ad7b;box-shadow:0 0 0 4px #dff4e8}.pin{letter-spacing:5px;text-align:center;font-weight:900}.btn{width:100%;margin-top:10px;border:0;border-radius:13px;padding:13px;background:#075b34;color:#fff;font-weight:900;font:inherit}.btn.alt{background:#edf7f0;color:#075b34}.btn.ghost{background:#fff;color:#075b34;border:1px solid #cfe0d5}.btn:disabled{opacity:.55}.msg{font-size:11px;color:#a03d26;min-height:18px;margin-top:8px}.info{font-size:11px;color:#486052;background:#eff8f2;border-radius:12px;padding:10px;margin-top:10px}.fine{font-size:10px;color:#7c877f;text-align:center;margin-top:10px}.hide{display:none!important}
@@ -41,4 +43,5 @@ $('mobile').oninput=e=>e.target.value=digits(e.target.value);$('loginPin').oninp
 try{const saved=digits(readStore('nel_b2c_session_mobile'));if(/^[6-9]\d{9}$/.test(saved))location.replace('../?v=10370')}catch(e){}
 })();
 </script>
+<script src="../install-analytics-v10420.js?v=10420"></script>
 </body></html>
