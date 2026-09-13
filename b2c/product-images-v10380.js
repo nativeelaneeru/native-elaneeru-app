@@ -9,12 +9,15 @@
   function directImageUrl(value){
     var url=String(value||'').trim();
     if(!/^https?:\/\//i.test(url))return '';
+    if(/your-image-link|example\.com|placeholder/i.test(url))return '';
     var match=url.match(/drive\.google\.com\/file\/d\/([A-Za-z0-9_-]+)/i)||url.match(/[?&]id=([A-Za-z0-9_-]+)/i);
     if(match)return 'https://drive.google.com/uc?export=view&id='+encodeURIComponent(match[1]);
     return url;
   }
   function fallback(productName){
-    return '<span class="nelImageFallback" aria-label="'+esc(productName||'Product image unavailable')+'">🥥</span>';
+    var name=String(productName||'Product').toLowerCase(),dehusked=/dehusked|dry coconut/.test(name);
+    var shell=dehusked?'#b97838':'#50a83f',light=dehusked?'#edd2a8':'#a9dc63';
+    return '<span class="nelImageFallback" role="img" aria-label="'+esc(productName||'Product image')+'"><svg viewBox="0 0 240 180" width="100%" height="100%" aria-hidden="true"><rect width="240" height="180" rx="22" fill="#f4fbf4"/><ellipse cx="120" cy="151" rx="69" ry="10" fill="#dcebdc"/><path d="M73 112C66 68 93 31 135 27c41-4 65 31 52 73-11 37-39 56-72 52-25-3-38-17-42-40z" fill="'+shell+'"/><path d="M92 51c20-16 50-17 70-1-13 3-25 12-33 26-12-11-24-19-37-25z" fill="'+light+'"/><path d="M127 29c-2-18 7-27 20-28-4 10-1 18 8 25" fill="none" stroke="#306f2e" stroke-width="8" stroke-linecap="round"/><circle cx="112" cy="80" r="5" fill="#315d2d" opacity=".55"/></svg></span>';
   }
   function imageHtml(p){
     var url=directImageUrl(p&&p.imageUrl);
