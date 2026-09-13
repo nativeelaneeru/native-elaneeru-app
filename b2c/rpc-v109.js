@@ -18,7 +18,7 @@
       script.onerror=function(){cleanup();reject(new Error('Unable to connect. Please check internet and retry.'))};
       var req={method:String(method||''),args:args,requestId:id};
       script.src=api()+'?jsonp=1&callback='+encodeURIComponent(cb)+'&payload='+encodeURIComponent(JSON.stringify(req))+'&v=1090&_='+Date.now();
-      timer=setTimeout(function(){cleanup();reject(new Error('Connection timed out. Please retry.'))},15000);
+      timer=setTimeout(function(){cleanup();reject(new Error('Connection timed out. Please retry.'))},30000);
       document.head.appendChild(script);
     });
   }
