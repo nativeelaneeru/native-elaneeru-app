@@ -48,8 +48,8 @@ img{max-width:100%}
   const B2B='https://nativeelaneeru.github.io/native-elaneeru-app/b2b/';
   const LOGO='https://nativeelaneeru.github.io/native-elaneeru-app/icons/native-elaneeru.svg';
   const SLOGAN='Grow Farmers • Empower Vendors • Serve Everyone';
-  const pageSlogan=document.querySelector('.splashTag,[data-i18n="freshKarnataka"]');
-  if(pageSlogan)pageSlogan.textContent=SLOGAN;
+  document.querySelectorAll('.splashTag,[data-i18n="freshKarnataka"]').forEach(function(x){x.textContent=SLOGAN});
+  try{const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while((n=walker.nextNode()))if(String(n.nodeValue||'').trim()==='Freshness from the Heart of Karnataka')n.nodeValue=SLOGAN}catch(e){}
   const q=new URLSearchParams(location.search);let page=(q.get('page')||'').toLowerCase();
   if(!page){
     const t=String(document.title||'').toLowerCase();
