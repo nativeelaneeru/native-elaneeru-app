@@ -65,7 +65,7 @@ jobs:
           const requiredRoutes=[
             "'admin':'Admin'","'dashboard':'CumulativeDashboard'","'payments':'PaymentVerification'",
             "'sales':'Sales'","'picker':'Picker'","'barcode':'Barcode'","'inventory':'Inventory'",
-            "'vendor':'VendorOnboardingV910'","'approvals':'VendorApproval'","'driver':'Driver'","'delivery':'Delivery'","'b2b':'B2B'"
+            "'vendor':'VendorOnboardingV910'","'approvals':'VendorApproval'","'driver':'Driver'","'delivery':'Delivery'","'b2b':'BusinessRedirect'","'b2c':'DirectRedirect'"
           ];
           for(const r of requiredRoutes)if(!routes.includes(r))throw new Error('Final production route missing: '+r);
           const reward=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZ_V911_ReferralRewards.gs','utf8');
