@@ -35,7 +35,7 @@ new Function(router);
 const requiredRoutes={
   admin:'Admin',dashboard:'CumulativeDashboard',payments:'PaymentVerification',sales:'Sales',picker:'Picker',
   barcode:'Barcode',inventory:'Inventory',vendor:'VendorOnboardingV910',approvals:'VendorApproval',
-  driver:'Driver',delivery:'Delivery',b2b:'B2B'
+  driver:'Driver',delivery:'Delivery',b2b:'BusinessRedirect',b2c:'DirectRedirect'
 };
 for(const [route,page] of Object.entries(requiredRoutes))ok(router.includes(`'${route}':'${page}'`),`router maps ${route} → ${page}`);
 ok(/VendorOnboardingFixV918/.test(router),'Vendor Onboarding V918 safety guard is attached');
