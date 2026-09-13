@@ -1,15 +1,20 @@
 {
-  "id":"./",
-  "name":"Native Elaneeru Business",
-  "short_name":"Elaneeru B2B",
-  "description":"Bulk tender coconut ordering for Native Elaneeru business customers.",
-  "start_url":"./",
-  "scope":"./",
-  "display":"standalone",
-  "background_color":"#f2f5f8",
-  "theme_color":"#123a5a",
-  "orientation":"portrait-primary",
-  "icons":[
-    {"src":"../icons/native-elaneeru.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  "id": "./",
+  "name": "Native Elaneeru Business",
+  "short_name": "Elaneeru Business",
+  "description": "Bulk tender coconut ordering for Native Elaneeru business customers.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f2f5f8",
+  "theme_color": "#123a5a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "../icons/native-elaneeru.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }
