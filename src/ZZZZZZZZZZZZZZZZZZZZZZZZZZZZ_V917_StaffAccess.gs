@@ -6,9 +6,9 @@ function v917RoleConfig_(role){
   const map={
     SALES:{role:'SALES',label:'Sales Executive',defaultApps:['VENDOR_ONBOARDING']},
     SALES_MANAGER:{role:'SALES_MANAGER',label:'Sales Manager',defaultApps:['VENDOR_ONBOARDING']},
-    OPERATIONS:{role:'OPERATIONS',label:'Operations',defaultApps:['VENDOR_ONBOARDING']},
-    FIELD_EXECUTIVE:{role:'FIELD_EXECUTIVE',label:'Field Executive',defaultApps:['VENDOR_ONBOARDING']},
-    PICKER:{role:'PICKER',label:'Picker',defaultApps:['PICKER']}
+    OPERATIONS:{role:'OPERATIONS',label:'Operations',defaultApps:['VENDOR_ONBOARDING','BUNCH']},
+    FIELD_EXECUTIVE:{role:'FIELD_EXECUTIVE',label:'Field Executive',defaultApps:['VENDOR_ONBOARDING','BUNCH']},
+    PICKER:{role:'PICKER',label:'Picker',defaultApps:['PICKER','BUNCH']}
   };
   return map[role]||null;
 }
@@ -17,7 +17,8 @@ function v917AppConfig_(app){
   app=s_(app).toUpperCase();
   const map={
     VENDOR_ONBOARDING:{value:'VENDOR_ONBOARDING',label:'Vendor Onboarding'},
-    PICKER:{value:'PICKER',label:'Picker'}
+    PICKER:{value:'PICKER',label:'Picker'},
+    BUNCH:{value:'BUNCH',label:'Bunch Scanning'}
   };
   return map[app]||null;
 }
@@ -79,7 +80,8 @@ function getStaffAccessAdminV917(email,pin){
     ],
     apps:[
       {value:'VENDOR_ONBOARDING',label:'Vendor Onboarding'},
-      {value:'PICKER',label:'Picker'}
+      {value:'PICKER',label:'Picker'},
+      {value:'BUNCH',label:'Bunch Scanning'}
     ],
     storageSheet:V8.SHEETS.STAFF,pinStoredAsHash:true,adminAccessSeparate:true
   };
@@ -126,6 +128,6 @@ function getStaffAccessHealthV917(){
   return {
     ok:true,version:V917_ACCESS_VERSION,adminManaged:true,storageSheet:'Staff_Users',pinStoredAsHash:true,adminAccessSeparate:true,
     roles:['SALES','SALES_MANAGER','OPERATIONS','FIELD_EXECUTIVE','PICKER'],
-    apps:['VENDOR_ONBOARDING','PICKER']
+    apps:['VENDOR_ONBOARDING','PICKER','BUNCH']
   };
 }

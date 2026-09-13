@@ -1,0 +1,6 @@
+(function(){
+  var base=window.add;if(typeof base!=='function')return;
+  var card=window.pcard;if(typeof card==='function')window.pcard=function(p){var html=card.apply(this,arguments);if(p&&p.stockTracked&&p.stockStatus==='OOS')return html.replace('<div class="price">','<div class="meta" style="color:#b42318;font-weight:900">OUT OF STOCK</div><div class="price">').replace('<button class="add"','<button class="add" disabled');return html;};
+  window.add=function(id){var cfg=typeof S!=='undefined'&&S.cfg,products=cfg&&cfg.products||[],p=products.find(function(x){return x.productId===id;});if(p&&p.stockTracked&&p.stockStatus==='OOS')return window.toast('Out of stock');return base.apply(this,arguments);};
+  document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('button[onclick^="change("]');if(!b)return;var m=(b.getAttribute('onclick')||'').match(/change\('([^']+)'/),p=m&&typeof S!=='undefined'&&S.cfg.products.find(function(x){return x.productId===m[1];});if(p&&p.stockTracked&&Number(S.cart[p.productId]||0)>=Number(p.availableQty||0)){e.preventDefault();e.stopImmediatePropagation();window.toast('Only '+Number(p.availableQty||0)+' available');}},true);
+})();
