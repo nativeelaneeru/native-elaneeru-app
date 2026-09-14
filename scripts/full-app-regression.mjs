@@ -115,4 +115,13 @@ ok(/9000000005/.test(security)&&/9000000006/.test(security),'legacy demo staff i
 ok(/setupDemoAccessV81=function\(\)/.test(security),'demo access creation is disabled in production');
 ok(/Legacy demo access is disabled/.test(security),'legacy demo logins are rejected at authentication');
 
+const directApp=read('b2c/index.html');
+const directLogin=read('b2c/login/index.html');
+const directWorker=read('b2c/sw.js');
+ok(/function persistentSessionMobile\(/.test(directApp)&&/nel_profile_v9','nel_b2c_profile/.test(directApp),'B2C restores login from persistent customer profiles');
+ok(/NEL_DB\.getKV\('mobile'\)/.test(directApp),'B2C restores login from IndexedDB before redirecting');
+ok(/nel_profile_v9','nel_b2c_profile/.test(directLogin),'B2C login recognises an existing remembered profile');
+ok(/staleWhileRevalidate\(request,navigationFallback\(url\)\)/.test(directWorker),'B2C repeat launches use cached navigation immediately');
+ok(/staleWhileRevalidate\(request\)/.test(directWorker),'B2C cached runtime assets refresh in the background');
+
 console.log('Full Native Elaneeru app regression audit passed.');

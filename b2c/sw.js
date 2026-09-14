@@ -1,4 +1,4 @@
-const CACHE='native-elaneeru-b2c-v10.49.0';
+const CACHE='native-elaneeru-b2c-v10.50.0';
 const SHELL=[
   './','./index.html','./login/index.html','./config.js','./manifest.webmanifest','./idb-v1.js','./order-sync-v1.js',
   './boot-recovery-v10360.js','./image-fallback-v918.js','./product-images-v10380.js','./ui-v108.js','./ui-v110.js','./ui-v111.js','./ui-v112.js','./ui-v113.js','./ui-v125.js','./ui-v127.js',
@@ -69,6 +69,16 @@ async function cacheFirst(request){
   return response;
 }
 
+async function staleWhileRevalidate(request,fallback){
+  const cached=await caches.match(request);
+  const refresh=fetchAndRefreshCache(request).catch(()=>null);
+  if(cached){refresh.catch(()=>{});return cached;}
+  const response=await refresh;
+  if(response)return response;
+  if(fallback){const page=await caches.match(fallback);if(page)return page;}
+  throw new Error('offline');
+}
+
 self.addEventListener('fetch',event=>{
   const request=event.request;
   if(request.method!=='GET')return;
@@ -76,13 +86,13 @@ self.addEventListener('fetch',event=>{
   if(url.origin!==self.location.origin)return;
 
   if(request.mode==='navigate'){
-    event.respondWith(networkFirst(request,navigationFallback(url)));
+    event.respondWith(staleWhileRevalidate(request,navigationFallback(url)));
     return;
   }
 
   const critical=/\/(?:config|boot-recovery-v10360|image-fallback-v918|product-images-v10380|idb-v1|order-sync-v1|ui-v108|ui-v110|ui-v111|ui-v112|ui-v113|ui-v125|ui-v127|separate-links|cart-visibility-v10320|customer-growth-v10330|referral-reward-v10340|payment-upi-v10350|update-notifier|install-analytics-v10420|i18n-v102|i18n-v104)\.js$/;
   if(critical.test(url.pathname)||url.pathname.endsWith('/manifest.webmanifest')){
-    event.respondWith(networkFirst(request));
+    event.respondWith(staleWhileRevalidate(request));
     return;
   }
 

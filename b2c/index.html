@@ -35,8 +35,29 @@ function catalogJsonpV114(){
     document.head.appendChild(script);
   });
 }
+function persistentSessionMobile(){
+  const digits=v=>String(v||'').replace(/\D/g,'').slice(-10);
+  let mobile='';
+  try{mobile=digits(localStorage.getItem('nel_b2c_session_mobile'))}catch(e){}
+  if(!/^[6-9]\d{9}$/.test(mobile)){try{mobile=digits(sessionStorage.getItem('nel_b2c_session_mobile'))}catch(e){}}
+  if(!/^[6-9]\d{9}$/.test(mobile)){
+    for(const key of ['nel_profile_v9','nel_b2c_profile']){
+      try{const saved=JSON.parse(localStorage.getItem(key)||'{}');mobile=digits(saved&&saved.mobile)}catch(e){}
+      if(/^[6-9]\d{9}$/.test(mobile))break;
+    }
+  }
+  if(/^[6-9]\d{9}$/.test(mobile)){
+    try{localStorage.setItem('nel_b2c_session_mobile',mobile)}catch(e){}
+    try{sessionStorage.setItem('nel_b2c_session_mobile',mobile)}catch(e){}
+  }
+  return mobile;
+}
 async function init(){
-  const session=(localStorage.getItem('nel_b2c_session_mobile')||'').replace(/\D/g,'').slice(-10);
+  let session=persistentSessionMobile();
+  if(!/^[6-9]\d{9}$/.test(session)&&window.NEL_DB){
+    try{session=String(await window.NEL_DB.getKV('mobile')||'').replace(/\D/g,'').slice(-10)}catch(e){}
+    if(/^[6-9]\d{9}$/.test(session)){try{localStorage.setItem('nel_b2c_session_mobile',session)}catch(e){}}
+  }
   if(!/^[6-9]\d{9}$/.test(session)){location.replace('./login/');return}
   if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
   const saved=profile();
