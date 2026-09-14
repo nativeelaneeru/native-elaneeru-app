@@ -11,7 +11,7 @@
     if(!/^https?:\/\//i.test(url))return '';
     if(/your-image-link|example\.com|placeholder/i.test(url))return '';
     var match=url.match(/drive\.google\.com\/file\/d\/([A-Za-z0-9_-]+)/i)||url.match(/[?&]id=([A-Za-z0-9_-]+)/i);
-    if(match)return 'https://drive.google.com/uc?export=view&id='+encodeURIComponent(match[1]);
+    if(match)return 'https://lh3.googleusercontent.com/d/'+encodeURIComponent(match[1])+'=w1200';
     return url;
   }
   function canonicalImage(p){

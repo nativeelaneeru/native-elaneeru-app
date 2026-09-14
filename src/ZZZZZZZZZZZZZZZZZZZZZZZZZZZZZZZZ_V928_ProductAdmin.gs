@@ -90,6 +90,6 @@ function uploadProductImageAdminV928(email,pin,p){
   const stamp=Utilities.formatDate(new Date(),'Asia/Kolkata','yyyyMMdd-HHmmss');
   const blob=Utilities.newBlob(bytes,mime,id+'-'+stamp+'.'+ext);const file=folder.createFile(blob);
   try{file.setSharing(DriveApp.Access.ANYONE_WITH_LINK,DriveApp.Permission.VIEW)}catch(e){try{file.setSharing(DriveApp.Access.ANYONE,DriveApp.Permission.VIEW)}catch(ignore){throw new Error('Image uploaded, but public sharing is blocked by Drive policy. Use a public image URL instead.')}}
-  const url='https://drive.google.com/uc?export=view&id='+encodeURIComponent(file.getId());
+  const url='https://lh3.googleusercontent.com/d/'+encodeURIComponent(file.getId())+'=w1200';
   return {success:true,url:url,fileId:file.getId(),name:file.getName()};
 }
