@@ -21,7 +21,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Validate B2C and B2B PWAs
         run: node scripts/smoke-check.mjs
@@ -122,17 +122,31 @@ jobs:
           })().catch(error=>{console.error(error);process.exit(1)});
           NODE
 
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
         with:
           enablement: true
 
-      - uses: actions/upload-pages-artifact@v3
+      - name: Archive GitHub Pages artifact
+        run: |
+          tar \
+            --dereference --hard-dereference \
+            --exclude=.git \
+            --exclude=.github \
+            --exclude='.[^/]*' \
+            -cvf "$RUNNER_TEMP/artifact.tar" \
+            .
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-artifact@v7
         with:
-          path: .
+          name: github-pages
+          path: ${{ runner.temp }}/artifact.tar
+          retention-days: 1
+          if-no-files-found: error
 
       - name: Deploy GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
       - name: Verify live B2C and B2B PWAs in Chrome
         env:
