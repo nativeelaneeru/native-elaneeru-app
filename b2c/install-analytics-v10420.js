@@ -3,13 +3,19 @@
   var promptEvent=null,queue=[],timer=0,seenPlv=false;
   var isIos=/iphone|ipad|ipod/i.test(navigator.userAgent||'');
   var installed=function(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true};
+  function installGuide(){
+    var old=document.getElementById('nelInstallGuide10420');if(old)old.remove();
+    var x=document.createElement('div');x.id='nelInstallGuide10420';x.style.cssText='position:fixed;inset:0;z-index:9999;background:#001b10aa;display:grid;place-items:center;padding:20px';
+    x.innerHTML='<div style="width:min(390px,100%);background:#fff;border-radius:22px;padding:22px;color:#172019;font:14px/1.5 system-ui;box-shadow:0 24px 70px #0005"><div style="font-size:42px">⬇</div><h2 style="margin:8px 0;color:#075b34">Install Native Elaneeru</h2><p style="margin:0 0 16px">'+(isIos?'Tap the <b>Share</b> button, then choose <b>Add to Home Screen</b>.':'Chrome is preparing the app for installation. If the install window does not appear, open the browser menu <b>⋮</b> and choose <b>Install app</b>.')+'</p><button type="button" style="width:100%;border:0;border-radius:12px;padding:12px;background:#075b34;color:#fff;font-weight:800">Got it</button></div>';
+    x.querySelector('button').onclick=function(){x.remove()};x.onclick=function(e){if(e.target===x)x.remove()};document.body.appendChild(x);
+  }
   function installUi(){
     if(installed()||document.getElementById('nelInstall10420'))return;
     var b=document.createElement('button');b.id='nelInstall10420';b.type='button';b.textContent='⬇ Install App';
     b.style.cssText='position:fixed;right:12px;bottom:86px;z-index:75;border:0;border-radius:999px;padding:11px 14px;background:#075b34;color:#fff;font:800 12px system-ui;box-shadow:0 8px 26px #06351f55';
     b.onclick=async function(){
       if(promptEvent){promptEvent.prompt();var c=await promptEvent.userChoice;promptEvent=null;if(c&&c.outcome==='accepted')b.remove();return}
-      alert(isIos?'To install: tap Share, then “Add to Home Screen”.':'To install: open the browser menu and tap “Install app” or “Add to Home screen”.');
+      installGuide();
     };
     document.body.appendChild(b);
   }
