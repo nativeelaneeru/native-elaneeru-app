@@ -1,0 +1,2 @@
+importScripts('../staff-sw.js');
+
