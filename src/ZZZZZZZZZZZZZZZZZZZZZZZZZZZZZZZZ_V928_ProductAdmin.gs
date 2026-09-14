@@ -18,7 +18,15 @@ function v928EnsureProductHeaders_(){
 function v928ProductRows_(){v928EnsureProductHeaders_();return rows_(V8.SHEETS.PRODUCTS)}
 function v928CleanStatus_(v){return s_(v).toUpperCase()==='LIVE'?'LIVE':'NOT LIVE'}
 function v928CleanUrl_(v){const x=s_(v);if(!x)return '';if(!/^https?:\/\//i.test(x))throw new Error('Image URL must start with http:// or https://');return x}
-function v928ClearCatalogCache_(){try{CacheService.getScriptCache().remove('NEL_PUBLIC_CATALOG_V908')}catch(e){}}
+function v928ClearCatalogCache_(){
+  try{
+    CacheService.getScriptCache().removeAll([
+      'NEL_PUBLIC_CATALOG_V908',
+      'NEL_B2C_APP_CONFIG_V837',
+      'V905:B2C_PRODUCTS'
+    ]);
+  }catch(e){}
+}
 function v928ProductDto_(r){
   return {
     row:Number(r._row||0),productId:s_(r['Product ID']),productName:s_(r['Product Name']),category:s_(r.Category),unit:s_(r.Unit),
