@@ -131,9 +131,9 @@ async function testRoot(){
     for(let attempt=1;attempt<=4;attempt++){
       try{
         await page.navigate(`${BASE}?e2e=root-${Date.now()}-${attempt}`);
-        await page.waitFor(`location.pathname.includes('/b2c/')`,12000,'root redirect to B2C');
+        await page.waitFor(`document.title.includes('Native Elaneeru') && !!document.querySelector('a[href="./b2c/"]') && !!document.querySelector('a[href="./b2b/"]')`,12000,'public website');
         const path=await page.evaluate('location.pathname');
-        assert(path.includes('/b2c/'), 'root: redirects into the current B2C PWA flow');
+        assert(path.endsWith('/native-elaneeru-app/'), 'root: public website renders at the canonical path');
         return;
       }catch(error){
         last=error;
@@ -143,7 +143,7 @@ async function testRoot(){
         if(attempt<4)await sleep(2000*attempt);
       }
     }
-    throw last||new Error('Root redirect to B2C never became ready after deployment.');
+    throw last||new Error('Public website never became ready after deployment.');
   }finally{await page.close()}
 }
 
