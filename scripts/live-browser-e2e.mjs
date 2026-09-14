@@ -30,14 +30,14 @@ async function waitForDebugger(profileDir){
   let last;
   if(!PORT){
     const portFile=path.join(profileDir,'DevToolsActivePort');
-    for(let i=0;i<80;i++){
+    for(let i=0;i<160;i++){
       if(fs.existsSync(portFile)){
         PORT=Number(fs.readFileSync(portFile,'utf8').split(/\r?\n/)[0]);
         if(PORT)break;
       }
       await sleep(250);
     }
-    if(!PORT)throw new Error('Chrome did not publish a DevTools port.');
+    if(!PORT)throw new Error('Chrome did not publish a DevTools port within 40 seconds.');
   }
   for(let i=0;i<80;i++){
     try{
