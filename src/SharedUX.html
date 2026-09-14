@@ -65,14 +65,13 @@ img{max-width:100%}
     else if(t.includes('delivery'))page='delivery';
     else if(t.includes('admin'))page='admin';
   }
+  const centralLauncher=page==='admin'||page==='dashboard';
+  if(!centralLauncher)return;
   let apps=[
     ['dashboard','📊','Control Tower',MAIN+'?page=dashboard'],['admin','⚙️','Operations Admin',MAIN+'?page=admin'],['payments','💳','UPI Verification',MAIN+'?page=payments'],['approvals','✅','Vendor Approvals',MAIN+'?page=approvals'],
     ['vendor','🤝','Vendor Onboarding',MAIN+'?page=vendor'],['sales','📈','Sales',MAIN+'?page=sales'],['picker','📦','Picker',MAIN+'?page=picker'],['barcode','▦','Barcode',MAIN+'?page=barcode'],['inventory','🏬','Inventory',MAIN+'?page=inventory'],
     ['delivery','🛵','B2C Delivery',MAIN+'?page=delivery'],['driver','🚚','B2B Driver',MAIN+'?page=driver'],['b2b','🥥','B2B',B2B],['b2c','🛒','Customer',B2C]
   ];
-  /* Onboarding staff receive only the Vendor Onboarding entry. Admin and other
-     operational apps remain separate even though this common launcher is shared. */
-  if(page==='vendor'||page==='sales')apps=apps.filter(a=>a[0]==='vendor');
   if(page!=='admin'){
     const brand=document.createElement('div');brand.className='nel-shared-brand';brand.innerHTML='<img src="'+LOGO+'" alt="Native Elaneeru logo"><div><b>Native Elaneeru</b><small>'+SLOGAN+'</small></div>';document.body.insertBefore(brand,document.body.firstChild);
   }
