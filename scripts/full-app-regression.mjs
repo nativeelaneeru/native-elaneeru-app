@@ -17,7 +17,7 @@ function parseHtml(path){
 
 const appHtml=[
   'src/Admin.html','src/AdminFixesV915.html','src/AdminAccessV917.html',
-  'src/CumulativeDashboard.html','src/PaymentVerification.html',
+  'src/CumulativeDashboard.html','src/Customer360.html','src/PaymentVerification.html',
   'src/VendorOnboardingV910.html','src/VendorOnboardingFixV918.html',
   'src/VendorApproval.html','src/VendorApprovalFixV916.html',
   'src/Sales.html','src/Picker.html','src/Barcode.html','src/Inventory.html',
@@ -34,7 +34,7 @@ for(const path of ['b2b/runtime-guard-v918.js','b2b/production-fixes-v990.js','b
 const router=read('src/ZZZZZZZZZZZZZZZZZZZZZZZ_V912_FinalRoutes.gs');
 new Function(router);
 const requiredRoutes={
-  admin:'Admin',dashboard:'CumulativeDashboard',payments:'PaymentVerification',sales:'Sales',picker:'Picker',
+  admin:'Admin',customer360:'Customer360',dashboard:'CumulativeDashboard',payments:'PaymentVerification',sales:'Sales',picker:'Picker',
   barcode:'Barcode',inventory:'Inventory',vendor:'VendorOnboardingV910',approvals:'VendorApproval',
   driver:'Driver',delivery:'Delivery',b2b:'BusinessRedirect',b2c:'DirectRedirect'
 };
@@ -49,6 +49,13 @@ ok(/nativeelaneeru\.github\.io\/native-elaneeru-app\/b2c\//.test(shared),'shared
 ok(/nativeelaneeru\.github\.io\/native-elaneeru-app\/b2b\//.test(shared),'shared launcher sends B2B to the live B2B PWA');
 ok(!/location\.href\.split\('\?'\)/.test(shared),'shared launcher does not build routes from iframe location');
 ok(!/href=["']\?page=/.test(shared),'shared launcher has no iframe-relative page links');
+
+const customer360=read('src/Customer360.html');
+ok(/searchCustomer360V947/.test(customer360)&&/getCustomer360ProfileV947/.test(customer360),'Customer 360 loads search and profile APIs');
+const customer360Backend=read('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V947_Customer360.gs');
+new Function(customer360Backend);
+ok(/requireAdmin_\(email,pin\)/.test(customer360Backend),'Customer 360 endpoints require Admin authentication');
+ok(!/append_\(|updateObj_\(|deleteRow\(/.test(customer360Backend),'Customer 360 backend performs no production writes');
 
 const payments=read('src/PaymentVerification.html');
 ok(!/href=["']\?page=/.test(payments),'UPI Verification has no iframe-relative navigation');

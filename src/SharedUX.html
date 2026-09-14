@@ -65,10 +65,10 @@ img{max-width:100%}
     else if(t.includes('delivery'))page='delivery';
     else if(t.includes('admin'))page='admin';
   }
-  const centralLauncher=page==='admin'||page==='dashboard';
+  const centralLauncher=page==='admin'||page==='dashboard'||page==='customer360';
   if(!centralLauncher)return;
   let apps=[
-    ['dashboard','📊','Control Tower',MAIN+'?page=dashboard'],['admin','⚙️','Operations Admin',MAIN+'?page=admin'],['payments','💳','UPI Verification',MAIN+'?page=payments'],['approvals','✅','Vendor Approvals',MAIN+'?page=approvals'],
+    ['customer360','👤','Customer 360',MAIN+'?page=customer360'],['dashboard','📊','Control Tower',MAIN+'?page=dashboard'],['admin','⚙️','Operations Admin',MAIN+'?page=admin'],['payments','💳','UPI Verification',MAIN+'?page=payments'],['approvals','✅','Vendor Approvals',MAIN+'?page=approvals'],
     ['vendor','🤝','Vendor Onboarding',MAIN+'?page=vendor'],['sales','📈','Sales',MAIN+'?page=sales'],['picker','📦','Picker',MAIN+'?page=picker'],['barcode','▦','Barcode',MAIN+'?page=barcode'],['inventory','🏬','Inventory',MAIN+'?page=inventory'],
     ['delivery','🛵','B2C Delivery',MAIN+'?page=delivery'],['driver','🚚','B2B Driver',MAIN+'?page=driver'],['b2b','🥥','B2B',B2B],['b2c','🛒','Customer',B2C]
   ];
