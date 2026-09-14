@@ -15,10 +15,12 @@
     return url;
   }
   function canonicalImage(p){
+    var configured=directImageUrl(p&&p.imageUrl);
+    if(configured)return configured;
     var id=String(p&&p.productId||'').trim().toUpperCase();
     if(id==='TC')return './images/tender-coconut-v2.webp';
     if(id==='DC')return './images/dehusked-coconut-v2.webp';
-    return directImageUrl(p&&p.imageUrl);
+    return '';
   }
   function applyCanonicalImages(){
     try{(S&&S.cfg&&Array.isArray(S.cfg.products)?S.cfg.products:[]).forEach(function(p){var url=canonicalImage(p);if(url)p.imageUrl=url})}catch(e){}
