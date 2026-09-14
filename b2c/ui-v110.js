@@ -65,6 +65,7 @@
   function validOrder(o){var st=String(o&&o.status||'').toUpperCase();return !/(CANCEL|FAIL|REJECT|UNABLE|RETURN)/.test(st)}
   function orderTs(o,index){var raw=(o&&(o.orderedAt||o.createdAt||o.date))||'';var n=Date.parse(raw);return isNaN(n)?(1000000-index):n}
   function renderReorder(d){
+    if(window.NEL_UI_V125)return;
     var host=document.getElementById('favProducts');if(!host)return;ensureStyle();var c=t();
     var note=document.getElementById('nel110ReorderNote');if(!note){note=document.createElement('div');note.id='nel110ReorderNote';note.className='nel110-reorder-note';host.parentNode.insertBefore(note,host)}note.textContent=c.reorder;
     if(!d){host.innerHTML='<div class="empty">'+esc(c.loading)+'</div>';return}

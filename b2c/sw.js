@@ -1,9 +1,9 @@
-const CACHE='native-elaneeru-direct-v10.45.0';
+const CACHE='native-elaneeru-b2c-v10.46.0';
 const SHELL=[
   './','./index.html','./login/index.html','./config.js','./manifest.webmanifest','./idb-v1.js','./order-sync-v1.js',
   './boot-recovery-v10360.js','./image-fallback-v918.js','./product-images-v10380.js','./ui-v108.js','./ui-v110.js','./ui-v111.js','./ui-v112.js','./ui-v113.js','./ui-v125.js','./ui-v127.js',
   './separate-links.js','./cart-visibility-v10320.js','./customer-growth-v10330.js','./referral-reward-v10340.js','./payment-upi-v10350.js','./update-notifier.js','./install-analytics-v10420.js','./i18n-v102.js','./i18n-v104.js',
-  './icons/native-elaneeru.svg'
+  './icons/native-elaneeru.svg','./images/tender-coconut-v2.webp','./images/dehusked-coconut-v2.webp'
 ];
 
 self.addEventListener('install',event=>{

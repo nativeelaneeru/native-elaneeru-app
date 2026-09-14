@@ -33,6 +33,7 @@
     var promo=home.querySelector('.promo');if(promo)promo.insertAdjacentElement('afterend',rail);else home.insertBefore(rail,home.firstChild);
   }
   function renderReorder(d){
+    if(window.NEL_UI_V125)return;
     var host=document.getElementById('favProducts');if(!host)return;var products=[];try{products=(typeof S!=='undefined'&&S.cfg&&Array.isArray(S.cfg.products))?S.cfg.products:[]}catch(e){};if(!products.length)return;
     var stats={};((d&&d.orders)||[]).forEach(function(o,ix){if(['Cancelled','Failed','Rejected'].indexOf(String(o.status||''))>=0)return;(o.items||[]).forEach(function(it){var k=String(it.name||'').trim().toLowerCase();if(!k)return;if(!stats[k])stats[k]={qty:0,recent:ix};stats[k].qty+=Number(it.qty||0);stats[k].recent=Math.min(stats[k].recent,ix)})});
     var ranked=products.map(function(p){var x=stats[String(p.productName||'').trim().toLowerCase()];return x?{p:p,qty:x.qty,recent:x.recent}:null}).filter(Boolean).sort(function(a,b){return b.qty-a.qty||a.recent-b.recent}).slice(0,6);
