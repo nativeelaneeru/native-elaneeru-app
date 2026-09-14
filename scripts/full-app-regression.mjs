@@ -21,7 +21,8 @@ const appHtml=[
   'src/VendorOnboardingV910.html','src/VendorOnboardingFixV918.html',
   'src/VendorApproval.html','src/VendorApprovalFixV916.html',
   'src/Sales.html','src/Picker.html','src/Barcode.html','src/Inventory.html',
-  'src/Delivery.html','src/DeliveryFixV918.html','src/Driver.html','src/SharedUX.html'
+  'src/Delivery.html','src/DeliveryFixV918.html','src/Driver.html','src/SharedUX.html',
+  'src/AdminVendorPricingV946.html'
 ];
 appHtml.forEach(parseHtml);
 
@@ -40,6 +41,7 @@ const requiredRoutes={
 for(const [route,page] of Object.entries(requiredRoutes))ok(router.includes(`'${route}':'${page}'`),`router maps ${route} → ${page}`);
 ok(/VendorOnboardingFixV918/.test(router),'Vendor Onboarding V918 safety guard is attached');
 ok(/DeliveryFixV918/.test(router),'B2C Delivery V918 safety guard is attached');
+ok(/AdminVendorPricingV946/.test(router),'Admin Vendor Pricing editor is attached');
 
 const shared=read('src/SharedUX.html');
 ok(/script\.google\.com\/macros\/s\/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB\/exec/.test(shared),'shared launcher uses the production Apps Script URL');
@@ -61,6 +63,12 @@ ok(/['"]feedback['"]/.test(adminRuntime)&&/Array\.isArray\(d\[k\]\)/.test(adminR
 
 const productAdmin=read('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V928_ProductAdmin.gs');
 ok(/NEL_PUBLIC_CATALOG_V908/.test(productAdmin)&&/NEL_B2C_APP_CONFIG_V837/.test(productAdmin)&&/V905:B2C_PRODUCTS/.test(productAdmin),'Product Admin invalidates catalogue and checkout price caches');
+
+const vendorPricingAdmin=read('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V946_VendorPricingAdmin.gs');
+new Function(vendorPricingAdmin);
+ok(/requireAdmin_\(email,pin\)/.test(vendorPricingAdmin),'Vendor Pricing editor requires Admin authentication');
+ok(/B2B Default Price/.test(vendorPricingAdmin)&&/Agreed Price/.test(vendorPricingAdmin),'Vendor Pricing editor shows default and agreed B2B prices');
+ok(/price<=0/.test(vendorPricingAdmin)&&/moq<1\|\|step<1/.test(vendorPricingAdmin),'Vendor Pricing editor validates price, MOQ and quantity step');
 
 const access=read('src/AdminAccessV917.html');
 ok(/d&&Array\.isArray\(d\.rows\)/.test(access),'Access Management guards null staff responses');
