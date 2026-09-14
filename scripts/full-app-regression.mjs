@@ -26,7 +26,7 @@ const appHtml=[
 ];
 appHtml.forEach(parseHtml);
 
-for(const path of ['b2b/runtime-guard-v918.js','b2b/production-fixes-v990.js','b2b/payment-upi-v916.js']){
+for(const path of ['b2b/runtime-guard-v918.js','b2b/production-fixes-v990.js','b2b/payment-upi-v916.js','b2b/session-v985.js']){
   new Function(read(path));
   ok(true,`${path} parses`);
 }
@@ -105,9 +105,16 @@ ok(/d\.stops=Array\.isArray\(d\.stops\)\?d\.stops:\[\]/.test(driver),'B2B Driver
 
 const b2bConfig=read('b2b/config.js');
 ok(/runtime-guard-v918\.js/.test(b2bConfig),'B2B production config loads the V918 runtime guard');
+ok(/session-v985\.js/.test(b2bConfig),'B2B production config loads persistent fast-session support');
 const b2bGuard=read('b2b/runtime-guard-v918.js');
 ok(/d\.products=Array\.isArray\(d\.products\)/.test(b2bGuard)&&/d\.orders=Array\.isArray\(d\.orders\)/.test(b2bGuard),'B2B runtime guard normalises product/order lists');
 ok(/!Array\.isArray\(o\.items\)/.test(b2bGuard),'B2B runtime guard normalises nested order items');
+const b2bSession=read('b2b/session-v985.js');
+const b2bWorker=read('b2b/sw.js');
+ok(/NEL_B2B_DB\.get\('sessionToken'\)/.test(b2bSession),'B2B restores the partner session from IndexedDB');
+ok(/nel_b2b_data_cache/.test(b2bSession)&&/renderCached/.test(b2bSession),'B2B renders cached dashboard data before live refresh');
+ok(/function clearSaved\(/.test(b2bSession)&&/localStorage\.removeItem\('nel_b2b_token'\)/.test(b2bSession),'B2B explicit logout clears the persistent session');
+ok(/staleWhileRevalidate\(request,'\.\/index\.html'\)/.test(b2bWorker),'B2B repeat launches use cached navigation immediately');
 
 const security=read('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V918_ProductionSecurity.gs');
 new Function(security);
