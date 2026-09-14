@@ -59,6 +59,9 @@ ok(/normaliseAdminData|normaliseDashboard/.test(adminRuntime),'Operations Admin 
 ok(/!Array\.isArray\(o\.items\)/.test(adminRuntime),'Operations Admin guards nested order items');
 ok(/['"]feedback['"]/.test(adminRuntime)&&/Array\.isArray\(d\[k\]\)/.test(adminRuntime),'Operations Admin guards feedback and other list responses');
 
+const productAdmin=read('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V928_ProductAdmin.gs');
+ok(/NEL_PUBLIC_CATALOG_V908/.test(productAdmin)&&/NEL_B2C_APP_CONFIG_V837/.test(productAdmin)&&/V905:B2C_PRODUCTS/.test(productAdmin),'Product Admin invalidates catalogue and checkout price caches');
+
 const access=read('src/AdminAccessV917.html');
 ok(/d&&Array\.isArray\(d\.rows\)/.test(access),'Access Management guards null staff responses');
 ok(!/href=["']\?page=vendor/.test(access),'Access Management uses safe Vendor Onboarding navigation');
