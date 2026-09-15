@@ -26,7 +26,8 @@ doGet = function(e){
       getB2CPaymentEngineHealthV913:getB2CPaymentEngineHealthV913,
       getCumulativeDashboardHealthV914:getCumulativeDashboardHealthV914,
       getB2BPaymentEngineHealthV916:getB2BPaymentEngineHealthV916,
-      getBarcodeConsoleHealthV922:getBarcodeConsoleHealthV922
+      getBarcodeConsoleHealthV922:getBarcodeConsoleHealthV922,
+      getVendorOnboardingSessionHealthV949:getVendorOnboardingSessionHealthV949
     };
     if(!allowed[method]) throw new Error('Method not allowed.');
     response = {
