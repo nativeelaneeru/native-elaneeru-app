@@ -3,51 +3,91 @@
   if(window.NEL_VENDOR_ONBOARDING_FIX_V918)return;window.NEL_VENDOR_ONBOARDING_FIX_V918=true;
   const q=id=>document.getElementById(id);
   const invoke=(fn,args=[])=>new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve).withFailureHandler(e=>reject(new Error(e&&e.message?e.message:String(e))))[fn](...args));
+  const SESSION_KEY='nel_vendor_onboarding_session_v949',MOBILE_KEY='nel_vendor_onboarding_staff_mobile';
+  let SESSION_TOKEN='';
   function text(e){return e&&e.message?e.message:String(e||'Something went wrong')}
+  function savedToken(){try{return String(localStorage.getItem(SESSION_KEY)||sessionStorage.getItem(SESSION_KEY)||'')}catch(e){try{return String(sessionStorage.getItem(SESSION_KEY)||'')}catch(x){return ''}}}
+  function rememberSession(token,mobile){SESSION_TOKEN=String(token||'');try{if(SESSION_TOKEN){localStorage.setItem(SESSION_KEY,SESSION_TOKEN);sessionStorage.setItem(SESSION_KEY,SESSION_TOKEN)}if(mobile)localStorage.setItem(MOBILE_KEY,digits(mobile))}catch(e){try{if(SESSION_TOKEN)sessionStorage.setItem(SESSION_KEY,SESSION_TOKEN)}catch(x){}}}
+  function clearSession(){SESSION_TOKEN='';try{localStorage.removeItem(SESSION_KEY);sessionStorage.removeItem(SESSION_KEY)}catch(e){try{sessionStorage.removeItem(SESSION_KEY)}catch(x){}}}
+  function restoreMobile(){try{const m=digits(localStorage.getItem(MOBILE_KEY)||'');if(m&&q('smobile'))q('smobile').value=m}catch(e){}}
+
+  function showSignedIn(raw,token){
+    if(!raw||typeof raw!=='object')throw new Error('Staff profile could not be loaded. Please try again.');
+    SALES=raw;PRODUCTS=Array.isArray(raw.products)?raw.products:[];
+    const apps=Array.isArray(raw.allowedApps)?raw.allowedApps:[];
+    if(apps.length&&apps.indexOf('VENDOR_ONBOARDING')===-1)throw new Error('This login is not authorized for Vendor Onboarding.');
+    if(token)rememberSession(token,raw.mobile);
+    const login=q('login'),flow=q('flow'),box=q('salesBox');if(login)login.style.display='none';if(flow)flow.style.display='block';
+    if(q('spin'))q('spin').value='';
+    if(box)box.innerHTML='<div style="display:flex;align-items:center;gap:10px"><div style="min-width:0;flex:1"><b>'+esc(raw.name||'Staff')+'</b><div class="muted">'+esc(raw.staffId||'')+' · '+esc(raw.role||'STAFF')+' · Vendor Onboarding access active</div></div><button type="button" class="btn alt" id="vendorLogoutBtn" style="padding:8px 11px">Log out</button></div>';
+    const logout=q('vendorLogoutBtn');if(logout)logout.onclick=logoutStaff;
+    if(typeof renderProducts==='function')renderProducts();
+    if(!PRODUCTS.length&&typeof msg==='function')msg('No LIVE B2B products found. Check B2B Status in the Products sheet.');
+  }
 
   async function safeSalesLogin(){
     const b=q('loginBtn'),mobile=digits(q('smobile')&&q('smobile').value),pin=String(q('spin')&&q('spin').value||'').trim();
     if(b){b.disabled=true;b.textContent='Checking PIN…'}if(typeof msg==='function')msg('');
     try{
       if(!/^[6-9]\d{9}$/.test(mobile)||pin.length<4)throw new Error('Enter your authorized staff mobile number and PIN.');
-      const raw=await invoke('salesStaffLoginV82',[mobile,pin]);
-      if(!raw||typeof raw!=='object')throw new Error('Staff profile could not be loaded. Please try again.');
-      SALES=raw;PRODUCTS=Array.isArray(raw.products)?raw.products:[];
-      const apps=Array.isArray(raw.allowedApps)?raw.allowedApps:[];
-      if(apps.length&&apps.indexOf('VENDOR_ONBOARDING')===-1)throw new Error('This login is not authorized for Vendor Onboarding.');
-      const login=q('login'),flow=q('flow'),box=q('salesBox');if(login)login.style.display='none';if(flow)flow.style.display='block';
-      if(box)box.innerHTML='<b>'+esc(raw.name||'Staff')+'</b><div class="muted">'+esc(raw.staffId||'')+' · '+esc(raw.role||'STAFF')+' · Vendor Onboarding access active</div>';
-      if(typeof renderProducts==='function')renderProducts();
-      if(!PRODUCTS.length&&typeof msg==='function')msg('No LIVE B2B products found. Check B2B Status in the Products sheet.');
-    }catch(e){SALES=null;PRODUCTS=[];if(typeof msg==='function')msg(text(e))}
+      const raw=await invoke('createVendorOnboardingSessionV949',[mobile,pin]);
+      if(!raw||!raw.sessionToken)throw new Error('A secure staff session could not be created. Please try again.');
+      showSignedIn(raw,raw.sessionToken);
+      if(typeof msg==='function')msg('Signed in. This device will remember your Vendor Onboarding session.',true);
+    }catch(e){SALES=null;PRODUCTS=[];clearSession();if(typeof msg==='function')msg(text(e))}
     finally{if(b){b.disabled=false;b.textContent='Start onboarding'}}
+  }
+
+  async function restoreStaff(){
+    const token=savedToken();if(!token)return false;SESSION_TOKEN=token;
+    const b=q('loginBtn');if(b){b.disabled=true;b.textContent='Restoring session…'}
+    try{
+      const raw=await invoke('resumeVendorOnboardingSessionV949',[token]);
+      showSignedIn(raw,token);
+      return true;
+    }catch(e){clearSession();SALES=null;PRODUCTS=[];if(typeof msg==='function')msg('Your saved Vendor Onboarding session expired. Sign in once to continue.');return false}
+    finally{if(b){b.disabled=false;b.textContent='Start onboarding'}}
+  }
+
+  async function logoutStaff(){
+    const token=SESSION_TOKEN||savedToken();clearSession();SALES=null;PRODUCTS=[];
+    try{if(token)await invoke('logoutVendorOnboardingSessionV949',[token])}catch(e){}
+    location.reload();
   }
 
   async function safeSubmit(){
     const b=q('submitBtn');if(!b)return;
     b.disabled=true;b.textContent='Submitting…';if(typeof msg==='function')msg('');
     try{
-      if(!SALES||typeof SALES!=='object')throw new Error('Staff session is missing. Please reload and sign in again.');
+      const token=SESSION_TOKEN||savedToken();
+      if(!token||!SALES||typeof SALES!=='object')throw new Error('Staff session has expired. Please sign in again.');
       if(typeof data!=='function')throw new Error('Vendor form is unavailable. Reload the page.');
       const payload=data();
       payload.initialB2BPin=String(q('vendorB2BPin')&&q('vendorB2BPin').value||'').trim();
       if(!/^\d{4,8}$/.test(payload.initialB2BPin))throw new Error('Set a 4–8 digit B2B PIN for the vendor.');
-      const raw=await invoke('submitVendorOnboardingV840',[digits(q('smobile')&&q('smobile').value),String(q('spin')&&q('spin').value||'').trim(),payload]);
+      const raw=await invoke('submitVendorOnboardingSessionV949',[token,payload]);
       if(!raw||typeof raw!=='object'||raw.success===false||!raw.onboardingId)throw new Error(raw&&raw.error||'Vendor onboarding was not saved. Please retry.');
       const form=q('formCard');if(form)form.innerHTML='<div class="success"><div class="tick">✅</div><h2>B2B account activated</h2><div class="muted">'+esc(raw.productName||payload.productName||'')+'</div><div class="muted" style="margin-top:8px">Onboarding ID</div><h3>'+esc(raw.onboardingId)+'</h3><div class="muted">Captured by '+esc(raw.salesExecutive||SALES.name||'Staff')+'</div><div class="muted" style="margin-top:8px">B2B Login: '+esc(payload.mobile||'')+' / '+esc(payload.initialB2BPin)+' · Account is active immediately.</div><button class="btn" style="margin-top:14px" onclick="location.reload()">Add another vendor</button></div>';
       const cat=q('catalogCard');if(cat)cat.style.display='none';if(typeof msg==='function')msg('Submitted successfully.',true);
-    }catch(e){if(typeof msg==='function')msg(text(e));b.disabled=false;b.textContent='Submit vendor ✓'}
+    }catch(e){
+      if(/session|access has been removed|access is inactive/i.test(text(e)))clearSession();
+      if(typeof msg==='function')msg(text(e));b.disabled=false;b.textContent='Submit vendor ✓';
+    }
   }
 
-  function injectPin(){const form=q('formCard');if(!form||q('vendorB2BPin'))return;const node=document.createElement('div');node.style.marginTop='10px';node.innerHTML='<div class="muted">Vendor B2B PIN *</div><input id="vendorB2BPin" class="field" type="password" inputmode="numeric" maxlength="8" placeholder="Set 4–8 digit vendor PIN">';form.appendChild(node)}
+  function injectPin(){
+    const section=q('s3'),grid=section&&section.querySelector('.grid');if(!grid||q('vendorB2BPin'))return;
+    const node=document.createElement('div');node.style.gridColumn='1/-1';node.innerHTML='<div class="label">Vendor B2B PIN *</div><input id="vendorB2BPin" class="field" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password" placeholder="Set 4–8 digit vendor PIN"><div class="muted" style="margin-top:5px">Give this PIN to the vendor for Native Elaneeru Business login.</div>';grid.appendChild(node);
+  }
   function relabel(){
     const m=q('smobile'),p=q('spin');if(m)m.placeholder='Authorized staff mobile';if(p)p.placeholder='Staff PIN';
-    const sec=document.querySelector('#login .security');if(sec)sec.textContent='Only staff explicitly granted Vendor Onboarding access can sign in. Admin access stays separate.';
+    const sec=document.querySelector('#login .security');if(sec)sec.textContent='Only staff explicitly granted Vendor Onboarding access can sign in. This device securely remembers the session; your PIN is never stored in the browser.';
   }
   function start(){
-    relabel();injectPin();
+    relabel();injectPin();restoreMobile();
     try{window.salesLogin=safeSalesLogin;salesLogin=safeSalesLogin}catch(e){window.salesLogin=safeSalesLogin}
     try{window.submitForm=safeSubmit;submitForm=safeSubmit}catch(e){window.submitForm=safeSubmit}
+    restoreStaff();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
