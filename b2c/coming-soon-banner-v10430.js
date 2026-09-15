@@ -1,5 +1,6 @@
+/* Native Elaneeru launch-status banner refresh V10.4.31 */
 (function(){
-  if(window.NEL_COMING_SOON_B2C_V10430)return;window.NEL_COMING_SOON_B2C_V10430=true;
+  if(window.NEL_COMING_SOON_B2C_V10431)return;window.NEL_COMING_SOON_B2C_V10431=true;
   function addStyle(){
     if(document.getElementById('nel-coming-soon-style'))return;
     var s=document.createElement('style');s.id='nel-coming-soon-style';
