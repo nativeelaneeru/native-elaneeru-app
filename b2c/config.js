@@ -34,3 +34,4 @@ document.write('<script src="./payment-upi-v10350.js?v=10350"></script>');
 document.write('<script src="./update-notifier.js?v=10360"></script>');
 document.write('<script src="./install-analytics-v10420.js?v=10420"></script>');
 document.write('<script src="./coming-soon-banner-v10430.js?v=10431"></script>');
+document.write('<script src="./live-pricing-v10440.js?v=10440"></script>');
