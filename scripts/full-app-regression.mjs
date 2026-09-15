@@ -56,6 +56,10 @@ const customer360Backend=read('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V947_
 new Function(customer360Backend);
 ok(/requireAdmin_\(email,pin\)/.test(customer360Backend),'Customer 360 endpoints require Admin authentication');
 ok(!/append_\(|updateObj_\(|deleteRow\(/.test(customer360Backend),'Customer 360 backend performs no production writes');
+const customer360Access=read('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V948_Customer360Access.gs');
+new Function(customer360Access);
+ok(/CUSTOMER_360/.test(customer360Access)&&/staffAppLoginV917_/.test(customer360Access),'Customer 360 supports explicitly selected staff');
+ok(/v948RequireCustomer360_/.test(customer360Backend),'Customer 360 data endpoints enforce private access');
 
 const payments=read('src/PaymentVerification.html');
 ok(!/href=["']\?page=/.test(payments),'UPI Verification has no iframe-relative navigation');

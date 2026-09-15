@@ -10,7 +10,7 @@ function v947Cancelled_(s){return v947Upper_(s).indexOf('CANCEL')>=0;}
 function v947Delivered_(s){return v947Upper_(s).indexOf('DELIVER')>=0;}
 
 function searchCustomer360V947(email,pin,query){
-  requireAdmin_(email,pin);
+  v948RequireCustomer360_(email,pin);
   var q=s_(query).toLowerCase(),vendors=rows_(V8.SHEETS.B2B_VENDORS),orders=rows_(V8.SHEETS.B2B_ORDERS),stats={};
   orders.forEach(function(o){var id=s_(o['Vendor ID']);if(!id)return;var x=stats[id]||(stats[id]={count:0,value:0,last:null});x.count++;if(!v947Cancelled_(o.Status))x.value+=n_(v947First_(o,['Total Amount','Order Total','Amount']));var d=v947Date_(v947OrderDate_(o));if(d&&(!x.last||d>x.last))x.last=d;});
   var matched=vendors.filter(function(v){if(!q)return true;return ['Vendor ID','Business Name','Owner Name','Mobile','WhatsApp','Area','Pincode'].some(function(k){return s_(v[k]).toLowerCase().indexOf(q)>=0;});}).slice(0,50);
@@ -18,7 +18,7 @@ function searchCustomer360V947(email,pin,query){
 }
 
 function getCustomer360ProfileV947(email,pin,vendorId){
-  requireAdmin_(email,pin);vendorId=s_(vendorId);if(!vendorId)throw new Error('Vendor ID is required.');
+  v948RequireCustomer360_(email,pin);vendorId=s_(vendorId);if(!vendorId)throw new Error('Vendor ID is required.');
   var vendor=find_(V8.SHEETS.B2B_VENDORS,'Vendor ID',vendorId);if(!vendor)throw new Error('B2B vendor not found.');
   var allOrders=rows_(V8.SHEETS.B2B_ORDERS).filter(function(o){return s_(o['Vendor ID'])===vendorId;});
   var orderIds={};allOrders.forEach(function(o){orderIds[s_(o['Order ID'])]=true;});
@@ -34,4 +34,4 @@ function getCustomer360ProfileV947(email,pin,vendorId){
   return {success:true,version:V947_C360_VERSION,readOnly:true,generatedAt:fmtDT_(now_()),vendor:{vendorId:vendorId,businessName:s_(vendor['Business Name']),ownerName:s_(vendor['Owner Name']),mobile:digits_(vendor.Mobile),whatsapp:digits_(vendor.WhatsApp||vendor.Mobile),vendorType:s_(vendor['Vendor Type']),area:s_(vendor.Area),address:s_(vendor.Address),pincode:s_(vendor.Pincode),latitude:lat,longitude:lng,mapUrl:lat&&lng?'https://www.google.com/maps?q='+lat+','+lng:'',paymentType:s_(vendor['Payment Type']),creditDays:n_(vendor['Credit Days']),creditLimit:n_(vendor['Credit Limit']),outstanding:n_(vendor.Outstanding),moq:n_(vendor.MOQ),deliveryFrequency:s_(vendor['Delivery Frequency']),preferredTime:s_(vendor['Preferred Time']),status:s_(vendor.Status),onboardingId:s_(vendor['Onboarding ID']),createdAt:fmtDT_(vendor['Created At']),updatedAt:fmtDT_(vendor['Updated At'])},metrics:{lifetimeGmv:gmv,orderCount:allOrders.length,delivered:delivered,cancelled:cancelled,returns:returned,returnRate:delivered?returned*100/delivered:0,averageOrderValue:valid.length?gmv/valid.length:0,lastOrder:last?fmtDT_(last):'',frequency:allOrders.length?(allOrders.length/months).toFixed(1)+' orders/month':'No orders'},orders:orders,collections:collectionRows.sort(function(a,b){return (v947Date_(v947First_(b,['Collected At','Paid At','Created At','Date']))||0)-(v947Date_(v947First_(a,['Collected At','Paid At','Created At','Date']))||0);}).slice(0,100).map(function(r){return {date:fmtDT_(v947First_(r,['Collected At','Paid At','Created At','Date'])),reference:s_(v947First_(r,['Collection ID','Reference ID','Transaction ID','Order ID'])),method:s_(v947First_(r,['Method','Payment Method','Mode'])),status:s_(r.Status),amount:n_(v947First_(r,['Amount','Collected Amount','Paid Amount']))};}),tickets:tickets.sort(function(a,b){return (v947Date_(b['Created At'])||0)-(v947Date_(a['Created At'])||0);}).slice(0,100).map(function(r){return {ticketId:s_(r['Ticket ID']),createdAt:fmtDT_(r['Created At']),category:s_(r.Category),subject:s_(r.Subject),description:s_(r.Description),orderId:s_(r['Order ID']),priority:s_(r.Priority),status:s_(r.Status),resolution:s_(r.Resolution)};}),pricing:products.filter(function(p){return s_(p['Product ID'])&&v947Upper_(p['B2B Status'])!=='INACTIVE';}).map(function(p){var pid=s_(p['Product ID']),r=priceByProduct[pid]||{},def=n_(p['B2B Default Price']),agreed=n_(r['Agreed Price']);return {productId:pid,productName:s_(p['Product Name']),defaultPrice:def,agreedPrice:agreed,effectivePrice:agreed||def,moq:n_(r.MOQ)||n_(p['B2B MOQ'])||1,qtyStep:n_(r['Qty Step'])||n_(p['Qty Step'])||1,status:s_(r.Status)||(s_(p['B2B Status'])||'ACTIVE')};})};
 }
 
-function getCustomer360HealthV947(){return {ok:true,version:V947_C360_VERSION,readOnly:true,requiresAdmin:true};}
+function getCustomer360HealthV947(){return {ok:true,version:V947_C360_VERSION,readOnly:true,requiresAdminOrSelectedStaff:true};}
