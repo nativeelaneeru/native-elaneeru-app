@@ -1,0 +1,52 @@
+<script>
+(function(){
+  if(window.NEL_VENDOR_ONBOARDING_CAPTURE_V952)return;window.NEL_VENDOR_ONBOARDING_CAPTURE_V952=true;
+  const q=id=>document.getElementById(id);
+  function value(id){const x=q(id);return x?String(x.value||'').trim():''}
+  function positive(id){return Number(value(id)||0)>0}
+  function labelRequired(id){
+    const x=q(id);if(!x)return;x.required=true;
+    const wrap=x.parentElement,label=wrap&&wrap.querySelector('.label');
+    if(label&&label.textContent.indexOf('*')===-1)label.textContent=label.textContent.trim()+' *';
+  }
+  function gpsReady(){
+    try{return typeof LAT!=='undefined'&&typeof LNG!=='undefined'&&isFinite(Number(LAT))&&isFinite(Number(LNG))&&!(Number(LAT)===0&&Number(LNG)===0)}catch(e){return false}
+  }
+  function showError(t){if(typeof msg==='function')msg(t);return false}
+  function validateStep(n){
+    if(n===3){
+      if(!value('area'))return showError('Area is required.');
+      if(!/^\d{6}$/.test(value('pincode')))return showError('Enter a valid 6 digit pincode.');
+      if(!value('address'))return showError('Full address is required.');
+      if(!positive('daily'))return showError('Expected daily quantity is required.');
+      if(!positive('current'))return showError('Current buying price is required.');
+      if(!gpsReady())return showError('Capture the vendor GPS location before continuing.');
+      try{if(!OWNER_PHOTO||!SHOP_PHOTO)return showError('Capture both owner and shop-front photos before continuing.')}catch(e){return showError('Capture both owner and shop-front photos before continuing.')}
+    }
+    if(n===4){
+      if(!positive('agreed'))return showError('Agreed price is required.');
+      if(!positive('moq'))return showError('MOQ is required.');
+      if(!value('frequency'))return showError('Delivery frequency is required.');
+      if(!value('ptime'))return showError('Preferred delivery time is required.');
+      if(!value('start'))return showError('Planned start date is required.');
+      if(value('payment').toUpperCase()==='CREDIT'&&!positive('limit'))return showError('Credit limit is required for CREDIT vendors.');
+    }
+    return true;
+  }
+  function install(){
+    ['business','type','owner','mobile','area','pincode','address','daily','current','agreed','moq','frequency','ptime','payment','start','ownerPhoto','shopPhoto'].forEach(labelRequired);
+    const loc=q('locText');if(loc&&!loc.textContent.trim())loc.textContent='GPS capture required *';
+    const base=window.next;if(typeof base==='function'&&!base.__v952){
+      const wrapped=function(n){if(!validateStep(Number(n)))return;return base.apply(this,arguments)};wrapped.__v952=true;window.next=wrapped;try{next=wrapped}catch(e){}
+    }
+    const baseReview=window.review;if(typeof baseReview==='function'&&!baseReview.__v952){
+      const wrappedReview=function(){
+        const p=typeof data==='function'?data():{};
+        baseReview.apply(this,arguments);
+        const box=q('review');if(box)box.innerHTML+='<hr style="border:0;border-top:1px solid #e5ebe6;margin:12px 0"><div class="grid"><div><div class="label">Address</div><b>'+esc(p.address||'')+'</b></div><div><div class="label">Pincode</div><b>'+esc(p.pincode||'')+'</b></div><div><div class="label">Current buying price</div><b>₹'+Number(p.currentBuyingPrice||0).toFixed(2)+'</b></div><div><div class="label">Preferred time</div><b>'+esc(p.preferredTime||'')+'</b></div><div><div class="label">Planned start</div><b>'+esc(p.plannedStartDate||'')+'</b></div><div><div class="label">GPS</div><b>'+(p.latitude&&p.longitude?'Captured ✓':'Missing')+'</b></div></div>';
+      };wrappedReview.__v952=true;window.review=wrappedReview;try{review=wrappedReview}catch(e){}
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})();
+</script>
