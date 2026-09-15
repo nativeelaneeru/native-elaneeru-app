@@ -59,18 +59,19 @@
     var changed=false;
     DATA.products=DATA.products.map(function(old){
       var fresh=freshById[String(old.productId||'')];if(!fresh)return old;
-      if(num(old.price)!==num(fresh.price)||num(old.moq)!==num(fresh.moq)||num(old.qtyStep)!==num(fresh.qtyStep))changed=true;
-      return Object.assign({},old,{price:num(fresh.price),moq:num(fresh.moq)||1,qtyStep:num(fresh.qtyStep)||1,pricingType:fresh.pricingType||old.pricingType});
+      if(num(old.price)!==num(fresh.price)||num(old.basePrice)!==num(fresh.basePrice)||num(old.moq)!==num(fresh.moq)||num(old.qtyStep)!==num(fresh.qtyStep))changed=true;
+      return Object.assign({},old,{price:num(fresh.price),basePrice:num(fresh.basePrice)||num(fresh.price),moq:num(fresh.moq)||1,qtyStep:num(fresh.qtyStep)||1,pricingType:fresh.pricingType||old.pricingType});
     });
 
     if(typeof CART!=='undefined'&&CART){
-      Object.keys(CART).forEach(function(id){var fresh=freshById[String(id)];if(!fresh||!CART[id])return;CART[id].product=Object.assign({},CART[id].product||{},fresh);});
+      Object.keys(CART).forEach(function(id){var fresh=freshById[String(id)];if(!fresh||!CART[id])return;CART[id].product=Object.assign({},CART[id].product||{},fresh,{basePrice:num(fresh.basePrice)||num(fresh.price)});});
     }
     saveSeen(freshMap);
 
     if(changed){
       try{if(typeof render==='function')render();else if(typeof renderCart==='function')renderCart()}catch(e){}
       try{sessionStorage.setItem('nel_b2b_data_cache',JSON.stringify(DATA));localStorage.setItem('nel_b2b_data_cache',JSON.stringify(DATA))}catch(e){}
+      try{window.dispatchEvent(new CustomEvent('nel:base-price-refresh'))}catch(ignore){}
     }
     if(changes.length)showNotice(changes);
     return changed||changes.length>0;
