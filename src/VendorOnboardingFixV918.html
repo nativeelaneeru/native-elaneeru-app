@@ -10,6 +10,12 @@
   function rememberSession(token,mobile){SESSION_TOKEN=String(token||'');try{if(SESSION_TOKEN){localStorage.setItem(SESSION_KEY,SESSION_TOKEN);sessionStorage.setItem(SESSION_KEY,SESSION_TOKEN)}if(mobile)localStorage.setItem(MOBILE_KEY,digits(mobile))}catch(e){try{if(SESSION_TOKEN)sessionStorage.setItem(SESSION_KEY,SESSION_TOKEN)}catch(x){}}}
   function clearSession(){SESSION_TOKEN='';try{localStorage.removeItem(SESSION_KEY);sessionStorage.removeItem(SESSION_KEY)}catch(e){try{sessionStorage.removeItem(SESSION_KEY)}catch(x){}}}
   function restoreMobile(){try{const m=digits(localStorage.getItem(MOBILE_KEY)||'');if(m&&q('smobile'))q('smobile').value=m}catch(e){}}
+  function showSignedOut(message){
+    clearSession();SALES=null;PRODUCTS=[];
+    const login=q('login'),flow=q('flow');if(login)login.style.display='grid';if(flow)flow.style.display='none';
+    if(q('spin'))q('spin').value='';
+    if(message&&typeof msg==='function')msg(message);
+  }
 
   function showSignedIn(raw,token){
     if(!raw||typeof raw!=='object')throw new Error('Staff profile could not be loaded. Please try again.');
@@ -34,7 +40,7 @@
       if(!raw||!raw.sessionToken)throw new Error('A secure staff session could not be created. Please try again.');
       showSignedIn(raw,raw.sessionToken);
       if(typeof msg==='function')msg('Signed in. This device will remember your Vendor Onboarding session.',true);
-    }catch(e){SALES=null;PRODUCTS=[];clearSession();if(typeof msg==='function')msg(text(e))}
+    }catch(e){showSignedOut(text(e))}
     finally{if(b){b.disabled=false;b.textContent='Start onboarding'}}
   }
 
@@ -45,12 +51,12 @@
       const raw=await invoke('resumeVendorOnboardingSessionV949',[token]);
       showSignedIn(raw,token);
       return true;
-    }catch(e){clearSession();SALES=null;PRODUCTS=[];if(typeof msg==='function')msg('Your saved Vendor Onboarding session expired. Sign in once to continue.');return false}
+    }catch(e){showSignedOut('Your saved Vendor Onboarding session expired. Sign in once to continue.');return false}
     finally{if(b){b.disabled=false;b.textContent='Start onboarding'}}
   }
 
   async function logoutStaff(){
-    const token=SESSION_TOKEN||savedToken();clearSession();SALES=null;PRODUCTS=[];
+    const token=SESSION_TOKEN||savedToken();showSignedOut('');
     try{if(token)await invoke('logoutVendorOnboardingSessionV949',[token])}catch(e){}
     location.reload();
   }
@@ -70,8 +76,9 @@
       const form=q('formCard');if(form)form.innerHTML='<div class="success"><div class="tick">✅</div><h2>B2B account activated</h2><div class="muted">'+esc(raw.productName||payload.productName||'')+'</div><div class="muted" style="margin-top:8px">Onboarding ID</div><h3>'+esc(raw.onboardingId)+'</h3><div class="muted">Captured by '+esc(raw.salesExecutive||SALES.name||'Staff')+'</div><div class="muted" style="margin-top:8px">B2B Login: '+esc(payload.mobile||'')+' / '+esc(payload.initialB2BPin)+' · Account is active immediately.</div><button class="btn" style="margin-top:14px" onclick="location.reload()">Add another vendor</button></div>';
       const cat=q('catalogCard');if(cat)cat.style.display='none';if(typeof msg==='function')msg('Submitted successfully.',true);
     }catch(e){
-      if(/session|access has been removed|access is inactive/i.test(text(e)))clearSession();
-      if(typeof msg==='function')msg(text(e));b.disabled=false;b.textContent='Submit vendor ✓';
+      const err=text(e);
+      if(/session|access has been removed|access is inactive/i.test(err)){showSignedOut(err);return}
+      if(typeof msg==='function')msg(err);b.disabled=false;b.textContent='Submit vendor ✓';
     }
   }
 
