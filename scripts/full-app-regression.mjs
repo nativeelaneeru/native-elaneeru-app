@@ -54,7 +54,7 @@ const customer360=read('src/Customer360.html');
 ok(/searchCustomer360V947/.test(customer360)&&/getCustomer360ProfileV947/.test(customer360),'Customer 360 loads search and profile APIs');
 const customer360Backend=read('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V947_Customer360.gs');
 new Function(customer360Backend);
-ok(/requireAdmin_\(email,pin\)/.test(customer360Backend),'Customer 360 endpoints require Admin authentication');
+ok(/v948RequireCustomer360_\(email,pin\)/.test(customer360Backend),'Customer 360 endpoints require Admin or selected-staff authentication');
 ok(!/append_\(|updateObj_\(|deleteRow\(/.test(customer360Backend),'Customer 360 backend performs no production writes');
 const customer360Access=read('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V948_Customer360Access.gs');
 new Function(customer360Access);
