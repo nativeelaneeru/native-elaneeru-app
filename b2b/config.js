@@ -1,4 +1,4 @@
-window.NEL_B2B_CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec',appVersion:'9.8.5',supportPhone:'7411807675',supportWhatsApp:'917411807675',company:'Sri Govindadri Ventures'};
+window.NEL_B2B_CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec',appVersion:'9.8.9',supportPhone:'7411807675',supportWhatsApp:'917411807675',company:'Sri Govindadri Ventures'};
 (function(){
   var base='./', scripts=[
     base+'idb-v1.js?v=1',
@@ -12,7 +12,8 @@ window.NEL_B2B_CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbx2s0l5A8
     base+'update-notifier.js?v=1040',
     base+'analytics-v981.js?v=981',
     base+'coming-soon-banner-v986.js?v=987',
-    base+'live-pricing-v950.js?v=950'
+    base+'live-pricing-v950.js?v=952',
+    base+'base-price-v952.js?v=952'
   ];
   scripts.forEach(function(src){var s=document.createElement('script');s.src=src;s.defer=true;document.head.appendChild(s)});
 })();
