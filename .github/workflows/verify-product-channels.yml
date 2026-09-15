@@ -1,0 +1,18 @@
+name: Verify Native Elaneeru Product Channels
+
+on:
+  push:
+    branches:
+      - main
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify simple product channels
+        run: node scripts/verify-product-channels.mjs
