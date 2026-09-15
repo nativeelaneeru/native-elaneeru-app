@@ -93,6 +93,18 @@ ok(!/href=["']\?page=vendor/.test(access),'Access Management uses safe Vendor On
 const vendorFix=read('src/VendorOnboardingFixV918.html');
 ok(/SALES=raw;PRODUCTS=Array\.isArray\(raw\.products\)/.test(vendorFix),'Vendor Onboarding guards Sales profile/product responses');
 ok(/raw\.success===false\|\|!raw\.onboardingId/.test(vendorFix),'Vendor Onboarding validates successful persistence before showing success');
+ok(/nel_vendor_onboarding_session_v949/.test(vendorFix)&&/resumeVendorOnboardingSessionV949/.test(vendorFix),'Vendor Onboarding restores its saved staff session');
+ok(/createVendorOnboardingSessionV949/.test(vendorFix)&&/submitVendorOnboardingSessionV949/.test(vendorFix),'Vendor Onboarding uses token-based login and submit');
+ok(!/localStorage\.setItem\([^,]+,\s*pin\b/i.test(vendorFix),'Vendor Onboarding never stores the staff PIN in localStorage');
+ok(/const section=q\('s3'\),grid=section&&section\.querySelector\('\.grid'\)/.test(vendorFix),'Vendor B2B PIN is injected into the Commercials step');
+
+const vendorSession=read('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V949_VendorOnboardingSession.gs');
+new Function(vendorSession);
+ok(/createVendorOnboardingSessionV949/.test(vendorSession)&&/resumeVendorOnboardingSessionV949/.test(vendorSession)&&/logoutVendorOnboardingSessionV949/.test(vendorSession),'Vendor Onboarding backend supports create, resume and logout sessions');
+ok(/PropertiesService\.getScriptProperties/.test(vendorSession)&&/V949_VENDOR_SESSION_TTL_MS=30\*24\*60\*60\*1000/.test(vendorSession),'Vendor Onboarding session is persisted server-side for 30 days');
+ok(/JSON\.stringify\(\{\s*staffId:u\.staffId,createdAt:Date\.now\(\),expiresAt:expiresAt\s*\}\)/.test(vendorSession),'Vendor Onboarding server session stores staff identity only, not the PIN');
+ok(/active_\(r\.Status\)/.test(vendorSession)&&/v917AppsForRow_\(row\)/.test(vendorSession),'Vendor Onboarding rechecks active status and app permission on every session use');
+ok(/serverStoresPin:false/.test(vendorSession)&&/pinStoredInBrowser:false/.test(vendorSession),'Vendor Onboarding session health contract confirms no PIN persistence');
 
 const approvalFix=read('src/VendorApprovalFixV916.html');
 ok(/LIST=Array\.isArray\(raw\)\?raw:\[\]/.test(approvalFix),'Vendor Approvals guards null pending-vendor responses');
