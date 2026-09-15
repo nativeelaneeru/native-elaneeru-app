@@ -9,6 +9,14 @@ function v949VendorSessionKey_(token){
   return V949_VENDOR_SESSION_PREFIX+hashV8_(token);
 }
 
+function v949StaffAccessFingerprint_(row){
+  const apps=v917AppsForRow_(row).slice().sort().join(',');
+  return hashV8_([
+    s_(row&&row['Staff ID']),s_(row&&row['PIN Hash']),s_(row&&row.Role).toUpperCase(),
+    apps,s_(row&&row.Status).toUpperCase()
+  ].join('|'));
+}
+
 function v949PruneVendorSessions_(){
   const props=PropertiesService.getScriptProperties(),all=props.getProperties(),now=Date.now();
   Object.keys(all).forEach(function(key){
@@ -41,6 +49,11 @@ function v949VendorSessionStaff_(token,refresh){
   if(!row){props.deleteProperty(key);throw new Error('Staff access is inactive. Please contact Admin.');}
   const apps=v917AppsForRow_(row);
   if(apps.indexOf('VENDOR_ONBOARDING')===-1){props.deleteProperty(key);throw new Error('Vendor Onboarding access has been removed. Please contact Admin.');}
+  const fingerprint=v949StaffAccessFingerprint_(row);
+  if(!rec.accessFingerprint||rec.accessFingerprint!==fingerprint){
+    props.deleteProperty(key);
+    throw new Error('Staff credentials or access changed. Please sign in again.');
+  }
   const u={staffId:s_(row['Staff ID']),name:s_(row.Name),mobile:digits_(row.Mobile),role:s_(row.Role).toUpperCase(),allowedApps:apps};
   if(refresh!==false){
     rec.expiresAt=Date.now()+V949_VENDOR_SESSION_TTL_MS;
@@ -51,11 +64,13 @@ function v949VendorSessionStaff_(token,refresh){
 
 function createVendorOnboardingSessionV949(mobile,pin){
   const u=staffAppLoginV917_(mobile,pin,'VENDOR_ONBOARDING');
+  const row=rows_(V8.SHEETS.STAFF).find(function(r){return s_(r['Staff ID'])===s_(u.staffId)&&active_(r.Status);});
+  if(!row)throw new Error('Staff access record was not found.');
   v949PruneVendorSessions_();
   const token=Utilities.getUuid().replace(/-/g,'')+Utilities.getUuid().replace(/-/g,'');
   const expiresAt=Date.now()+V949_VENDOR_SESSION_TTL_MS;
   PropertiesService.getScriptProperties().setProperty(v949VendorSessionKey_(token),JSON.stringify({
-    staffId:u.staffId,createdAt:Date.now(),expiresAt:expiresAt
+    staffId:u.staffId,accessFingerprint:v949StaffAccessFingerprint_(row),createdAt:Date.now(),expiresAt:expiresAt
   }));
   return v949VendorSessionPublic_(u,token,expiresAt);
 }
@@ -115,5 +130,5 @@ function submitVendorOnboardingSessionV949(token,p){
 }
 
 function getVendorOnboardingSessionHealthV949(){
-  return {ok:true,version:V949_VENDOR_SESSION_VERSION,persistent:true,pinStoredInBrowser:false,serverStoresPin:false,ttlDays:30,revokesOnStaffDisable:true,revokesOnPermissionRemoval:true,expiredSessionsPruned:true};
+  return {ok:true,version:V949_VENDOR_SESSION_VERSION,persistent:true,pinStoredInBrowser:false,serverStoresPin:false,ttlDays:30,revokesOnStaffDisable:true,revokesOnPermissionRemoval:true,revokesOnPinReset:true,revokesOnRoleOrAccessChange:true,expiredSessionsPruned:true};
 }
