@@ -8,13 +8,13 @@
   }
   function mount(){
     if(document.getElementById('nelComingSoonB2B'))return true;
-    var home=document.getElementById('homeView');
-    if(!home)return false;
+    var wrap=document.querySelector('main.wrap')||document.querySelector('main');
+    if(!wrap)return false;
     addStyle();
     var el=document.createElement('div');el.id='nelComingSoonB2B';el.className='nelB2BComingSoon';
     el.setAttribute('role','status');
-    el.innerHTML='<div class="nelB2BComingSoonIcon">✨</div><div class="nelB2BComingSoonCopy"><b>More products coming soon</b><span>Milk, Grocery & more business essentials will be available on Native Elaneeru Business.</span></div><div class="nelB2BComingSoonTag">COMING SOON</div>';
-    home.insertBefore(el,home.firstChild);
+    el.innerHTML='<div class="nelB2BComingSoonIcon">🚀</div><div class="nelB2BComingSoonCopy"><b>Operations Commencing Soon</b><span>Native Elaneeru Business is preparing to begin supply and delivery operations shortly. We are getting everything ready for a reliable launch.</span></div><div class="nelB2BComingSoonTag">LAUNCHING SOON</div>';
+    wrap.insertBefore(el,wrap.firstChild);
     return true;
   }
   function start(){if(mount())return;var tries=0,t=setInterval(function(){tries++;if(mount()||tries>40)clearInterval(t)},150)}
