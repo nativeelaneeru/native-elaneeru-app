@@ -62,3 +62,20 @@ function getB2BLivePricingV950(token){
 function getLivePricingHealthV950(){
   return {ok:true,version:V950_LIVE_PRICING_VERSION,b2cLivePricing:true,b2bVendorPricing:true,serverAuthoritative:true};
 }
+
+const V950_PREVIOUS_DO_POST=doPost;
+doPost=function(e){
+  const isBridge=String(e&&e.parameter&&e.parameter.bridge||'')==='1';
+  if(isBridge){
+    let req={};
+    try{
+      req=JSON.parse(String(e&&e.parameter&&e.parameter.payload||'{}'));
+      const method=String(req.method||''),args=Array.isArray(req.args)?req.args:[];
+      const live={getB2CLivePricingV950:getB2CLivePricingV950,getB2BLivePricingV950:getB2BLivePricingV950,getLivePricingHealthV950:getLivePricingHealthV950};
+      if(live[method])return bridgeHtml_({ok:true,result:live[method].apply(null,args),requestId:String(req.requestId||'')});
+    }catch(err){
+      return bridgeHtml_({ok:false,error:String(err&&err.message||err),requestId:String(req&&req.requestId||'')});
+    }
+  }
+  return V950_PREVIOUS_DO_POST(e);
+};
