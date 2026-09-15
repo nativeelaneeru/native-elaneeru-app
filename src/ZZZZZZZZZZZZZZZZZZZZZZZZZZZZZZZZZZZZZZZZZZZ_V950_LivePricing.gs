@@ -1,5 +1,5 @@
-/** Native Elaneeru V9.5.0 — lightweight live storefront pricing. */
-const V950_LIVE_PRICING_VERSION='9.5.0';
+/** Native Elaneeru V9.5.2 — lightweight live storefront pricing. */
+const V950_LIVE_PRICING_VERSION='9.5.2';
 
 function v950SheetRows_(sh){
   if(!sh)return [];
@@ -20,12 +20,16 @@ function getB2CLivePricingV950(){
   if(!sh)throw new Error('Missing sheet: '+V8.SHEETS.PRODUCTS);
   const products=v950SheetRows_(sh)
     .filter(function(p){return active_(p['B2C Status'])||s_(p['Product ID']).toUpperCase()==='TC';})
-    .map(function(p){return {
-      productId:s_(p['Product ID']),productName:s_(p['Product Name']),unit:s_(p.Unit)||'pc',
-      price:n_(p['B2C Price']),offerQty1:n_(p['Bundle Qty 1']),offerPrice1:n_(p['Bundle Price 1']),
-      offerQty2:n_(p['Bundle Qty 2']),offerPrice2:n_(p['Bundle Price 2']),
-      updatedAt:v950Millis_(p['Updated At'])
-    };});
+    .map(function(p){
+      const price=n_(p['B2C Price']);
+      return {
+        productId:s_(p['Product ID']),productName:s_(p['Product Name']),unit:s_(p.Unit)||'pc',
+        price:price,basePrice:n_(p['B2C Base Price'])||price,
+        offerQty1:n_(p['Bundle Qty 1']),offerPrice1:n_(p['Bundle Price 1']),
+        offerQty2:n_(p['Bundle Qty 2']),offerPrice2:n_(p['Bundle Price 2']),
+        updatedAt:v950Millis_(p['Updated At'])
+      };
+    });
   return {ok:true,version:V950_LIVE_PRICING_VERSION,checkedAt:Date.now(),products:products};
 }
 
@@ -47,9 +51,11 @@ function getB2BLivePricingV950(token){
         return s_(x['Vendor ID'])===vendorId&&s_(x['Product ID'])===pid&&active_(x.Status)&&
           (!from||isNaN(from.getTime())||from<=now)&&(!to||isNaN(to.getTime())||to>=now);
       });
+      const defaultPrice=n_(p['B2B Default Price']);
       return {
         productId:pid,productName:s_(p['Product Name']),unit:s_(p.Unit)||'pc',
-        price:agreed?n_(agreed['Agreed Price']):n_(p['B2B Default Price']),
+        price:agreed?n_(agreed['Agreed Price']):defaultPrice,
+        basePrice:n_(p['B2B Base Price'])||defaultPrice,
         moq:agreed?(n_(agreed.MOQ)||n_(p['B2B MOQ'])||1):(n_(p['B2B MOQ'])||1),
         qtyStep:agreed?(n_(agreed['Qty Step'])||n_(p['Qty Step'])||1):(n_(p['Qty Step'])||1),
         pricingType:agreed?'AGREED':'DEFAULT',
@@ -60,7 +66,7 @@ function getB2BLivePricingV950(token){
 }
 
 function getLivePricingHealthV950(){
-  return {ok:true,version:V950_LIVE_PRICING_VERSION,b2cLivePricing:true,b2bVendorPricing:true,serverAuthoritative:true};
+  return {ok:true,version:V950_LIVE_PRICING_VERSION,b2cLivePricing:true,b2bVendorPricing:true,basePriceDisplay:true,serverAuthoritative:true};
 }
 
 const V950_PREVIOUS_DO_POST=doPost;
