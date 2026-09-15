@@ -1,0 +1,17 @@
+name: Verify Native Elaneeru Live Pricing
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify live price synchronization
+        run: node scripts/live-pricing-regression.mjs
