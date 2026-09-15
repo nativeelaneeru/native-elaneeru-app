@@ -1,0 +1,27 @@
+name: Verify Native Elaneeru Customer Auth
+
+on:
+  push:
+    branches: [main, 'fix/**']
+    paths:
+      - 'b2c/login/index.html'
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V953_B2CCustomerAuth.gs'
+      - 'scripts/customer-auth-regression.mjs'
+      - '.github/workflows/verify-customer-auth.yml'
+  pull_request:
+    paths:
+      - 'b2c/login/index.html'
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V953_B2CCustomerAuth.gs'
+      - 'scripts/customer-auth-regression.mjs'
+      - '.github/workflows/verify-customer-auth.yml'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Verify B2C customer registration and PIN auth
+        run: node scripts/customer-auth-regression.mjs
