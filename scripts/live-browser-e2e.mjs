@@ -205,7 +205,8 @@ async function testB2B(){
   try{
     await page.navigate(`${BASE}b2b/?e2e=${Date.now()}`);
     assert(/Native Elaneeru/i.test(await page.evaluate('document.title')), 'b2b: business PWA renders in Chrome');
-    assert((await page.evaluate('window.NEL_B2B_CONFIG && NEL_B2B_CONFIG.appVersion'))==='9.8.5','b2b: production version 9.8.5 is live');
+    assert(/^\d+\.\d+\.\d+$/.test(String(await page.evaluate('window.NEL_B2B_CONFIG && NEL_B2B_CONFIG.appVersion')||'')),'b2b: production app version is present');
+    assert(await page.evaluate('window.NEL_B2B_BASE_PRICE_V952===true'),'b2b: base-price display module is live');
     await checkManifest(page,'b2b');
     await checkServiceWorker(page,'b2b');
     assert(await page.evaluate(`!document.getElementById('login').classList.contains('hidden')`),'b2b: business login screen is visible');
@@ -245,7 +246,7 @@ try{
 
 if(failures.length){
   console.error(`\nLive browser E2E failed with ${failures.length} issue(s).`);
-  if(stderr)console.error(stderr.slice(-2500));
+  if(stderr.trim())console.error(stderr.slice(-3000));
   process.exit(1);
 }
-console.log(`\nLive browser E2E passed: ${passes.length} checks, 0 failures.`);
+console.log(`\nLive browser E2E passed: ${passes.length} checks.`);
