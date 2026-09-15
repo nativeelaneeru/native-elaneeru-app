@@ -13,7 +13,7 @@
     addStyle();
     var el=document.createElement('div');el.id='nelComingSoonB2C';el.className='nelComingSoon';
     el.setAttribute('role','status');
-    el.innerHTML='<div class="nelComingSoonIcon">✨</div><div class="nelComingSoonCopy"><b>Coming Soon</b><span>Milk, Grocery & more daily essentials are coming to Native Elaneeru.</span></div><div class="nelComingSoonTag">🥛 Milk · 🛒 Grocery</div>';
+    el.innerHTML='<div class="nelComingSoonIcon">🚀</div><div class="nelComingSoonCopy"><b>Operations Commencing Soon</b><span>Native Elaneeru is getting ready to serve you. Ordering and delivery operations will go live shortly.</span></div><div class="nelComingSoonTag">LAUNCHING SOON</div>';
     main.parentNode.insertBefore(el,main);
     return true;
   }
