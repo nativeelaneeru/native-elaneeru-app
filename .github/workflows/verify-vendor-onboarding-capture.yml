@@ -1,0 +1,39 @@
+name: Verify Native Elaneeru Vendor Onboarding Capture
+
+on:
+  push:
+    paths:
+      - 'src/VendorOnboardingV910.html'
+      - 'src/VendorOnboardingFixV918.html'
+      - 'src/VendorOnboardingCaptureV952.html'
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V935_InstantVendorActivation.gs'
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V949_VendorOnboardingSession.gs'
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V952_VendorOnboardingCapture.gs'
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZ_V912_FinalRoutes.gs'
+      - 'scripts/vendor-onboarding-capture-regression.mjs'
+      - '.github/workflows/verify-vendor-onboarding-capture.yml'
+  pull_request:
+    paths:
+      - 'src/VendorOnboardingV910.html'
+      - 'src/VendorOnboardingFixV918.html'
+      - 'src/VendorOnboardingCaptureV952.html'
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V935_InstantVendorActivation.gs'
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V949_VendorOnboardingSession.gs'
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V952_VendorOnboardingCapture.gs'
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZ_V912_FinalRoutes.gs'
+      - 'scripts/vendor-onboarding-capture-regression.mjs'
+      - '.github/workflows/verify-vendor-onboarding-capture.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify complete Vendor Onboarding capture
+        run: node scripts/vendor-onboarding-capture-regression.mjs
