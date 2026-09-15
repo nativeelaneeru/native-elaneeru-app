@@ -102,9 +102,12 @@ const vendorSession=read('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V949_Ve
 new Function(vendorSession);
 ok(/createVendorOnboardingSessionV949/.test(vendorSession)&&/resumeVendorOnboardingSessionV949/.test(vendorSession)&&/logoutVendorOnboardingSessionV949/.test(vendorSession),'Vendor Onboarding backend supports create, resume and logout sessions');
 ok(/PropertiesService\.getScriptProperties/.test(vendorSession)&&/V949_VENDOR_SESSION_TTL_MS=30\*24\*60\*60\*1000/.test(vendorSession),'Vendor Onboarding session is persisted server-side for 30 days');
-ok(/JSON\.stringify\(\{\s*staffId:u\.staffId,createdAt:Date\.now\(\),expiresAt:expiresAt\s*\}\)/.test(vendorSession),'Vendor Onboarding server session stores staff identity only, not the PIN');
+ok(/JSON\.stringify\(\{\s*staffId:u\.staffId,accessFingerprint:v949StaffAccessFingerprint_\(row\),createdAt:Date\.now\(\),expiresAt:expiresAt\s*\}\)/.test(vendorSession),'Vendor Onboarding server session stores staff identity and one-way access fingerprint, not the PIN');
 ok(/active_\(r\.Status\)/.test(vendorSession)&&/v917AppsForRow_\(row\)/.test(vendorSession),'Vendor Onboarding rechecks active status and app permission on every session use');
+ok(/rec\.accessFingerprint!==fingerprint/.test(vendorSession)&&/revokesOnPinReset:true/.test(vendorSession),'Vendor Onboarding invalidates remembered sessions after credential changes');
 ok(/serverStoresPin:false/.test(vendorSession)&&/pinStoredInBrowser:false/.test(vendorSession),'Vendor Onboarding session health contract confirms no PIN persistence');
+const publicRead=read('src/ZZZZZ_V838_PublicCatalog.gs');
+ok(/getVendorOnboardingSessionHealthV949:getVendorOnboardingSessionHealthV949/.test(publicRead),'Vendor Onboarding exposes only a read-only session health contract');
 
 const approvalFix=read('src/VendorApprovalFixV916.html');
 ok(/LIST=Array\.isArray\(raw\)\?raw:\[\]/.test(approvalFix),'Vendor Approvals guards null pending-vendor responses');
