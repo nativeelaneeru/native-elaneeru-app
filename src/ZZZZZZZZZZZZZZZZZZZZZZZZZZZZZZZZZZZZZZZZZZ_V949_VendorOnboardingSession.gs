@@ -9,6 +9,15 @@ function v949VendorSessionKey_(token){
   return V949_VENDOR_SESSION_PREFIX+hashV8_(token);
 }
 
+function v949PruneVendorSessions_(){
+  const props=PropertiesService.getScriptProperties(),all=props.getProperties(),now=Date.now();
+  Object.keys(all).forEach(function(key){
+    if(key.indexOf(V949_VENDOR_SESSION_PREFIX)!==0)return;
+    let rec=null;try{rec=JSON.parse(all[key]||'');}catch(e){}
+    if(!rec||!rec.staffId||Number(rec.expiresAt||0)<=now)props.deleteProperty(key);
+  });
+}
+
 function v949VendorSessionPublic_(u,token,expiresAt){
   return {
     staffId:u.staffId,name:u.name,mobile:u.mobile,role:u.role,allowedApps:u.allowedApps,
@@ -42,6 +51,7 @@ function v949VendorSessionStaff_(token,refresh){
 
 function createVendorOnboardingSessionV949(mobile,pin){
   const u=staffAppLoginV917_(mobile,pin,'VENDOR_ONBOARDING');
+  v949PruneVendorSessions_();
   const token=Utilities.getUuid().replace(/-/g,'')+Utilities.getUuid().replace(/-/g,'');
   const expiresAt=Date.now()+V949_VENDOR_SESSION_TTL_MS;
   PropertiesService.getScriptProperties().setProperty(v949VendorSessionKey_(token),JSON.stringify({
@@ -105,5 +115,5 @@ function submitVendorOnboardingSessionV949(token,p){
 }
 
 function getVendorOnboardingSessionHealthV949(){
-  return {ok:true,version:V949_VENDOR_SESSION_VERSION,persistent:true,pinStoredInBrowser:false,serverStoresPin:false,ttlDays:30,revokesOnStaffDisable:true,revokesOnPermissionRemoval:true};
+  return {ok:true,version:V949_VENDOR_SESSION_VERSION,persistent:true,pinStoredInBrowser:false,serverStoresPin:false,ttlDays:30,revokesOnStaffDisable:true,revokesOnPermissionRemoval:true,expiredSessionsPruned:true};
 }
