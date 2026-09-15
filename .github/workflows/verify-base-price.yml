@@ -1,0 +1,25 @@
+name: Verify Native Elaneeru Base Prices
+
+on:
+  push:
+    branches:
+      - main
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify customer-visible base prices
+        run: node scripts/base-price-regression.mjs
+      - name: Verify product channels
+        run: node scripts/verify-product-channels.mjs
+      - name: Verify live pricing
+        run: node scripts/live-pricing-regression.mjs
