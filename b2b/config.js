@@ -11,7 +11,8 @@ window.NEL_B2B_CONFIG={apiUrl:'https://script.google.com/macros/s/AKfycbx2s0l5A8
     base+'vendor-growth-v100.js?v=106',
     base+'update-notifier.js?v=1040',
     base+'analytics-v981.js?v=981',
-    base+'coming-soon-banner-v986.js?v=987'
+    base+'coming-soon-banner-v986.js?v=987',
+    base+'live-pricing-v950.js?v=950'
   ];
   scripts.forEach(function(src){var s=document.createElement('script');s.src=src;s.defer=true;document.head.appendChild(s)});
 })();
