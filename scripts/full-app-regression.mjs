@@ -17,7 +17,7 @@ function parseHtml(path){
 
 const appHtml=[
   'src/Admin.html','src/AdminFixesV915.html','src/AdminAccessV917.html',
-  'src/CumulativeDashboard.html','src/Customer360.html','src/PaymentVerification.html',
+  'src/CumulativeDashboard.html','src/Customer360.html','src/PaymentVerification.html','shop/index.html',
   'src/VendorOnboardingV910.html','src/VendorOnboardingFixV918.html',
   'src/VendorApproval.html','src/VendorApprovalFixV916.html',
   'src/Sales.html','src/Picker.html','src/Barcode.html','src/Inventory.html',
@@ -49,6 +49,11 @@ ok(/nativeelaneeru\.github\.io\/native-elaneeru-app\/b2c\//.test(shared),'shared
 ok(/nativeelaneeru\.github\.io\/native-elaneeru-app\/b2b\//.test(shared),'shared launcher sends B2B to the live B2B PWA');
 ok(!/location\.href\.split\('\?'\)/.test(shared),'shared launcher does not build routes from iframe location');
 ok(!/href=["']\?page=/.test(shared),'shared launcher has no iframe-relative page links');
+
+const publicShop=read('shop/index.html');
+ok(/getAppConfig/.test(publicShop),'Public Shop reads the live catalogue');
+ok(/\.\.\/b2c\//.test(publicShop)&&/\.\.\/b2b\//.test(publicShop),'Public Shop routes orders to Direct and Business');
+ok(!/placeOrder|saveOrder|submitOrder/.test(publicShop),'Public Shop cannot place production orders directly');
 
 const customer360=read('src/Customer360.html');
 ok(/searchCustomer360V947/.test(customer360)&&/getCustomer360ProfileV947/.test(customer360),'Customer 360 loads search and profile APIs');
