@@ -46,6 +46,7 @@ function doGetV912_(e){
     try{out.append(HtmlService.createTemplateFromFile('AdminVendorPricingV946').evaluate().getContent());}catch(err){}
     try{out.append(HtmlService.createTemplateFromFile('AdminOffersSubscriptionsV930').evaluate().getContent());}catch(err){}
     try{out.append(HtmlService.createTemplateFromFile('AdminServiceabilityV961').evaluate().getContent());}catch(err){}
+    try{out.append(HtmlService.createTemplateFromFile('AdminServiceabilityPopulationV962').evaluate().getContent());}catch(err){}
     try{out.append(HtmlService.createTemplateFromFile('AdminOpsCommandCenterV964').evaluate().getContent());}catch(err){}
     // Must load after the feature tabs so it can manage every Admin panel.
     try{out.append(HtmlService.createTemplateFromFile('AdminNavigationV957').evaluate().getContent());}catch(err){}
