@@ -96,6 +96,15 @@ function barcodeRpcV924(method,args){
     case 'markBatchPrintedV81':
       result=markBatchPrintedV81(args[0],args[1],args[2]);
       break;
+    case 'createBarcodeRealTestV959':
+      result=createBarcodeRealTestV959(args[0],args[1],args[2]||{});
+      break;
+    case 'getBarcodeRealTestStatusV959':
+      result=getBarcodeRealTestStatusV959(args[0],args[1],args[2]);
+      break;
+    case 'cleanupBarcodeRealTestV959':
+      result=cleanupBarcodeRealTestV959(args[0],args[1],args[2]);
+      break;
     default:
       throw new Error('Barcode method is not allowed: '+method);
   }
