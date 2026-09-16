@@ -26,7 +26,8 @@ if(!backend.includes("'Payment Status':'TEST'"))fail('Real test order must stay 
 if(/append_\(V8\.SHEETS\.(PAYMENTS|CASHBACK|COLLECTIONS)/.test(backend))fail('Real barcode test must not write payment/cashback/collection ledgers.');
 if(/placeB2BOrder|submitB2BUpi|prepareB2BUpi/.test(backend))fail('Real barcode test must not enter live B2B payment/order checkout engines.');
 if(!backend.includes("'Access Source':tag"))fail('Temporary driver is not safely tagged for cleanup.');
-if(!backend.includes("Location:'TEST-"))fail('Real test batch is not isolated by test location.');
+if(!backend.includes("location:'TEST-'+testId"))fail('Real test batch is not isolated by test location.');
+if(!backend.includes("s_(r.Location)==='TEST-'+s_(rec.testId)"))fail('Cleanup does not verify the isolated test batch location.');
 if(!backend.includes('v959DeleteWhere_'))fail('Cleanup helper is missing.');
 
 for(const method of ['createBarcodeRealTestV959','getBarcodeRealTestStatusV959','cleanupBarcodeRealTestV959']){
