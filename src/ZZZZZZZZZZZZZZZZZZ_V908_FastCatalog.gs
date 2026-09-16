@@ -1,14 +1,11 @@
 /**
- * Native Elaneeru V9.0.8 — fast public catalogue.
+ * Native Elaneeru V9.5.5 — fast public catalogue.
  *
- * The legacy getAppConfig chain opens the same spreadsheet repeatedly through
- * rows_()/sh_(), and the V8.3.4 catalogue guard performs an additional Products
- * repair read before the normal Products/Banners reads. On a large workbook
- * that can push a simple public catalogue request past the PWA timeout.
+ * The public catalogue must be cheap enough for a first-time PWA load. This
+ * implementation opens the workbook once, reads Products and Offers_Banners
+ * from that Spreadsheet object, enriches the B2C channel presentation fields
+ * in the same pass, and caches the assembled read-only payload briefly.
  *
- * This late compatibility override keeps the public response contract but
- * opens the workbook once, reads Products and Offers_Banners from that same
- * Spreadsheet object, and caches the assembled read-only payload briefly.
  * Tender Coconut remains visible to B2C even if its sheet status is accidentally
  * disabled; persistent sheet repair is still available through the existing
  * repairNativeElaneeruV834() helper and B2B guard.
@@ -36,6 +33,7 @@ function v908TenderFallback_(){
     'Category':'Coconuts',
     'Unit':'pc',
     'B2C Price':50,
+    'B2C Base Price':50,
     'B2C MOQ':1,
     'Bundle Qty 1':5,
     'Bundle Price 1':240,
@@ -71,6 +69,7 @@ function getAppConfigV908_(){
     if(!s_(tc.Category))tc.Category='Coconuts';
     if(!s_(tc.Unit))tc.Unit='pc';
     if(!n_(tc['B2C Price']))tc['B2C Price']=50;
+    if(!n_(tc['B2C Base Price']))tc['B2C Base Price']=n_(tc['B2C Price'])||50;
     if(!n_(tc['B2C MOQ']))tc['B2C MOQ']=1;
     if(!n_(tc['Sort Order']))tc['Sort Order']=1;
     productRows[tcIndex]=tc;
@@ -98,19 +97,25 @@ function getAppConfigV908_(){
     .filter(function(p){return active_(p['B2C Status'])||s_(p['Product ID']).toUpperCase()==='TC'})
     .map(function(p){
       const isTender=s_(p['Product ID']).toUpperCase()==='TC';
+      const sell=n_(p['B2C Price']);
+      const base=n_(p['B2C Base Price'])||sell;
       return {
         productId:s_(p['Product ID']),
         productName:s_(p['Product Name']),
         category:s_(p.Category),
         unit:s_(p.Unit),
-        price:n_(p['B2C Price']),
+        price:sell,
+        basePrice:base,
+        b2cBasePrice:base,
+        moq:Math.max(1,n_(p['B2C MOQ'])||1),
+        qtyStep:Math.max(1,n_(p['Qty Step'])||1),
         offerQty1:n_(p['Bundle Qty 1']),
         offerPrice1:n_(p['Bundle Price 1']),
         offerQty2:n_(p['Bundle Qty 2']),
         offerPrice2:n_(p['Bundle Price 2']),
         status:isTender?'LIVE':s_(p['B2C Status']),
         displayOrder:n_(p['Sort Order']),
-        imageUrl:safeImageUrl_(p['Image URL']),
+        imageUrl:safeImageUrl_(p['B2C Image URL'])||safeImageUrl_(p['Image URL']),
         description:s_(p.Description||'')
       };
     })
@@ -133,7 +138,7 @@ function getAppConfigV908_(){
     pickupPoints:[{id:'HUB',name:V8.HUB.name,lat:V8.HUB.lat,lng:V8.HUB.lng}],
     products:products,
     banners:banners,
-    appVersion:'9.0.8'
+    appVersion:'9.5.5'
   };
 
   try{
