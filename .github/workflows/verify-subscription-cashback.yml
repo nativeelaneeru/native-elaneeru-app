@@ -1,0 +1,28 @@
+name: Verify Native Elaneeru Subscriptions and NE Cash
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'b2c/subscription-cashback-v10540.js'
+      - 'b2c/config.js'
+      - 'b2c/sw.js'
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V954_SubscriptionsCashback.gs'
+      - 'scripts/subscription-cashback-regression.mjs'
+      - '.github/workflows/verify-subscription-cashback.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Verify smart subscription and NE Cash safety
+        run: node scripts/subscription-cashback-regression.mjs
