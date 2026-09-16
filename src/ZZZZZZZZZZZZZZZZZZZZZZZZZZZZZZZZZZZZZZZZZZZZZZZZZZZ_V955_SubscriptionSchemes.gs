@@ -26,12 +26,13 @@ function v955SchemeView_(r,days){
   const sub=n_(r&&r['Subscription Unit Price'])||regular;
   const perDelivery=safeRound_(qty*sub,2),regularDelivery=safeRound_(qty*regular,2),deliveries=v955FrequencyDeliveriesMonth_(r&&r.Frequency,days);
   const monthly=safeRound_(perDelivery*deliveries,2),regularMonthly=safeRound_(regularDelivery*deliveries,2);
+  const start=v954Date_(r&&r['Start Date']),end=v954Date_(r&&r['End Date']);
   return {
     schemeId:s_(r&&r['Scheme ID']),schemeName:s_(r&&r['Scheme Name']),productId:s_(r&&r['Product ID'])||'TC',quantity:qty,frequency:s_(r&&r.Frequency),
     regularUnitPrice:regular,subscriptionUnitPrice:sub,amountPerDelivery:perDelivery,regularAmountPerDelivery:regularDelivery,
     estimatedDeliveriesPerMonth:safeRound_(deliveries,2),estimatedMonthlyAmount:monthly,estimatedRegularMonthlyAmount:regularMonthly,
     estimatedMonthlySavings:Math.max(0,safeRound_(regularMonthly-monthly,2)),savingsPerDelivery:Math.max(0,safeRound_(regularDelivery-perDelivery,2)),
-    billingCycle:s_(r&&r['Billing Cycle'])||'PER_DELIVERY',description:s_(r&&r.Description),status:s_(r&&r.Status)||'PAUSED',displayOrder:n_(r&&r['Display Order'])
+    billingCycle:s_(r&&r['Billing Cycle'])||'PER_DELIVERY',description:s_(r&&r.Description),startDate:start?v954Iso_(start):'',endDate:end?v954Iso_(end):'',status:s_(r&&r.Status)||'PAUSED',displayOrder:n_(r&&r['Display Order'])
   };
 }
 function v955LiveSchemeRows_(){
