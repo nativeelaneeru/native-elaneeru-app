@@ -5,11 +5,15 @@ function ok(cond,msg){if(cond)console.log('✓ '+msg);else{console.error('✗ '+
 
 const login=fs.readFileSync('b2c/login/index.html','utf8');
 const backend=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V953_B2CCustomerAuth.gs','utf8');
+const authTransport=(login.match(/function rpc\(method,args=\[\]\)\{[\s\S]*?\nasync function saveOpen/)||[])[0]||'';
+const cataloguePrefetch=(login.match(/function prefetchCatalog\(\)\{[\s\S]*?\nasync function warmCatalogBeforeOpen/)||[])[0]||'';
 
-ok(/form\.method='POST'/.test(login)&&/form\.action=API\+'\?bridge=1'/.test(login),'B2C registration uses the POST bridge');
-ok(!/jsonp=1/.test(login),'B2C registration does not send authentication through JSONP');
-ok(/input\.name='payload'/.test(login),'B2C registration sends RPC payload in POST body');
+ok(/form\.method='POST'/.test(authTransport)&&/form\.action=API\+'\?bridge=1'/.test(authTransport),'B2C registration uses the POST bridge');
+ok(!!authTransport&&!/jsonp=1/.test(authTransport),'B2C registration does not send authentication through JSONP');
+ok(/input\.name='payload'/.test(authTransport),'B2C registration sends RPC payload in POST body');
 ok(/getCustomerPinStatusV107/.test(login)&&/customerLoginWithPinV107/.test(login)&&/setCustomerPinV107/.test(login),'B2C login UI calls the customer PIN APIs');
+ok(!!cataloguePrefetch&&/method:'getAppConfig'/.test(cataloguePrefetch)&&/jsonp=1/.test(cataloguePrefetch),'Login JSONP is limited to the read-only public catalogue prefetch');
+ok(!/getCustomerPinStatusV107|customerLoginV95|customerLoginWithPinV107|setCustomerPinV107/.test(cataloguePrefetch),'Customer authentication methods are never sent through the catalogue JSONP prefetch');
 
 for(const fn of ['getCustomerPinStatusV107','customerLoginV95','customerLoginWithPinV107','setCustomerPinV107']){
   ok(new RegExp('function\\s+'+fn+'\\s*\\(').test(backend),fn+' is implemented');
