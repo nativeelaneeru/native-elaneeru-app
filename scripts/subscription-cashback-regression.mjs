@@ -2,14 +2,16 @@ import fs from 'node:fs';
 // Keep Admin route wiring covered so subscription controls cannot disappear from production.
 function ok(v,m){if(!v)throw new Error(m);console.log('✓',m)}
 const ui=fs.readFileSync('b2c/subscription-schemes-v10580.js','utf8');
+const pricingUi=fs.readFileSync('b2c/pricing-hierarchy-v10581.js','utf8');
 const simple=fs.readFileSync('b2c/simple-catalog-v10580.js','utf8');
 const backend=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V955_SubscriptionSchemes.gs','utf8');
+const offerBackend=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V956_SubscriptionOfferPricing.gs','utf8');
 const rewards=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V954_SubscriptionsCashback.gs','utf8');
 const admin=fs.readFileSync('src/AdminOffersSubscriptionsV930.html','utf8');
 const routes=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZ_V912_FinalRoutes.gs','utf8');
 const config=fs.readFileSync('b2c/config.js','utf8');
 const sw=fs.readFileSync('b2c/sw.js','utf8');
-new Function(ui);new Function(simple);new Function(backend);
+new Function(ui);new Function(pricingUi);new Function(simple);new Function(backend);new Function(offerBackend);
 ok(/Coconut Subscription/.test(ui)&&/Subscription amount/i.test(ui),'B2C shows subscription scheme pricing');
 ok(/amountPerDelivery/.test(ui)&&/estimatedMonthlyAmount/.test(ui)&&/estimatedMonthlySavings/.test(ui),'B2C shows per-delivery amount, monthly estimate and savings');
 ok(/Skip next/.test(ui)&&/Vacation/.test(ui),'Subscription UI keeps skip and vacation controls');
@@ -18,6 +20,11 @@ ok(/getB2CSubscriptionExperienceV955/.test(ui)&&/saveB2CSubscriptionV955/.test(u
 ok(!/saveOrder\s*\(/.test(ui)&&!/placeOrder\s*\(/.test(ui),'Subscription-scheme UI cannot create a production order');
 ok(/B2C_Subscription_Schemes/.test(backend)&&/saveSubscriptionSchemeAdminV955/.test(backend),'Backend has an admin-managed subscription scheme master');
 ok(/Normal Unit Price/.test(backend)&&/Subscription Unit Price/.test(backend)&&/Estimated Monthly Savings/.test(backend),'Scheme backend stores commercial pricing fields');
+ok(/savingsBaseline:'CURRENT_B2C_PRICE'/.test(offerBackend)&&/regularUnitPrice:offerUnit/.test(offerBackend)&&/regularAmountPerDelivery:offerAmount/.test(offerBackend),'Subscription savings use the current B2C offer/customer price as baseline');
+ok(/normalUnitPrice:normalUnit/.test(offerBackend)&&/offerUnitPrice:offerUnit/.test(offerBackend)&&/subscriptionUnitPrice:subscriptionUnit/.test(offerBackend),'Subscription backend exposes normal, offer and subscription price hierarchy');
+ok(/Subscription price cannot exceed the current B2C customer price/.test(offerBackend),'Admin scheme validation prevents subscription price above current customer price');
+ok(/Normal /.test(pricingUi)&&/Offer /.test(pricingUi)&&/Subscription /.test(pricingUi),'B2C clearly labels normal, offer and subscription pricing');
+ok(!/saveOrder\s*\(/.test(pricingUi)&&!/placeOrder\s*\(/.test(pricingUi)&&!/saveOrder\s*\(/.test(offerBackend)&&!/placeOrder\s*\(/.test(offerBackend),'Pricing hierarchy cannot create production orders');
 ok(/autoOrderEnabled:false/.test(backend)&&!/saveOrder\s*\(/.test(backend)&&!/placeOrder\s*\(/.test(backend),'V9.5.5 cannot create production orders');
 ok(/subscriptionAutoOrderSupported:false/.test(rewards)&&/subscriptionAutoOrderEnabled:false/.test(rewards),'Automatic subscription order creation remains hard-off');
 ok(/creditsCashbackByDefault:false/.test(rewards)&&/NEL_TARGET_CASHBACK_AUTO_CREDIT/.test(rewards),'NE Cash automatic crediting defaults off behind an admin flag');
@@ -26,7 +33,7 @@ ok(/Reward Key/.test(rewards)&&/duplicate/.test(rewards)&&/LockService/.test(rew
 ok(/Subscription Schemes/.test(admin)&&/saveSchemeV955/.test(admin),'Admin UI can create and edit subscription schemes');
 ok(/AdminOffersSubscriptionsV930/.test(routes),'Admin route appends Offers & Subscriptions UI');
 ok(/QUICK DELIVERY/.test(simple)&&/style\.display='none'/.test(simple),'B2C simplifier removes unnecessary catalogue filter rows');
-ok(/subscription-schemes-v10580\.js/.test(config)&&/simple-catalog-v10580\.js/.test(config),'B2C production config loads subscription schemes and simplified catalogue');
+ok(/subscription-schemes-v10580\.js/.test(config)&&/simple-catalog-v10580\.js/.test(config)&&/pricing-hierarchy-v10581\.js/.test(config),'B2C production config loads subscription schemes, simplified catalogue and pricing hierarchy');
 ok(!/subscription-cashback-v10540\.js/.test(config),'Legacy subscription renderer is no longer loaded, preventing UI races');
-ok(/subscription-schemes-v10580\.js/.test(sw)&&/simple-catalog-v10580\.js/.test(sw),'B2C service worker caches and refreshes the new modules');
-console.log('Subscription schemes + NE Cash regression checks passed.');
+ok(/subscription-schemes-v10580\.js/.test(sw)&&/simple-catalog-v10580\.js/.test(sw)&&/pricing-hierarchy-v10581\.js/.test(sw),'B2C service worker caches and refreshes the subscription pricing modules');
+console.log('Subscription schemes + offer pricing + NE Cash regression checks passed.');
