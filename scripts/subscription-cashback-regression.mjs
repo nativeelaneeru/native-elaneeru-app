@@ -5,6 +5,7 @@ const simple=fs.readFileSync('b2c/simple-catalog-v10580.js','utf8');
 const backend=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V955_SubscriptionSchemes.gs','utf8');
 const rewards=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V954_SubscriptionsCashback.gs','utf8');
 const admin=fs.readFileSync('src/AdminOffersSubscriptionsV930.html','utf8');
+const routes=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZ_V912_FinalRoutes.gs','utf8');
 const config=fs.readFileSync('b2c/config.js','utf8');
 const sw=fs.readFileSync('b2c/sw.js','utf8');
 new Function(ui);new Function(simple);new Function(backend);
@@ -22,6 +23,7 @@ ok(/creditsCashbackByDefault:false/.test(rewards)&&/NEL_TARGET_CASHBACK_AUTO_CRE
 ok(/DELIVERED/.test(rewards)&&/v954DeliveredQty_/.test(rewards),'Target progress counts delivered orders only');
 ok(/Reward Key/.test(rewards)&&/duplicate/.test(rewards)&&/LockService/.test(rewards),'NE Cash credits are idempotent and lock-protected');
 ok(/Subscription Schemes/.test(admin)&&/saveSchemeV955/.test(admin),'Admin UI can create and edit subscription schemes');
+ok(/AdminOffersSubscriptionsV930/.test(routes),'Admin route appends Offers & Subscriptions UI');
 ok(/QUICK DELIVERY/.test(simple)&&/style\.display='none'/.test(simple),'B2C simplifier removes unnecessary catalogue filter rows');
 ok(/subscription-schemes-v10580\.js/.test(config)&&/simple-catalog-v10580\.js/.test(config),'B2C production config loads subscription schemes and simplified catalogue');
 ok(!/subscription-cashback-v10540\.js/.test(config),'Legacy subscription renderer is no longer loaded, preventing UI races');
