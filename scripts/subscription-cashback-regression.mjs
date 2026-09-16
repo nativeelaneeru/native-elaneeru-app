@@ -20,9 +20,10 @@ ok(/getB2CSubscriptionExperienceV955/.test(ui)&&/saveB2CSubscriptionV955/.test(u
 ok(!/saveOrder\s*\(/.test(ui)&&!/placeOrder\s*\(/.test(ui),'Subscription-scheme UI cannot create a production order');
 ok(/B2C_Subscription_Schemes/.test(backend)&&/saveSubscriptionSchemeAdminV955/.test(backend),'Backend has an admin-managed subscription scheme master');
 ok(/Normal Unit Price/.test(backend)&&/Subscription Unit Price/.test(backend)&&/Estimated Monthly Savings/.test(backend),'Scheme backend stores commercial pricing fields');
-ok(/savingsBaseline:'CURRENT_B2C_PRICE'/.test(offerBackend)&&/regularUnitPrice:offerUnit/.test(offerBackend)&&/regularAmountPerDelivery:offerAmount/.test(offerBackend),'Subscription savings use the current B2C offer/customer price as baseline');
-ok(/normalUnitPrice:normalUnit/.test(offerBackend)&&/offerUnitPrice:offerUnit/.test(offerBackend)&&/subscriptionUnitPrice:subscriptionUnit/.test(offerBackend),'Subscription backend exposes normal, offer and subscription price hierarchy');
-ok(/Subscription price cannot exceed the current B2C customer price/.test(offerBackend),'Admin scheme validation prevents subscription price above current customer price');
+ok(/savingsBaseline:'APPLICABLE_B2C_OFFER_TOTAL'/.test(offerBackend)&&/regularUnitPrice:offerUnit/.test(offerBackend)&&/regularAmountPerDelivery:offerAmount/.test(offerBackend),'Plan savings use the applicable B2C offer total as baseline');
+ok(/Bundle Qty 1/.test(offerBackend)&&/Bundle Price 1/.test(offerBackend)&&/Bundle Qty 2/.test(offerBackend)&&/Bundle Price 2/.test(offerBackend)&&/qty===q/.test(offerBackend),'Plan pricing mirrors the cart exact-quantity bundle rule');
+ok(/normalUnitPrice:normalUnit/.test(offerBackend)&&/offerUnitPrice:offerUnit/.test(offerBackend)&&/subscriptionUnitPrice:planUnit/.test(offerBackend),'Backend exposes normal, offer and plan price hierarchy');
+ok(/Plan total cannot exceed the current B2C offer total/.test(offerBackend),'Admin scheme validation prevents plan total above applicable customer offer total');
 ok(/Normal /.test(pricingUi)&&/Offer /.test(pricingUi)&&/Plan /.test(pricingUi),'B2C clearly labels normal, offer and plan pricing');
 ok(/Offer total/.test(pricingUi)&&/Plan /.test(pricingUi)&&/versus the current offer/.test(pricingUi),'B2C displays offer total before the lower plan total');
 ok(!/saveOrder\s*\(/.test(pricingUi)&&!/placeOrder\s*\(/.test(pricingUi)&&!/saveOrder\s*\(/.test(offerBackend)&&!/placeOrder\s*\(/.test(offerBackend),'Pricing hierarchy cannot create production orders');
