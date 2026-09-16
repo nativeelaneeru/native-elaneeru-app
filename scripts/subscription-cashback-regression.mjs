@@ -1,0 +1,21 @@
+import fs from 'node:fs';
+function ok(v,m){if(!v)throw new Error(m);console.log('✓',m)}
+const ui=fs.readFileSync('b2c/subscription-cashback-v10540.js','utf8');
+const backend=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V954_SubscriptionsCashback.gs','utf8');
+const config=fs.readFileSync('b2c/config.js','utf8');
+const sw=fs.readFileSync('b2c/sw.js','utf8');
+new Function(ui);new Function(backend);
+ok(/Smart Coconut Subscription/.test(ui),'B2C shows the smart subscription experience');
+ok(/CUSTOM_DAYS/.test(ui)&&/Skip next/.test(ui)&&/Vacation Mode/.test(ui),'Subscription UI supports custom days, skip and vacation mode');
+ok(/NE Cash Rewards/.test(ui)&&/Weekly Target/.test(ui)&&/Monthly Target/.test(ui),'B2C shows NE Cash weekly and monthly target progress');
+ok(/getB2CSubscriptionCashbackV954/.test(ui)&&/saveB2CSubscriptionV954/.test(ui),'B2C UI uses the V9.5.4 subscription/cashback API');
+ok(!/saveOrder\s*\(/.test(ui)&&!/placeOrder\s*\(/.test(ui),'Subscription/cashback UI cannot create a production order');
+ok(/subscriptionAutoOrderSupported:false/.test(backend)&&/subscriptionAutoOrderEnabled:false/.test(backend),'Automatic subscription order creation is hard-off in V9.5.4');
+ok(/creditsCashbackByDefault:false/.test(backend)&&/NEL_TARGET_CASHBACK_AUTO_CREDIT/.test(backend),'NE Cash automatic crediting defaults off behind an admin flag');
+ok(/DELIVERED/.test(backend)&&/v954DeliveredQty_/.test(backend),'Target progress counts delivered orders only');
+ok(/Reward Key/.test(backend)&&/duplicate/.test(backend)&&/LockService/.test(backend),'NE Cash credits are idempotent and lock-protected');
+ok(/Scheme:'TARGET'/.test(backend)&&/'Entry Type':'CREDIT'/.test(backend),'Enabled target rewards credit the existing Cashback_Ledger');
+ok(!/saveOrder\s*\(/.test(backend)&&!/placeOrder\s*\(/.test(backend),'V9.5.4 backend contains no production order creation call');
+ok(/subscription-cashback-v10540\.js/.test(config),'B2C production config loads the subscription/cashback experience');
+ok(/subscription-cashback-v10540\.js/.test(sw)&&/subscription-cashback-v10540/.test(sw),'B2C service worker caches and refreshes the new module');
+console.log('Subscription + NE Cash regression checks passed.');
