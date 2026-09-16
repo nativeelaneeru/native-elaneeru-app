@@ -36,6 +36,7 @@ function doGetV912_(e){
     try{out.append(HtmlService.createTemplateFromFile('SharedUX').evaluate().getContent());}catch(err){}
   }
   if(page==='Admin'){
+    // Admin feature partials must be appended here or they are not present in the live Admin dashboard.
     try{out.append(HtmlService.createTemplateFromFile('AdminFixesV915').evaluate().getContent());}catch(err){}
     try{out.append(HtmlService.createTemplateFromFile('AdminAccessV917').evaluate().getContent());}catch(err){}
     try{out.append(HtmlService.createTemplateFromFile('AdminAccessDeliveryV920').evaluate().getContent());}catch(err){}
