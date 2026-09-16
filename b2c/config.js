@@ -1,6 +1,6 @@
 window.NEL_CONFIG = {
   apiUrl: 'https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec',
-  appVersion: '10.56.0-pwa',
+  appVersion: '10.57.0-pwa',
   paymentRelease: '10.35.0-pwa',
   supportPhone: '7411807675',
   supportWhatsApp: '917411807675',
@@ -31,6 +31,7 @@ document.write('<script src="./cart-visibility-v10320.js?v=10350"></script>');
 document.write('<script src="./customer-growth-v10330.js?v=10350"></script>');
 document.write('<script src="./subscription-cashback-v10540.js?v=10540"></script>');
 document.write('<script src="./ux-polish-v10560.js?v=10560"></script>');
+document.write('<script src="./home-focus-v10570.js?v=10570"></script>');
 document.write('<script src="./referral-reward-v10340.js?v=10360"></script>');
 document.write('<script src="./payment-upi-v10350.js?v=10350"></script>');
 document.write('<script src="./update-notifier.js?v=10360"></script>');
