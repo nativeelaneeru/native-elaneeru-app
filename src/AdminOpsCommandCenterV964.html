@@ -1,0 +1,69 @@
+<style>
+#opscenter{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}.opsShell{display:grid;gap:12px}.opsHero{background:linear-gradient(135deg,#0d5f31,#15834a);color:#fff;border-radius:18px;padding:16px;display:flex;justify-content:space-between;gap:12px;align-items:center}.opsHero h2{margin:0 0 4px;font-size:21px}.opsHero .muted{color:#d8f1e0}.opsGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}.opsMetric,.opsBox{background:#fff;border:1px solid #e0e8e1;border-radius:15px;padding:13px}.opsMetric strong{display:block;font-size:24px;margin-top:4px}.opsMetric.action strong{color:#a43d16}.opsMetric.good strong{color:#0d6a36}.opsTwo{display:grid;grid-template-columns:1.15fr .85fr;gap:12px}.opsBlocker{border:1px solid #e6ebe7;border-radius:12px;padding:10px;margin-top:8px}.opsBlocker.ACTION{background:#fff7ed;border-color:#fed7aa}.opsBlocker.WARN{background:#fffbea;border-color:#f6dd91}.opsBlocker.GOOD{background:#effaf2;border-color:#bde4c8}.opsBlocker b{display:block;margin-bottom:3px}.opsFunnel{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.opsPill{padding:7px 9px;background:#f2f7f3;border:1px solid #e0e9e2;border-radius:999px;font-size:12px}.opsMarket{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.opsMarketCard{border:1px solid #e2e9e3;border-radius:12px;padding:10px}.opsFresh{color:#0b6b3a;font-weight:800}.opsWatch{color:#8a6100;font-weight:800}.opsStale{color:#a43d16;font-weight:800}.opsStatusRow{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.opsBtn{border:0;border-radius:9px;padding:9px 11px;background:#edf6ef;color:#155b2b;font-weight:800;cursor:pointer}.opsTable{width:100%;border-collapse:collapse}.opsTable th,.opsTable td{font-size:12px;padding:8px;border-bottom:1px solid #edf0ed}.opsIssue{font-size:11px;color:#8a3b1e;margin-top:4px}.opsLoading{padding:25px;text-align:center;color:#6b786e}.opsError{background:#fff0ed;color:#9a3412;border:1px solid #ffd0c7;border-radius:12px;padding:12px}@media(max-width:1000px){.opsGrid{grid-template-columns:repeat(2,1fr)}.opsTwo{grid-template-columns:1fr}}@media(max-width:600px){.opsGrid,.opsMarket{grid-template-columns:1fr 1fr}.opsHero{align-items:flex-start;flex-direction:column}.opsTable{display:block;overflow:auto}}
+</style>
+<script>
+(function(){
+  if(window.NEL_ADMIN_OPS_V964)return;window.NEL_ADMIN_OPS_V964=true;
+  var loadedOnce=false,autoAttempts=0;
+  function q(id){return document.getElementById(id)}
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})}
+  function num(v){return Number(v||0).toLocaleString('en-IN')}
+  function money(v){return '₹'+Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:2})}
+  function addUi(){
+    var dash=q('dash'),tabs=dash&&dash.querySelector('.tabs');if(!dash||!tabs){setTimeout(addUi,80);return}
+    if(q('tOpsCenter'))return;
+    var btn=document.createElement('button');btn.id='tOpsCenter';btn.textContent='Command Center';btn.setAttribute('onclick','showOpsCommandCenterV964()');tabs.insertBefore(btn,tabs.firstChild);
+    var panel=document.createElement('div');panel.id='opscenter';panel.className='card hidden';panel.innerHTML='<div class="opsLoading">Loading operations command center…</div>';
+    tabs.insertAdjacentElement('afterend',panel);
+    setTimeout(tryDefault,50);
+  }
+  function authReady(){try{return typeof E!=='undefined'&&typeof P!=='undefined'&&!!E&&!!P}catch(e){return false}}
+  function rpc(){return new Promise(function(resolve,reject){
+    if(!authReady())return reject(new Error('Admin login required.'));
+    google.script.run.withSuccessHandler(resolve).withFailureHandler(function(e){reject(new Error(e&&e.message?e.message:String(e)))}).getAdminOpsCommandCenterV964(E,P);
+  })}
+  function severityClass(v){v=String(v||'').toUpperCase();return v==='GOOD'?'GOOD':(v==='ACTION'?'ACTION':'WARN')}
+  function targetButton(target){
+    var map={orders:'tOrders',adminProductsPanel:'tProducts'};var id=map[target];
+    return id?'<button class="opsBtn" onclick="document.getElementById(\''+id+'\')&&document.getElementById(\''+id+'\').click()">Open</button>':'';
+  }
+  function marketCard(m){
+    m=m||{};var cls=m.freshness==='FRESH'?'opsFresh':(m.freshness==='WATCH'?'opsWatch':'opsStale');
+    return '<div class="opsMarketCard"><b>'+esc(m.state)+'</b><div class="'+cls+'">'+esc(m.freshness||'NO DATA')+'</div>'+(m.available?'<div style="margin-top:5px"><b>'+esc(m.market||m.district||'Latest market')+'</b><br>'+money(m.modalRate)+' '+esc(m.unit)+'<br><span class="muted">Rate date '+esc(m.rateDate)+(m.ageDays!=null?' • '+num(m.ageDays)+' day(s) old':'')+'<br>'+esc(m.source)+'</span></div>':'<div class="muted" style="margin-top:5px">No usable market rate found.</div>')+'</div>';
+  }
+  function render(d){
+    var p=q('opscenter');if(!p)return;d=d||{};var m=d.metrics||{},f=d.vendorFunnel||{},quality=d.vendorQuality||{},issues=quality.issues||{},products=d.products||{};
+    var blockers=Array.isArray(d.blockers)?d.blockers:[],pending=Array.isArray(d.pendingVendors)?d.pendingVendors:[],markets=Array.isArray(d.market)?d.market:[];
+    var metrics=[['Active Vendors',m.activeVendors,'good'],['Vendor Approvals',m.pendingVendorApprovals,m.pendingVendorApprovals?'action':'good'],['B2C Orders Waiting',m.openB2COrders,m.openB2COrders?'action':'good'],['B2B Orders Waiting',m.openB2BOrders,m.openB2BOrders?'action':'good'],['Picker Queue',m.pendingPickerTasks,m.pendingPickerTasks?'action':'good'],['Active Routes',m.activeRoutes,m.activeRoutes?'action':'good'],['Pending Stops',m.pendingStops,m.pendingStops?'action':'good'],['Open Tickets',m.openTickets,m.openTickets?'action':'good'],['B2C OOS',m.b2cOos,m.b2cOos?'action':'good'],['B2B OOS',m.b2bOos,m.b2bOos?'action':'good']];
+    var b2c=(products.b2c||{}),b2b=(products.b2b||{});
+    var rows=pending.map(function(v){return '<tr><td><b>'+esc(v.businessName||v.onboardingId)+'</b><div class="muted">'+esc(v.ownerName)+'</div></td><td>'+esc(v.area)+'</td><td>'+num(v.dailyQty)+'</td><td>'+money(v.agreedPrice)+'</td><td>'+esc(v.createdAt)+'</td></tr>'}).join('');
+    var issueExamples=Array.isArray(quality.examples)?quality.examples:[];
+    p.innerHTML='<div class="opsShell">'+
+      '<div class="opsHero"><div><h2>Operations Command Center</h2><div class="muted">One screen for orders, vendors, stock, delivery and market freshness.</div></div><div><button class="opsBtn" onclick="loadOpsCommandCenterV964(true)">↻ Refresh</button><div class="muted" style="margin-top:6px">'+esc(d.generatedAt||'')+'</div></div></div>'+
+      '<div class="opsGrid">'+metrics.map(function(x){return '<div class="opsMetric '+x[2]+'"><span class="muted">'+x[0]+'</span><strong>'+num(x[1])+'</strong></div>'}).join('')+'</div>'+
+      '<div class="opsTwo"><div class="opsBox"><b>Needs attention</b>'+blockers.map(function(b){return '<div class="opsBlocker '+severityClass(b.severity)+'"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><div><b>'+esc(b.title)+'</b><span class="muted">'+esc(b.detail)+'</span></div>'+targetButton(b.target)+'</div></div>'}).join('')+'</div>'+
+      '<div class="opsBox"><b>Vendor acquisition funnel</b><div class="opsFunnel"><span class="opsPill">Pending <b>'+num(f.pending)+'</b></span><span class="opsPill">Approved <b>'+num(f.approved)+'</b></span><span class="opsPill">Rejected <b>'+num(f.rejected)+'</b></span><span class="opsPill">Active B2B <b>'+num(f.activeVendors)+'</b></span><span class="opsPill">Other/invalid <b>'+num(f.other)+'</b></span></div><div style="margin-top:12px"><a class="opsBtn" style="display:inline-block;text-decoration:none" href="?page=approvals" target="_top">Vendor Approvals</a> <a class="opsBtn" style="display:inline-block;text-decoration:none" href="?page=vendor" target="_blank">Vendor Onboarding</a></div></div></div>'+
+      '<div class="opsTwo"><div class="opsBox"><b>Market price freshness</b><div class="opsMarket">'+markets.map(marketCard).join('')+'</div><div class="muted" style="margin-top:8px">Wholesale mandi reference only. It is not the B2C or B2B selling price.</div></div>'+
+      '<div class="opsBox"><b>Product availability</b><div class="opsStatusRow"><span class="opsPill">B2C LIVE <b>'+num(b2c.live)+'</b></span><span class="opsPill">B2C OOS <b>'+num(b2c.oos)+'</b></span><span class="opsPill">B2C NOT LIVE <b>'+num(b2c.notLive)+'</b></span></div><div class="opsStatusRow"><span class="opsPill">B2B LIVE <b>'+num(b2b.live)+'</b></span><span class="opsPill">B2B OOS <b>'+num(b2b.oos)+'</b></span><span class="opsPill">B2B NOT LIVE <b>'+num(b2b.notLive)+'</b></span></div><div style="margin-top:10px"><button class="opsBtn" onclick="document.getElementById(\'tProducts\')&&document.getElementById(\'tProducts\').click()">Manage Products</button></div></div></div>'+
+      '<div class="opsTwo"><div class="opsBox"><b>Vendor onboarding data quality</b><div class="opsFunnel"><span class="opsPill">Invalid status <b>'+num(issues.invalidStatus)+'</b></span><span class="opsPill">GPS missing <b>'+num(issues.missingGps)+'</b></span><span class="opsPill">Pincode issue <b>'+num(issues.invalidPincode)+'</b></span><span class="opsPill">Demand missing <b>'+num(issues.missingDemand)+'</b></span><span class="opsPill">Price missing <b>'+num(issues.missingAgreedPrice)+'</b></span><span class="opsPill">Legacy wording <b>'+num(issues.legacyTerminology)+'</b></span></div>'+issueExamples.map(function(x){return '<div class="opsIssue"><b>'+esc(x.businessName||x.onboardingId)+'</b> • '+esc(x.area)+' — '+esc((x.issues||[]).join(' · '))+'</div>'}).join('')+'</div>'+
+      '<div class="opsBox"><b>Pending vendor approvals</b>'+(rows?'<table class="opsTable"><tr><th>Vendor</th><th>Area</th><th>Demand</th><th>Price</th><th>Created</th></tr>'+rows+'</table>':'<div class="muted" style="margin-top:9px">No pending vendor approvals.</div>')+'</div></div>'+
+      '</div>';
+  }
+  window.loadOpsCommandCenterV964=async function(force){
+    var panel=q('opscenter');if(!panel)return;if(loadedOnce&&!force&&panel.dataset.loaded==='1')return;
+    panel.innerHTML='<div class="opsLoading">Refreshing operational health…</div>';
+    try{var d=await rpc();render(d);panel.dataset.loaded='1';loadedOnce=true}catch(e){panel.innerHTML='<div class="opsError"><b>Command Center could not load.</b><br>'+esc(e&&e.message?e.message:e)+'</div>'}
+  };
+  window.showOpsCommandCenterV964=function(){var panel=q('opscenter');if(panel)panel.classList.remove('hidden');loadOpsCommandCenterV964(false)};
+  function tryDefault(){
+    var dash=q('dash'),btn=q('tOpsCenter');if(!dash||!btn)return;
+    if(!dash.classList.contains('hidden')&&authReady()&&dash.dataset.opsDefault!=='1'){dash.dataset.opsDefault='1';btn.click();return}
+    if(autoAttempts++<80)setTimeout(tryDefault,250);
+  }
+  function hookRefresh(){
+    if(typeof window.refresh==='function'&&!window.refresh.__opsV964){var base=window.refresh;var wrap=function(){var r=base.apply(this,arguments);setTimeout(function(){if(authReady())loadOpsCommandCenterV964(true)},350);return r};wrap.__opsV964=true;window.refresh=wrap;}
+  }
+  window.getAdminOpsUiHealthV964=function(){return {ok:true,version:'9.6.4',commandCenter:true,autoDefault:true,readOnly:true}};
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',function(){addUi();hookRefresh()},{once:true}):(addUi(),hookRefresh());
+})();
+</script>

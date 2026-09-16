@@ -53,6 +53,9 @@ jobs:
       - name: Serviceability map regression
         run: node scripts/serviceability-regression.mjs
 
+      - name: Admin Operations Command Center regression
+        run: node scripts/admin-ops-command-center-regression.mjs
+
       - name: Vendor onboarding capture regression
         run: node scripts/vendor-onboarding-capture-regression.mjs
 

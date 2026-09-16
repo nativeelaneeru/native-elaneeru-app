@@ -4,7 +4,7 @@
 <script>
 (function(){
   if(window.NEL_ADMIN_NAV_V957)return;window.NEL_ADMIN_NAV_V957=true;
-  var PANELS=['orders','customers','feedback','tickets','delivery','routeplan','access','adminBarcodePanel','adminProductsPanel','vendorPricingPanel','adminGrowthPanel','serviceability'];
+  var PANELS=['opscenter','orders','customers','feedback','tickets','delivery','routeplan','access','adminBarcodePanel','adminProductsPanel','vendorPricingPanel','adminGrowthPanel','serviceability'];
   function q(id){return document.getElementById(id)}
   function hideAll(){PANELS.forEach(function(id){var x=q(id);if(x)x.classList.add('hidden')})}
   function install(){
