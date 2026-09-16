@@ -1,8 +1,8 @@
-const CACHE='native-elaneeru-b2c-v10.57.0';
+const CACHE='native-elaneeru-b2c-v10.57.1';
 const SHELL=[
   './','./index.html','./login/index.html','./config.js','./manifest.webmanifest','./idb-v1.js','./order-sync-v1.js',
   './boot-recovery-v10360.js','./image-fallback-v918.js','./product-images-v10380.js','./ui-v108.js','./ui-v110.js','./ui-v111.js','./ui-v112.js','./ui-v113.js','./ui-v125.js','./ui-v127.js',
-  './separate-links.js','./cart-visibility-v10320.js','./customer-growth-v10330.js','./subscription-cashback-v10540.js','./ux-polish-v10560.js','./home-focus-v10570.js','./referral-reward-v10340.js','./payment-upi-v10350.js','./update-notifier.js','./install-analytics-v10420.js','./coming-soon-banner-v10430.js','./live-pricing-v10440.js','./base-price-v10450.js','./i18n-v102.js','./i18n-v104.js',
+  './separate-links.js','./cart-visibility-v10320.js','./customer-growth-v10330.js','./subscription-cashback-v10540.js','./ux-polish-v10560.js','./referral-reward-v10340.js','./payment-upi-v10350.js','./update-notifier.js','./install-analytics-v10420.js','./coming-soon-banner-v10430.js','./live-pricing-v10440.js','./base-price-v10450.js','./i18n-v102.js','./i18n-v104.js',
   './icons/native-elaneeru.svg','./images/tender-coconut-v2.webp','./images/dehusked-coconut-v2.webp'
 ];
 
@@ -90,7 +90,7 @@ self.addEventListener('fetch',event=>{
     return;
   }
 
-  const critical=/\/(?:config|boot-recovery-v10360|image-fallback-v918|product-images-v10380|idb-v1|order-sync-v1|ui-v108|ui-v110|ui-v111|ui-v112|ui-v113|ui-v125|ui-v127|separate-links|cart-visibility-v10320|customer-growth-v10330|subscription-cashback-v10540|ux-polish-v10560|home-focus-v10570|referral-reward-v10340|payment-upi-v10350|update-notifier|install-analytics-v10420|coming-soon-banner-v10430|live-pricing-v10440|base-price-v10450|i18n-v102|i18n-v104)\.js$/;
+  const critical=/\/(?:config|boot-recovery-v10360|image-fallback-v918|product-images-v10380|idb-v1|order-sync-v1|ui-v108|ui-v110|ui-v111|ui-v112|ui-v113|ui-v125|ui-v127|separate-links|cart-visibility-v10320|customer-growth-v10330|subscription-cashback-v10540|ux-polish-v10560|referral-reward-v10340|payment-upi-v10350|update-notifier|install-analytics-v10420|coming-soon-banner-v10430|live-pricing-v10440|base-price-v10450|i18n-v102|i18n-v104)\.js$/;
   if(critical.test(url.pathname)||url.pathname.endsWith('/manifest.webmanifest')){
     event.respondWith(staleWhileRevalidate(request));
     return;
