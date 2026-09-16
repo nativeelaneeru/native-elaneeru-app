@@ -1,6 +1,6 @@
 window.NEL_CONFIG = {
   apiUrl: 'https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec',
-  appVersion: '10.58.2-pwa',
+  appVersion: '10.59.0-pwa',
   paymentRelease: '10.35.0-pwa',
   supportPhone: '7411807675',
   supportWhatsApp: '917411807675',
@@ -42,3 +42,4 @@ document.write('<script src="./coming-soon-banner-v10430.js?v=10431"></script>')
 document.write('<script src="./live-pricing-v10440.js?v=10441"></script>');
 document.write('<script src="./base-price-v10450.js?v=10450"></script>');
 document.write('<script src="./pricing-hierarchy-v10582.js?v=10582"></script>');
+document.write('<script src="./stock-status-v10590.js?v=10590"></script>');

@@ -1,8 +1,8 @@
-const CACHE='native-elaneeru-b2c-v10.58.2';
+const CACHE='native-elaneeru-b2c-v10.59.0';
 const SHELL=[
   './','./index.html','./login/index.html','./config.js','./manifest.webmanifest','./idb-v1.js','./order-sync-v1.js',
   './boot-recovery-v10360.js','./image-fallback-v918.js','./product-images-v10380.js','./ui-v108.js','./ui-v110.js','./ui-v111.js','./ui-v112.js','./ui-v113.js','./ui-v125.js','./ui-v127.js',
-  './separate-links.js','./cart-visibility-v10320.js','./customer-growth-v10330.js','./subscription-schemes-v10580.js','./ux-polish-v10561.js','./clickable-fix-v10573.js','./catalog-filter-v10574.js','./simple-catalog-v10580.js','./referral-reward-v10340.js','./payment-upi-v10350.js','./update-notifier.js','./install-analytics-v10420.js','./coming-soon-banner-v10430.js','./live-pricing-v10440.js','./base-price-v10450.js','./pricing-hierarchy-v10582.js','./i18n-v102.js','./i18n-v104.js',
+  './separate-links.js','./cart-visibility-v10320.js','./customer-growth-v10330.js','./subscription-schemes-v10580.js','./ux-polish-v10561.js','./clickable-fix-v10573.js','./catalog-filter-v10574.js','./simple-catalog-v10580.js','./referral-reward-v10340.js','./payment-upi-v10350.js','./update-notifier.js','./install-analytics-v10420.js','./coming-soon-banner-v10430.js','./live-pricing-v10440.js','./base-price-v10450.js','./pricing-hierarchy-v10582.js','./stock-status-v10590.js','./i18n-v102.js','./i18n-v104.js',
   './icons/native-elaneeru.svg','./images/tender-coconut-v2.webp','./images/dehusked-coconut-v2.webp'
 ];
 
@@ -90,7 +90,7 @@ self.addEventListener('fetch',event=>{
     return;
   }
 
-  const critical=/\/(?:config|boot-recovery-v10360|image-fallback-v918|product-images-v10380|idb-v1|order-sync-v1|ui-v108|ui-v110|ui-v111|ui-v112|ui-v113|ui-v125|ui-v127|separate-links|cart-visibility-v10320|customer-growth-v10330|subscription-schemes-v10580|ux-polish-v10561|clickable-fix-v10573|catalog-filter-v10574|simple-catalog-v10580|referral-reward-v10340|payment-upi-v10350|update-notifier|install-analytics-v10420|coming-soon-banner-v10430|live-pricing-v10440|base-price-v10450|pricing-hierarchy-v10582|i18n-v102|i18n-v104)\.js$/;
+  const critical=/\/(?:config|boot-recovery-v10360|image-fallback-v918|product-images-v10380|idb-v1|order-sync-v1|ui-v108|ui-v110|ui-v111|ui-v112|ui-v113|ui-v125|ui-v127|separate-links|cart-visibility-v10320|customer-growth-v10330|subscription-schemes-v10580|ux-polish-v10561|clickable-fix-v10573|catalog-filter-v10574|simple-catalog-v10580|referral-reward-v10340|payment-upi-v10350|update-notifier|install-analytics-v10420|coming-soon-banner-v10430|live-pricing-v10440|base-price-v10450|pricing-hierarchy-v10582|stock-status-v10590|i18n-v102|i18n-v104)\.js$/;
   if(critical.test(url.pathname)||url.pathname.endsWith('/manifest.webmanifest')){
     event.respondWith(staleWhileRevalidate(request));
     return;
