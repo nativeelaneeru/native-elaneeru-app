@@ -1,0 +1,23 @@
+<style>
+#dash .tabs{scrollbar-width:thin}#dash .tabs button{min-height:40px}
+</style>
+<script>
+(function(){
+  if(window.NEL_ADMIN_NAV_V957)return;window.NEL_ADMIN_NAV_V957=true;
+  var PANELS=['orders','customers','feedback','tickets','delivery','routeplan','access','adminBarcodePanel','adminProductsPanel','vendorPricingPanel','adminGrowthPanel'];
+  function q(id){return document.getElementById(id)}
+  function hideAll(){PANELS.forEach(function(id){var x=q(id);if(x)x.classList.add('hidden')})}
+  function install(){
+    var dash=q('dash'),tabs=dash&&dash.querySelector('.tabs');if(!dash||!tabs){setTimeout(install,80);return}
+    if(tabs.dataset.navV957==='1')return;tabs.dataset.navV957='1';
+    /* Delegation fixes panels/tabs added after older modules installed. */
+    tabs.addEventListener('click',function(e){
+      var btn=e.target&&e.target.closest?e.target.closest('button'):null;if(!btn||!tabs.contains(btn))return;
+      hideAll();tabs.querySelectorAll('button').forEach(function(b){b.classList.remove('active')});
+      setTimeout(function(){tabs.querySelectorAll('button').forEach(function(b){b.classList.remove('active')});btn.classList.add('active')},0);
+    },true);
+  }
+  window.getAdminNavigationHealthV957=function(){return {ok:true,version:'9.5.7',delegatedTabs:true,knownPanels:PANELS.slice()}};
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',install,{once:true}):install();setTimeout(install,0);
+})();
+</script>
