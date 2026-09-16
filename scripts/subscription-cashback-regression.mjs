@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+// Keep Admin route wiring covered so subscription controls cannot disappear from production.
 function ok(v,m){if(!v)throw new Error(m);console.log('✓',m)}
 const ui=fs.readFileSync('b2c/subscription-schemes-v10580.js','utf8');
 const simple=fs.readFileSync('b2c/simple-catalog-v10580.js','utf8');
