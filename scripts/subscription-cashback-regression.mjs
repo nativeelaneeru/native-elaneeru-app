@@ -23,7 +23,8 @@ ok(/Normal Unit Price/.test(backend)&&/Subscription Unit Price/.test(backend)&&/
 ok(/savingsBaseline:'CURRENT_B2C_PRICE'/.test(offerBackend)&&/regularUnitPrice:offerUnit/.test(offerBackend)&&/regularAmountPerDelivery:offerAmount/.test(offerBackend),'Subscription savings use the current B2C offer/customer price as baseline');
 ok(/normalUnitPrice:normalUnit/.test(offerBackend)&&/offerUnitPrice:offerUnit/.test(offerBackend)&&/subscriptionUnitPrice:subscriptionUnit/.test(offerBackend),'Subscription backend exposes normal, offer and subscription price hierarchy');
 ok(/Subscription price cannot exceed the current B2C customer price/.test(offerBackend),'Admin scheme validation prevents subscription price above current customer price');
-ok(/Normal /.test(pricingUi)&&/Offer /.test(pricingUi)&&/Subscription /.test(pricingUi),'B2C clearly labels normal, offer and subscription pricing');
+ok(/Normal /.test(pricingUi)&&/Offer /.test(pricingUi)&&/Plan /.test(pricingUi),'B2C clearly labels normal, offer and plan pricing');
+ok(/Offer total/.test(pricingUi)&&/Plan /.test(pricingUi)&&/versus the current offer/.test(pricingUi),'B2C displays offer total before the lower plan total');
 ok(!/saveOrder\s*\(/.test(pricingUi)&&!/placeOrder\s*\(/.test(pricingUi)&&!/saveOrder\s*\(/.test(offerBackend)&&!/placeOrder\s*\(/.test(offerBackend),'Pricing hierarchy cannot create production orders');
 ok(/autoOrderEnabled:false/.test(backend)&&!/saveOrder\s*\(/.test(backend)&&!/placeOrder\s*\(/.test(backend),'V9.5.5 cannot create production orders');
 ok(/subscriptionAutoOrderSupported:false/.test(rewards)&&/subscriptionAutoOrderEnabled:false/.test(rewards),'Automatic subscription order creation remains hard-off');
