@@ -45,6 +45,7 @@ function doGetV912_(e){
     try{out.append(HtmlService.createTemplateFromFile('AdminProductsSimpleV951').evaluate().getContent());}catch(err){}
     try{out.append(HtmlService.createTemplateFromFile('AdminVendorPricingV946').evaluate().getContent());}catch(err){}
     try{out.append(HtmlService.createTemplateFromFile('AdminOffersSubscriptionsV930').evaluate().getContent());}catch(err){}
+    try{out.append(HtmlService.createTemplateFromFile('AdminServiceabilityV961').evaluate().getContent());}catch(err){}
     // Must load last so it can manage every Admin tab added by the modules above.
     try{out.append(HtmlService.createTemplateFromFile('AdminNavigationV957').evaluate().getContent());}catch(err){}
     // Secure external camera bridge. V9.6.0 hides the mock entry and adds the real, cleanup-safe E2E test controls.
