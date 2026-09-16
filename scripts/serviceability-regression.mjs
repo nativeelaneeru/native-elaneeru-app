@@ -7,13 +7,16 @@ const populationFixPath='src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
 const backend=fs.readFileSync(backendPath,'utf8');
 const populationFix=fs.readFileSync(populationFixPath,'utf8');
 const admin=fs.readFileSync('src/AdminServiceabilityV961.html','utf8');
+const populationAdmin=fs.readFileSync('src/AdminServiceabilityPopulationV962.html','utf8');
 const routes=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZ_V912_FinalRoutes.gs','utf8');
 const nav=fs.readFileSync('src/AdminNavigationV957.html','utf8');
 
 const adminScript=(admin.match(/<script>([\s\S]*?)<\/script>/i)||[])[1]||'';
+const populationAdminScript=(populationAdmin.match(/<script>([\s\S]*?)<\/script>/i)||[])[1]||'';
 new Function(adminScript);
+new Function(populationAdminScript);
 ok(true,'Admin serviceability UI JavaScript parses');
-ok(/AdminServiceabilityV961/.test(routes),'Admin route appends the serviceability module');
+ok(/AdminServiceabilityV961/.test(routes)&&/AdminServiceabilityPopulationV962/.test(routes),'Admin route appends serviceability and unified population modules');
 ok(/serviceability/.test(nav),'Admin navigation knows the serviceability panel');
 ok(/V961_GRID_KM\s*=\s*1\.5/.test(backend),'Service grid is fixed at 1.5 km squares');
 ok(/V961_B2C_RADIUS_KM\s*=\s*3/.test(backend),'B2C launch radius is 3 km');
@@ -24,6 +27,8 @@ ok(/V8\.SHEETS\.VENDOR_ONBOARD/.test(populationFix)&&/pendingOnboarding/.test(po
 ok(/partyType='B2C'|partyType:'B2C'/.test(populationFix)&&/partyType:'B2B'/.test(populationFix),'Serviceability records identify B2C versus B2B customer type');
 ok(/customersNeedLocation/.test(backend)&&/missingGpsRetained:true/.test(populationFix),'Customers missing GPS remain visible for correction');
 ok(/getServiceabilityAdminV961=getServiceabilityAdminV962_/.test(populationFix),'V9.6.2 safely owns the Admin population endpoint');
+ok(/B2C Customers \+ approved B2B Vendors/.test(populationAdmin),'Admin explains the unified approved customer population source');
+ok(/Expected DRR/.test(populationAdmin)&&/partyType/.test(populationAdmin),'Unified table labels channel and B2B expected daily quantity');
 ok(/updateServiceGridStatusV961/.test(backend),'Admin can independently update grid service status');
 ok(/Apartment_Service_Overrides/.test(backend)&&/saveApartmentServiceOverrideV961/.test(backend),'Apartment subscription exceptions require an Admin-managed override');
 ok(/Subscription Only/.test(backend)&&/APARTMENT_APPROVED/.test(backend),'Apartment exceptions remain subscription-only and distinct from normal grid opening');
