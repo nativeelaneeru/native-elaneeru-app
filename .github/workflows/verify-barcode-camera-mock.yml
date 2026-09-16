@@ -1,0 +1,28 @@
+name: Verify Native Elaneeru Barcode Camera Mock
+
+on:
+  push:
+    paths:
+      - 'src/AdminBarcodeCameraMockV958.html'
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZ_V912_FinalRoutes.gs'
+      - 'scanner/**'
+      - 'scripts/barcode-camera-mock-regression.mjs'
+      - '.github/workflows/verify-barcode-camera-mock.yml'
+  pull_request:
+    paths:
+      - 'src/AdminBarcodeCameraMockV958.html'
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZ_V912_FinalRoutes.gs'
+      - 'scanner/**'
+      - 'scripts/barcode-camera-mock-regression.mjs'
+      - '.github/workflows/verify-barcode-camera-mock.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-barcode-camera-mock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify camera bridge and safe mock mode
+        run: node scripts/barcode-camera-mock-regression.mjs
