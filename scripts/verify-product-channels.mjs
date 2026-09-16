@@ -27,7 +27,7 @@ ok(/pcB2cSection/.test(ui)&&/pcB2bSection/.test(ui)&&/style\.display=b2c\?'block
 ok(/Leave blank to use the B2C\/shared image/.test(ui),'B2B image is optional when a shared image is sufficient');
 ok(/value="LIVE">LIVE/.test(ui)&&/value="NOT LIVE">NOT LIVE/.test(ui)&&/value="OOS">OOS/.test(ui),'Admin exposes LIVE NOT LIVE and OOS status choices');
 ok(/pcB2cStatus/.test(ui)&&/pcB2bStatus/.test(ui),'B2C and B2B have independent operational status controls');
-ok(/B2C OOS/.test(ui)||/OUT OF STOCK/.test(ui),'Admin visibly communicates out-of-stock state');
+ok(/Out of Stock/.test(ui)&&/visible but ordering blocked/.test(ui),'Admin visibly explains the OOS state');
 ok(/saveProductAdminV951/.test(ui),'simplified Admin saves through the channel-aware backend');
 
 ok(/AdminProductsSimpleV951/.test(routes),'Admin route loads the simplified Products UI after the legacy compatibility UI');
