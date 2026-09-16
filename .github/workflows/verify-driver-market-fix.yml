@@ -1,0 +1,27 @@
+name: Verify Driver Market Fix
+
+on:
+  push:
+    paths:
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V963_DriverMarketFix.gs'
+      - 'scripts/driver-market-regression.mjs'
+      - '.github/workflows/verify-driver-market-fix.yml'
+  pull_request:
+    paths:
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V963_DriverMarketFix.gs'
+      - 'scripts/driver-market-regression.mjs'
+      - '.github/workflows/verify-driver-market-fix.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Run driver/market regression
+        run: node scripts/driver-market-regression.mjs
