@@ -1,0 +1,137 @@
+<style>
+#adminBarcodeV926 #abMockHint,#adminBarcodeV926 #abMockBar{display:none!important}
+#adminBarcodeV926 .abRealTest{margin:10px 0 14px;padding:14px;border:1px solid #e2b95e;border-radius:14px;background:#fff9e9;color:#5f470d}
+#adminBarcodeV926 .abRealTest h4{margin:0 0 5px;font-size:14px}
+#adminBarcodeV926 .abRealTestGrid{display:grid;grid-template-columns:140px 1fr;gap:8px 12px;margin-top:11px;font-size:12px}
+#adminBarcodeV926 .abRealTestGrid b{color:#3d4d42}
+#adminBarcodeV926 .abRealActions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+#adminBarcodeV926 .abRealStatus{margin-top:10px;padding:10px 11px;border-radius:11px;background:#f6fbf7;border:1px solid #d6e8d9;color:#365443;font-size:12px;line-height:1.5}
+#adminBarcodeV926 .abRealWarn{margin-top:8px;font-size:11px;line-height:1.45;color:#795b12}
+#adminBarcodeV926 .abRealTest input{min-height:42px;padding:9px 10px;border:1px solid #d8dfda;border-radius:9px;width:90px}
+#adminBarcodeV926 .abRealPass{color:#155b2b;font-weight:900}.abRealPending{color:#8a6415;font-weight:800}
+@media(max-width:700px){#adminBarcodeV926 .abRealTestGrid{grid-template-columns:1fr}#adminBarcodeV926 .abRealActions button{min-height:44px;flex:1 1 46%}}
+</style>
+<script>
+(function(){
+  if(window.NEL_ADMIN_BARCODE_REAL_TEST_V959)return;window.NEL_ADMIN_BARCODE_REAL_TEST_V959=true;
+  const MAIN_APP='https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec';
+  let TEST=null;
+  function q(id){return document.getElementById(id)}
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})}
+  function admin(){return {email:String(typeof E!=='undefined'?E:'').trim(),pin:String(typeof P!=='undefined'?P:'').trim()}}
+  function msg(text,ok){const el=q('abMsg');if(!el)return;el.style.color=ok?'#155b2b':'#9a3412';el.textContent=text||''}
+  function call(method,args){
+    return new Promise(function(resolve,reject){
+      try{
+        if(!window.google||!google.script||!google.script.run)throw new Error('Apps Script connection is unavailable. Reload Admin.');
+        google.script.run.withSuccessHandler(function(v){if(v==null)return reject(new Error('Barcode backend returned no response.'));resolve(v)}).withFailureHandler(function(e){reject(new Error(e&&e.message?e.message:String(e))}).barcodeRpcV924(method,Array.isArray(args)?args:[]);
+      }catch(e){reject(e instanceof Error?e:new Error(String(e)))}
+    });
+  }
+  function save(){try{if(TEST)sessionStorage.setItem('nelBarcodeRealTestV959',JSON.stringify(TEST));else sessionStorage.removeItem('nelBarcodeRealTestV959')}catch(e){}}
+  function loadSaved(){try{const x=sessionStorage.getItem('nelBarcodeRealTestV959');if(x)TEST=JSON.parse(x)}catch(e){TEST=null}}
+  function fillAssign(){
+    if(!TEST)return;
+    if(q('abAssignBarcode'))q('abAssignBarcode').value=TEST.barcode||'';
+    if(q('abOrderType'))q('abOrderType').value='B2B';
+    if(q('abOrderId'))q('abOrderId').value=TEST.orderId||'';
+    if(q('abAssignQty'))q('abAssignQty').value=TEST.qty||1;
+  }
+  function stateText(s){
+    if(!s)return '<span class="abRealPending">Not checked</span>';
+    const a=s.assignment||{},st=s.stop||{},o=s.order||{};
+    return [
+      '<b>Assignment:</b> '+(a.exists?'<span class="abRealPass">'+esc(a.status||'CREATED')+' '+Number(a.scanned||0)+'/'+Number(a.assigned||0)+' scanned</span>':'<span class="abRealPending">Pending Step 2</span>'),
+      '<b>Driver stop:</b> '+(st.exists?esc(st.status||'PENDING'):'Missing'),
+      '<b>Order:</b> '+(o.exists?esc(o.status||''):'Missing')
+    ].join('<br>');
+  }
+  function render(status){
+    const box=q('abRealTestBox');if(!box)return;
+    if(!TEST){
+      box.innerHTML='<h4>🧪 Real end-to-end barcode test</h4><div>This test uses the <b>actual production tables and actual batch/assignment/driver functions</b>. It creates isolated test rows only; no payment, cashback, subscription or vendor-credit records are created.</div><div style="margin-top:9px">Test quantity: <input id="abRealQty" type="number" min="1" max="50" value="5"></div><div class="abRealActions"><button type="button" id="abRealStart" onclick="startAdminBarcodeRealTestV959()">Create REAL Test Setup</button></div><div class="abRealWarn">Creates a real batch, B2B test order, temporary driver, route and stop. Use the camera in Step 2, then the B2B Driver app in Step 3. Delete the test records after completion.</div>';
+      return;
+    }
+    box.innerHTML='<h4>🧪 REAL TEST ACTIVE — '+esc(TEST.testId)+'</h4><div class="abRealTestGrid">'+
+      '<b>Batch</b><span>'+esc(TEST.batchId)+' · '+esc(TEST.barcode)+'</span>'+
+      '<b>Test order</b><span>'+esc(TEST.orderId)+' · B2B · Qty '+Number(TEST.qty||0)+'</span>'+
+      '<b>Driver login</b><span>Mobile <b>'+esc(TEST.driverMobile)+'</b> · PIN <b>'+esc(TEST.driverPin)+'</b></span>'+
+      '<b>Delivery OTP</b><span><b>'+esc(TEST.deliveryOtp)+'</b></span>'+
+      '<b>Route / Stop</b><span>'+esc(TEST.routeId)+' / '+esc(TEST.stopId)+'</span>'+
+      '</div><div class="abRealActions">'+
+      '<button type="button" onclick="printAdminBarcodeRealTestV959()">🖨️ Print Real Barcode</button>'+
+      '<button type="button" onclick="openAdminBarcodeRealAssignV959()">2 · Scan & Assign</button>'+
+      '<button type="button" onclick="openAdminBarcodeRealDriverV959()">3 · Open B2B Driver</button>'+
+      '<button type="button" class="secondary" onclick="refreshAdminBarcodeRealTestV959()">Refresh Status</button>'+
+      '<button type="button" class="secondary" onclick="cleanupAdminBarcodeRealTestV959()">Delete Test Data</button></div>'+
+      '<div id="abRealStatus" class="abRealStatus">'+stateText(status)+'</div>'+
+      '<div class="abRealWarn"><b>Step 3:</b> in B2B Driver, login with the temporary mobile/PIN above → open today\'s route → Check In → scan the same barcode → Deliver using the OTP above → Check Out. These are real operational writes until you delete the test.</div>';
+    fillAssign();
+  }
+
+  window.startAdminBarcodeRealTestV959=async function(){
+    const a=admin(),product=q('abProduct'),qty=Math.max(1,Math.min(50,Number(q('abRealQty')&&q('abRealQty').value||5)));
+    if(!a.email||!a.pin)return msg('Admin session is required. Sign in again.',false);
+    if(!product||!product.value)return msg('Select a product first.',false);
+    if(!confirm('Create REAL test records now? This will write a batch, test B2B order, temporary driver, route and stop into the production workbook. You can delete them with Delete Test Data.'))return;
+    const btn=q('abRealStart');if(btn){btn.disabled=true;btn.textContent='Creating real test…'}
+    try{
+      const r=await call('createBarcodeRealTestV959',[a.email,a.pin,{productId:product.value,qty:qty}]);
+      if(!r||!r.success)throw new Error(r&&r.error||'Real test setup failed.');
+      TEST=r;save();fillAssign();
+      if(typeof window.loadAdminBarcodeV926==='function')await window.loadAdminBarcodeV926(true);
+      render(null);msg('REAL test setup created. Print the barcode, then use Step 2 camera and assign it to '+TEST.orderId+'.',true);
+    }catch(e){msg(e&&e.message?e.message:String(e),false);render(null)}
+  };
+
+  window.printAdminBarcodeRealTestV959=function(){
+    if(!TEST)return msg('Create the real test first.',false);
+    const rows=q('abRows')?Array.from(q('abRows').querySelectorAll('tr')):[];
+    const idx=rows.findIndex(function(tr){return tr.textContent.indexOf(TEST.batchId)>=0});
+    if(idx<0)return msg('Test batch is not in Recent batches yet. Tap Refresh, then try again.',false);
+    if(typeof window.adminBarcodePrintBatchV926==='function')window.adminBarcodePrintBatchV926(idx);
+  };
+
+  window.openAdminBarcodeRealAssignV959=function(){
+    if(!TEST)return msg('Create the real test first.',false);
+    fillAssign();
+    if(typeof window.adminBarcodeSubtabV926==='function')window.adminBarcodeSubtabV926('assign');
+    msg('Step 2 ready. Camera should open. Scan '+TEST.barcode+' and press Validate & assign.',true);
+  };
+
+  window.openAdminBarcodeRealDriverV959=function(){
+    if(!TEST)return msg('Create the real test first.',false);
+    window.open(MAIN_APP+'?page=driver','nelBarcodeRealDriverV959','noopener');
+    msg('B2B Driver opened. Login with '+TEST.driverMobile+' / PIN '+TEST.driverPin+'. Delivery OTP: '+TEST.deliveryOtp+'.',true);
+  };
+
+  window.refreshAdminBarcodeRealTestV959=async function(){
+    if(!TEST)return render(null);
+    const a=admin();
+    try{const s=await call('getBarcodeRealTestStatusV959',[a.email,a.pin,TEST.testId]);render(s);msg('Real test status refreshed.',true)}
+    catch(e){msg(e&&e.message?e.message:String(e),false)}
+  };
+
+  window.cleanupAdminBarcodeRealTestV959=async function(){
+    if(!TEST)return msg('No active real test is saved in this browser.',false);
+    if(!confirm('Delete ALL records created for '+TEST.testId+'? This removes the test batch, assignment, route/stop, test order, inventory/event rows and temporary driver.'))return;
+    const a=admin(),id=TEST.testId;
+    try{
+      const r=await call('cleanupBarcodeRealTestV959',[a.email,a.pin,id]);
+      TEST=null;save();
+      if(q('abAssignBarcode'))q('abAssignBarcode').value='';if(q('abOrderId'))q('abOrderId').value='';if(q('abAssignQty'))q('abAssignQty').value='';
+      if(typeof window.loadAdminBarcodeV926==='function')await window.loadAdminBarcodeV926(true);
+      render(null);msg('Real test '+id+' deleted. Test operational rows were removed.',true);
+    }catch(e){msg(e&&e.message?e.message:String(e),false)}
+  };
+
+  function install(){
+    const root=q('adminBarcodeV926');if(!root||q('abRealTestBox'))return;
+    const batch=root.querySelector('[data-abpane="batch"]');if(!batch)return;
+    const box=document.createElement('div');box.id='abRealTestBox';box.className='abRealTest';
+    const help=batch.querySelector('.abHelp');if(help&&help.parentNode)help.parentNode.insertBefore(box,help.nextSibling);else batch.insertBefore(box,batch.firstChild);
+    loadSaved();render(null);if(TEST)setTimeout(window.refreshAdminBarcodeRealTestV959,100);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(install,0)},{once:true});else setTimeout(install,0);
+})();
+</script>
