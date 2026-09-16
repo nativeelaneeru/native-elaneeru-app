@@ -1,4 +1,4 @@
-name: Inspect Apps Script Deployments For Approved E2E
+name: Run Approved Temporary Operations E2E
 
 on:
   push:
@@ -11,8 +11,12 @@ permissions:
   contents: read
 
 jobs:
-  inspect:
+  e2e:
     runs-on: ubuntu-latest
+    env:
+      TEMP_SLOT_ID: AKfycbyQt-ed9y0-yTr8lXB7wdLobHeUwWZruWWJo5piX2sukp0QzI8XZvoHFaC8TyWFZAjJ
+      TEMP_SLOT_ORIGINAL_VERSION: '27'
+      TEMP_SLOT_ORIGINAL_DESCRIPTION: Native Elaneeru V9 Preview 44e9ac38a41096dca27d651fa0c6e6599836d6da
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -25,6 +29,16 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Validate temporary E2E script syntax
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const p='src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V961_ApprovedTempOpsE2E.gs';
+          new Function(fs.readFileSync(p,'utf8'));
+          console.log('Temporary E2E Apps Script parses.');
+          NODE
 
       - name: Configure clasp project
         shell: bash
@@ -44,5 +58,88 @@ jobs:
           printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
           chmod 600 "$HOME/.clasprc.json"
 
-      - name: List existing Apps Script deployments read-only
-        run: npx clasp deployments
+      - name: Confirm selected slot is still the old Preview deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx clasp deployments | tee /tmp/deployments-before.txt
+          LINE="$(grep "$TEMP_SLOT_ID" /tmp/deployments-before.txt || true)"
+          echo "$LINE"
+          echo "$LINE" | grep -q "@$TEMP_SLOT_ORIGINAL_VERSION"
+          echo "$LINE" | grep -Fq "$TEMP_SLOT_ORIGINAL_DESCRIPTION"
+
+      - name: Push temporary owner-only E2E source to Apps Script HEAD
+        run: npx clasp push -f
+
+      - name: Temporarily repurpose old Preview slot as owner-only API executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx clasp deploy -i "$TEMP_SLOT_ID" -d "TEMP APPROVED OPS E2E $GITHUB_SHA"
+          npx clasp deployments | grep "$TEMP_SLOT_ID"
+
+      - name: Verify owner-only E2E API health before any TEST writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$(npx clasp run getApprovedTempOpsE2EHealthV961 --nondev 2>&1)"
+          echo "$OUT"
+          echo "$OUT" | grep -Eq '"ok"[[:space:]]*:[[:space:]]*true'
+          echo "$OUT" | grep -Eq '"payments"[[:space:]]*:[[:space:]]*false'
+          echo "$OUT" | grep -Eq '"cashback"[[:space:]]*:[[:space:]]*false'
+          echo "$OUT" | grep -Eq '"subscriptions"[[:space:]]*:[[:space:]]*false'
+
+      - name: Run real operational E2E with self-cleaning temporary TEST records
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$(npx clasp run runApprovedTempOpsE2EV961 --nondev 2>&1)"
+          printf '%s\n' "$OUT" | tee /tmp/approved-temp-ops-e2e-result.txt
+          echo "$OUT" | grep -Eq '"success"[[:space:]]*:[[:space:]]*true'
+          echo "$OUT" | grep -Eq '"allTemporaryRowsRemoved"[[:space:]]*:[[:space:]]*true'
+          echo "$OUT" | grep -Eq '"financialSafetyUnchanged"[[:space:]]*:[[:space:]]*true'
+          echo "$OUT" | grep -Eq '"paymentLedgerWrite"[[:space:]]*:[[:space:]]*false'
+          echo "$OUT" | grep -Eq '"cashbackWrite"[[:space:]]*:[[:space:]]*false'
+          echo "$OUT" | grep -Eq '"subscriptionWrite"[[:space:]]*:[[:space:]]*false'
+          echo "$OUT" | grep -Eq '"vendorOutstandingWrite"[[:space:]]*:[[:space:]]*false'
+
+      - name: Restore old Preview deployment exactly
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx clasp deploy -i "$TEMP_SLOT_ID" -V "$TEMP_SLOT_ORIGINAL_VERSION" -d "$TEMP_SLOT_ORIGINAL_DESCRIPTION"
+          LINE="$(npx clasp deployments | grep "$TEMP_SLOT_ID")"
+          echo "$LINE"
+          echo "$LINE" | grep -q "@$TEMP_SLOT_ORIGINAL_VERSION"
+          echo "$LINE" | grep -Fq "$TEMP_SLOT_ORIGINAL_DESCRIPTION"
+
+      - name: Restore Apps Script HEAD exactly from main
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout origin/main -- src
+          npx clasp push -f
+          echo "Apps Script HEAD restored from main. Production deployment IDs were never modified."
+
+      - name: Verify production B2C backend remains healthy read-only
+        if: always()
+        shell: bash
+        env:
+          API_URL: https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec
+        run: |
+          node <<'NODE'
+          (async()=>{
+            const cb='__nelPostE2EHealth';
+            const req={method:'getB2COrderEngineHealthV906',args:[],requestId:'post-e2e-'+Date.now()};
+            const url=process.env.API_URL+'?jsonp=1&callback='+cb+'&payload='+encodeURIComponent(JSON.stringify(req))+'&_='+Date.now();
+            const response=await fetch(url,{redirect:'follow',cache:'no-store'});
+            const text=await response.text();
+            const m=text.match(/^__nelPostE2EHealth\(([\s\S]*)\);?$/);
+            const p=m?JSON.parse(m[1]):null;
+            if(response.status!==200||!p||p.ok!==true||!p.result||p.result.ok!==true) throw new Error('Production B2C backend health check failed after E2E.');
+            console.log('Production B2C backend health is green after temporary E2E.');
+          })().catch(e=>{console.error(e);process.exit(1)});
+          NODE
