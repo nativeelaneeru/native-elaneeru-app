@@ -47,9 +47,9 @@ function doGetV912_(e){
     try{out.append(HtmlService.createTemplateFromFile('AdminOffersSubscriptionsV930').evaluate().getContent());}catch(err){}
     // Must load last so it can manage every Admin tab added by the modules above.
     try{out.append(HtmlService.createTemplateFromFile('AdminNavigationV957').evaluate().getContent());}catch(err){}
-    // Secure external camera bridge. V9.5.9 then replaces the mock-only entry with a real, cleanup-safe E2E test.
+    // Secure external camera bridge. V9.6.0 hides the mock entry and adds the real, cleanup-safe E2E test controls.
     try{out.append(HtmlService.createTemplateFromFile('AdminBarcodeCameraMockV958').evaluate().getContent());}catch(err){}
-    try{out.append(HtmlService.createTemplateFromFile('AdminBarcodeRealTestV959').evaluate().getContent());}catch(err){}
+    try{out.append(HtmlService.createTemplateFromFile('AdminBarcodeRealTestV960').evaluate().getContent());}catch(err){}
   }
   if(page==='VendorApproval'){
     try{out.append(HtmlService.createTemplateFromFile('VendorApprovalFixV916').evaluate().getContent());}catch(err){}
