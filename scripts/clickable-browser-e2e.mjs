@@ -58,7 +58,7 @@ async function login(page){
     await page.wait(`location.pathname.endsWith('/b2c/')`,12000,'read-only customer app redirect');
   }
   await page.wait(`typeof S!=='undefined'&&S.cfg&&Array.isArray(S.cfg.products)&&S.cfg.products.length>0`,45000,'catalogue');
-  await page.wait(`window.NEL_UX_POLISH_V10561===true`,10000,'loop-safe UX polish');
+  await page.wait(`window.NEL_UX_POLISH_V10561===true&&window.NEL_SIMPLE_CATALOG_V10580===true`,10000,'B2C UX modules');
   pass('B2C customer app renders without renderer crash');
 }
 
@@ -78,10 +78,11 @@ async function test(){
     pass('Home hero CTA opens Shop');
 
     await click(page,'.navIn button[data-page="home"]','Home navigation');
-    const fresh=await page.eval(`(()=>{const b=[...document.querySelectorAll('.filters .filter')].find(x=>/FRESH TODAY/i.test(x.textContent));if(!b)return false;b.click();return true})()`);
-    assert(fresh,'Fresh Today filter is clickable');
-    await page.wait(`[...document.querySelectorAll('.filters .filter')].some(x=>/FRESH TODAY/i.test(x.textContent)&&x.classList.contains('on'))`,5000,'Fresh Today active');
-    pass('Fresh Today filter responds visually');
+    await sleep(900);
+    const clutter=await page.eval(`(()=>{const visible=e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0};const bad=new Set(['ALL','FRESH','FRESH TODAY','QUICK DELIVERY','BESTSELLERS','BULK ORDER','BULK PACKS']);return [...document.querySelectorAll('button')].filter(visible).map(x=>String(x.textContent||'').replace(/\\s+/g,' ').trim().toUpperCase()).filter(x=>bad.has(x))})()`);
+    assert(Array.isArray(clutter)&&clutter.length===0,'Redundant All/Fresh/Quick/Bestseller/Bulk catalogue controls are hidden');
+    const offersVisible=await page.eval(`(()=>{const e=document.querySelector('.navIn button[data-page="offers"]');if(!e)return false;const s=getComputedStyle(e),r=e.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0})()`);
+    assert(offersVisible,'Offers remains available in bottom navigation');
 
     await click(page,'.navIn button[data-page="shop"]','Shop navigation');
     await page.wait(`!!document.querySelector('#products .add')`,10000,'product Add button');
