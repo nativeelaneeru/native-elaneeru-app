@@ -65,7 +65,7 @@
       '<button type="button" class="secondary" onclick="refreshAdminBarcodeRealTestV959()">Refresh Status</button>'+
       '<button type="button" class="secondary" onclick="cleanupAdminBarcodeRealTestV959()">Delete Test Data</button></div>'+
       '<div id="abRealStatus" class="abRealStatus">'+stateText(status)+'</div>'+
-      '<div class="abRealWarn"><b>Step 3:</b> in B2B Driver, login with the temporary mobile/PIN above → open today\'s route → Check In → scan the same barcode → Deliver using the OTP above → Check Out. These are real operational writes until you delete the test.</div>';
+      '<div class="abRealWarn"><b>Step 3:</b> in B2B Driver, login with the temporary mobile/PIN above → open today&#39;s route → Check In → scan the same barcode → Deliver using the OTP above → Check Out. These are real operational writes until you delete the test.</div>';
     fillAssign();
   }
 
@@ -117,7 +117,7 @@
     if(!confirm('Delete ALL records created for '+TEST.testId+'? This removes the test batch, assignment, route/stop, test order, inventory/event rows and temporary driver.'))return;
     const a=admin(),id=TEST.testId;
     try{
-      const r=await call('cleanupBarcodeRealTestV959',[a.email,a.pin,id]);
+      await call('cleanupBarcodeRealTestV959',[a.email,a.pin,id]);
       TEST=null;save();
       if(q('abAssignBarcode'))q('abAssignBarcode').value='';if(q('abOrderId'))q('abOrderId').value='';if(q('abAssignQty'))q('abAssignQty').value='';
       if(typeof window.loadAdminBarcodeV926==='function')await window.loadAdminBarcodeV926(true);
