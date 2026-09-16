@@ -5,6 +5,7 @@ on:
     branches: [ test/approved-temp-ops-e2e ]
     paths:
       - '.github/workflows/test-approved-temp-ops-clasp-run.yml'
+      - 'src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V963_DriverMarketFix.gs'
   workflow_dispatch:
 
 permissions:
