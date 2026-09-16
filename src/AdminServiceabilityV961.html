@@ -1,0 +1,149 @@
+<style>
+#serviceability{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+#serviceability .svcCard{background:#fff;border:1px solid #e0e8e1;border-radius:16px;padding:15px;margin-bottom:14px;box-shadow:0 4px 14px #163a2010}
+#serviceability .svcHead{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+#serviceability .svcMetrics{display:grid;grid-template-columns:repeat(6,minmax(120px,1fr));gap:8px;margin-top:12px}
+#serviceability .svcMetric{border:1px solid #e1e8e2;border-radius:12px;padding:10px;background:#f9fbf9}
+#serviceability .svcMetric b{display:block;font-size:20px;color:#155b2b;margin-top:2px}
+#serviceability .svcControls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+#serviceability .svcMapWrap{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(270px,.8fr);gap:12px}
+#serviceMapV961{height:620px;border:1px solid #dfe7e0;border-radius:14px;overflow:hidden;background:#eef3ef}
+#serviceGridDetailV961{border:1px solid #e1e8e2;border-radius:14px;padding:12px;background:#fbfcfb;min-height:220px}
+#serviceability .svcLegend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:#5f6d63;margin:8px 0}
+#serviceability .svcDot{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:4px;vertical-align:-1px}
+#serviceability .svcOpen{background:#2e9d50}.svcComing{background:#9aa5a0}.svcPaused{background:#e49a26}.svcClosed{background:#c74b4b}.svcCustomer{background:#2574d8;border-radius:50%!important}.svcSub{background:#7f45c6;border-radius:50%!important}
+#serviceability table{font-size:12px}#serviceability th{position:sticky;top:0;background:#f8faf8;z-index:1}
+#serviceability .svcTableWrap{max-height:420px;overflow:auto;border:1px solid #e5eae6;border-radius:12px}
+#serviceability .svcStatus{font-size:11px;font-weight:800;border-radius:999px;padding:3px 7px;display:inline-block}
+#serviceability .svcStatus.OPEN{background:#e7f6eb;color:#1f7a3b}.svcStatus.COMING_SOON{background:#eef1ef;color:#68736d}.svcStatus.PAUSED{background:#fff2d8;color:#8a6100}.svcStatus.CLOSED,.svcStatus.LOCATION_NEEDED{background:#fbe9e9;color:#a43434}
+#serviceability .svcForm{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}#serviceability .svcForm .wide{grid-column:span 2}
+#serviceability .svcSmall{font-size:11px;color:#66736a}
+@media(max-width:980px){#serviceability .svcMapWrap{grid-template-columns:1fr}#serviceMapV961{height:520px}#serviceability .svcMetrics{grid-template-columns:repeat(2,1fr)}#serviceability .svcForm{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){#serviceMapV961{height:430px}#serviceability .svcForm{grid-template-columns:1fr}#serviceability .svcForm .wide{grid-column:span 1}}
+</style>
+<script>
+(function(){
+  if(window.NEL_ADMIN_SERVICEABILITY_V961)return;window.NEL_ADMIN_SERVICEABILITY_V961=true;
+  var DATA961=null,MAP961=null,GRID_LAYERS961={},CUSTOMER_LAYER961=null,APARTMENT_LAYER961=null,VIEW961='B2C';
+  var COLORS961={OPEN:'#2e9d50',COMING_SOON:'#9aa5a0',PAUSED:'#e49a26',CLOSED:'#c74b4b'};
+  function q(id){return document.getElementById(id)}
+  function safe(v){return typeof esc==='function'?esc(v):String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})}
+  function notify(v){if(typeof toast==='function')toast(v);else alert(v)}
+  function run(fn,args,ok,fail){
+    if(typeof gs==='function'){gs(fn,args,ok,fail);return}
+    var r=google.script.run.withSuccessHandler(ok).withFailureHandler(function(e){if(fail)fail(e);else notify(e&&e.message||'Request failed')});r[fn].apply(r,args||[]);
+  }
+  function credentials(){return [typeof E!=='undefined'?E:'',typeof P!=='undefined'?P:'']}
+  function install(){
+    var dash=q('dash'),tabs=dash&&dash.querySelector('.tabs');if(!dash||!tabs){setTimeout(install,100);return}
+    if(q('tServiceability'))return;
+    var btn=document.createElement('button');btn.id='tServiceability';btn.textContent='Service Areas';
+    btn.addEventListener('click',function(){
+      Array.prototype.forEach.call(dash.querySelectorAll(':scope > .card:not(.tabs)'),function(){});
+      var panel=q('serviceability');if(panel)panel.classList.remove('hidden');
+      loadServiceabilityV961();
+    });
+    tabs.appendChild(btn);
+    var panel=document.createElement('div');panel.id='serviceability';panel.className='hidden';
+    panel.innerHTML='\
+      <div class="svcCard">\
+        <div class="svcHead"><div><h3 style="margin:0">Serviceability Control</h3><div class="muted">1.5 km square grids • B2C launch 3 km • B2B up to 20 km • current Customers sheet plotted automatically</div></div><button class="secondary" id="svcRefreshV961">Refresh Map</button></div>\
+        <div id="svcMetricsV961" class="svcMetrics"></div>\
+      </div>\
+      <div class="svcCard">\
+        <div class="svcControls"><select id="svcChannelV961"><option value="B2C">B2C Service</option><option value="B2B">B2B Service</option></select><select id="svcStatusFilterV961"><option value="ALL">All grids</option><option value="OPEN">Open</option><option value="COMING_SOON">Coming soon</option><option value="PAUSED">Paused</option><option value="CLOSED">Closed</option></select><label><input id="svcCustomersV961" type="checkbox" checked> Customers</label><label><input id="svcApartmentsV961" type="checkbox" checked> Apartments</label></div>\
+        <div class="svcLegend"><span><i class="svcDot svcOpen"></i>Open</span><span><i class="svcDot svcComing"></i>Coming soon</span><span><i class="svcDot svcPaused"></i>Paused</span><span><i class="svcDot svcClosed"></i>Closed</span><span><i class="svcDot svcCustomer"></i>Customer</span><span><i class="svcDot svcSub"></i>Subscriber</span></div>\
+        <div class="svcMapWrap"><div id="serviceMapV961"></div><div id="serviceGridDetailV961"><b>Select a grid</b><div class="muted" style="margin-top:6px">Click any square to view customers and change B2C/B2B status.</div></div></div>\
+      </div>\
+      <div class="svcCard"><div class="svcHead"><div><h3 style="margin:0">Current Onboarded Customers</h3><div class="muted">Every record comes from the existing Customers sheet. Customers without GPS stay visible below as “Location needed”.</div></div><input id="svcCustomerSearchV961" placeholder="Search name / mobile / area"></div><div id="svcCustomerTableV961" class="svcTableWrap" style="margin-top:10px"></div></div>\
+      <div class="svcCard"><h3 style="margin-top:0">Apartment Subscription Approval</h3><div class="muted">Approve a specific apartment without opening the entire surrounding grid for normal B2C customers.</div><div class="svcForm" style="margin-top:10px"><input id="aptNameV961" placeholder="Apartment name"><input id="aptContactV961" placeholder="Contact person"><input id="aptMobileV961" placeholder="Mobile" inputmode="numeric"><input id="aptStatusV961" value="APPROVED" readonly><input id="aptLatV961" placeholder="Latitude"><input id="aptLngV961" placeholder="Longitude"><input id="aptAddressV961" class="wide" placeholder="Apartment address"><input id="aptNotesV961" class="wide" placeholder="Approval notes"><button id="aptSaveV961">Approve Apartment</button></div><div id="svcApartmentTableV961" class="svcTableWrap" style="margin-top:12px"></div></div>';
+    dash.appendChild(panel);
+    q('svcRefreshV961').addEventListener('click',loadServiceabilityV961);
+    q('svcChannelV961').addEventListener('change',function(){VIEW961=this.value;renderGridLayers961();});
+    q('svcStatusFilterV961').addEventListener('change',renderGridLayers961);
+    q('svcCustomersV961').addEventListener('change',renderCustomerLayer961);
+    q('svcApartmentsV961').addEventListener('change',renderApartmentLayer961);
+    q('svcCustomerSearchV961').addEventListener('input',renderCustomerTable961);
+    q('aptSaveV961').addEventListener('click',saveApartment961);
+  }
+  function loadLeaflet961(done){
+    if(window.L){done();return}
+    if(!q('nelLeafletCssV961')){var l=document.createElement('link');l.id='nelLeafletCssV961';l.rel='stylesheet';l.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(l)}
+    var old=q('nelLeafletJsV961');if(old){old.addEventListener('load',done,{once:true});return}
+    var s=document.createElement('script');s.id='nelLeafletJsV961';s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';s.onload=done;s.onerror=function(){notify('Map library could not load. Check internet access.')};document.head.appendChild(s);
+  }
+  function loadServiceabilityV961(){
+    var c=credentials();if(!c[0]||!c[1])return;
+    var host=q('serviceGridDetailV961');if(host)host.innerHTML='<b>Loading service map…</b><div class="muted">Reading current grids and onboarded customers.</div>';
+    run('getServiceabilityAdminV961',[c[0],c[1]],function(d){DATA961=d||{};renderMetrics961();renderCustomerTable961();renderApartmentTable961();loadLeaflet961(function(){ensureMap961();renderGridLayers961();renderCustomerLayer961();renderApartmentLayer961()})},function(e){notify(e&&e.message||'Service map failed to load')});
+  }
+  window.loadServiceabilityV961=loadServiceabilityV961;
+  function renderMetrics961(){
+    var s=DATA961&&DATA961.summary||{},host=q('svcMetricsV961');if(!host)return;
+    var vals=[['Square grids',s.grids||0],['B2C open grids',s.b2cOpenGrids||0],['B2B open grids',s.b2bOpenGrids||0],['Onboarded customers',s.customers||0],['Mapped customers',s.customersMapped||0],['Need GPS',s.customersNeedLocation||0],['B2C open customers',s.b2cOpenCustomers||0],['Active subscriptions',s.activeSubscriptions||0],['Approved apartments',s.approvedApartments||0]];
+    host.innerHTML=vals.map(function(x){return '<div class="svcMetric"><span class="muted">'+safe(x[0])+'</span><b>'+safe(x[1])+'</b></div>'}).join('');
+  }
+  function ensureMap961(){
+    if(MAP961||!window.L||!DATA961||!DATA961.config)return;
+    var h=DATA961.config.hub;MAP961=L.map('serviceMapV961',{preferCanvas:true}).setView([h.lat,h.lng],12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(MAP961);
+    L.marker([h.lat,h.lng],{title:h.name||'Hub'}).addTo(MAP961).bindPopup('<b>'+safe(h.name||'Native Elaneeru Hub')+'</b><br>Service-grid origin');
+    setTimeout(function(){MAP961.invalidateSize()},100);
+  }
+  function gridColor961(g){var status=VIEW961==='B2B'?g.b2bStatus:g.b2cStatus;return COLORS961[status]||COLORS961.CLOSED}
+  function renderGridLayers961(){
+    if(!MAP961||!DATA961)return;
+    Object.keys(GRID_LAYERS961).forEach(function(id){MAP961.removeLayer(GRID_LAYERS961[id])});GRID_LAYERS961={};
+    var filter=q('svcStatusFilterV961')?q('svcStatusFilterV961').value:'ALL';
+    (DATA961.grids||[]).forEach(function(g){
+      var status=VIEW961==='B2B'?g.b2bStatus:g.b2cStatus;if(filter!=='ALL'&&status!==filter)return;
+      var pts=(g.polygon||[]).map(function(p){return [p.lat,p.lng]});
+      var layer=L.polygon(pts,{color:gridColor961(g),weight:1,fillColor:gridColor961(g),fillOpacity:status==='OPEN'?.24:.11});
+      layer.on('click',function(){showGridDetail961(g)});layer.bindTooltip(g.gridId+' • '+status,{sticky:true});layer.addTo(MAP961);GRID_LAYERS961[g.gridId]=layer;
+    });
+  }
+  function customerCounts961(gridId){var all=(DATA961.customers||[]).filter(function(c){return c.gridId===gridId});return {all:all,subs:all.filter(function(c){return !!c.subscriptionStatus})}}
+  function showGridDetail961(g){
+    var host=q('serviceGridDetailV961'),cc=customerCounts961(g.gridId);if(!host)return;
+    host.innerHTML='<h3 style="margin-top:0">'+safe(g.gridId)+'</h3><div class="muted">'+safe(g.cluster)+' • '+Number(g.distanceKm||0).toFixed(1)+' km from hub • '+safe(g.priority)+'</div><div style="margin:10px 0"><b>'+cc.all.length+'</b> onboarded customers • <b>'+cc.subs.length+'</b> subscriber(s)</div><div><b>B2C</b> <span class="svcStatus '+safe(g.b2cStatus)+'">'+safe(g.b2cStatus)+'</span></div><div class="svcControls">'+statusButtons961(g,'B2C')+'</div><div style="margin-top:8px"><b>B2B</b> <span class="svcStatus '+safe(g.b2bStatus)+'">'+safe(g.b2bStatus)+'</span></div><div class="svcControls">'+statusButtons961(g,'B2B')+'</div>'+(cc.all.length?'<div style="margin-top:12px"><b>Customers in this grid</b>'+cc.all.slice(0,12).map(function(c){return '<div class="svcSmall" style="margin-top:5px">• '+safe(c.name||c.mobile)+' • '+safe(c.area||'')+(c.subscriptionStatus?' • Subscription '+safe(c.subscriptionStatus):'')+'</div>'}).join('')+'</div>':'<div class="muted" style="margin-top:12px">No onboarded customers mapped to this square yet.</div>');
+    Array.prototype.forEach.call(host.querySelectorAll('[data-grid][data-channel][data-status]'),function(b){b.addEventListener('click',function(){updateGrid961(this.dataset.grid,this.dataset.channel,this.dataset.status)})});
+  }
+  function statusButtons961(g,ch){return ['OPEN','COMING_SOON','PAUSED','CLOSED'].map(function(st){var current=ch==='B2C'?g.b2cStatus:g.b2bStatus;return '<button '+(current===st?'disabled':'')+' class="'+(st==='OPEN'?'':'secondary')+'" data-grid="'+safe(g.gridId)+'" data-channel="'+ch+'" data-status="'+st+'">'+st.replace('_',' ')+'</button>'}).join(' ')}
+  function updateGrid961(gridId,channel,status){
+    if(!confirm('Set '+gridId+' '+channel+' to '+status.replace('_',' ')+'?'))return;
+    var c=credentials();run('updateServiceGridStatusV961',[c[0],c[1],gridId,channel,status],function(){notify(gridId+' '+channel+' updated');loadServiceabilityV961()});
+  }
+  function renderCustomerLayer961(){
+    if(!MAP961||!DATA961||!window.L)return;if(CUSTOMER_LAYER961){MAP961.removeLayer(CUSTOMER_LAYER961);CUSTOMER_LAYER961=null}
+    if(!q('svcCustomersV961')||!q('svcCustomersV961').checked)return;
+    CUSTOMER_LAYER961=L.layerGroup();(DATA961.customers||[]).filter(function(c){return c.hasLocation}).forEach(function(c){
+      var sub=!!c.subscriptionStatus,color=sub?'#7f45c6':'#2574d8';
+      L.circleMarker([c.lat,c.lng],{radius:sub?5:4,color:'#fff',weight:1,fillColor:color,fillOpacity:.95}).bindPopup('<b>'+safe(c.name||'Customer')+'</b><br>'+safe(c.mobile)+'<br>'+safe(c.area||c.address||'')+'<br>Grid: '+safe(c.gridId||'Outside')+'<br>B2C: '+safe(c.b2cService)+(sub?'<br>Subscription: '+safe(c.subscriptionStatus):'')).addTo(CUSTOMER_LAYER961);
+    });CUSTOMER_LAYER961.addTo(MAP961);
+  }
+  function renderApartmentLayer961(){
+    if(!MAP961||!DATA961||!window.L)return;if(APARTMENT_LAYER961){MAP961.removeLayer(APARTMENT_LAYER961);APARTMENT_LAYER961=null}
+    if(!q('svcApartmentsV961')||!q('svcApartmentsV961').checked)return;
+    APARTMENT_LAYER961=L.layerGroup();(DATA961.apartments||[]).filter(function(a){return a.lat&&a.lng}).forEach(function(a){
+      L.circleMarker([a.lat,a.lng],{radius:7,color:'#fff',weight:2,fillColor:a.status==='APPROVED'?'#7f45c6':'#e49a26',fillOpacity:.95}).bindPopup('<b>'+safe(a.name)+'</b><br>'+safe(a.status)+'<br>'+safe(a.gridId)+'<br>Subscription-only exception').addTo(APARTMENT_LAYER961);
+    });APARTMENT_LAYER961.addTo(MAP961);
+  }
+  function renderCustomerTable961(){
+    var host=q('svcCustomerTableV961');if(!host||!DATA961)return;var term=String(q('svcCustomerSearchV961')&&q('svcCustomerSearchV961').value||'').trim().toLowerCase();
+    var rows=(DATA961.customers||[]).filter(function(c){return !term||[c.name,c.mobile,c.area,c.address,c.gridId].join(' ').toLowerCase().indexOf(term)>=0});
+    host.innerHTML='<table><thead><tr><th>Customer</th><th>Mobile</th><th>Area</th><th>Grid</th><th>Distance</th><th>B2C</th><th>B2B</th><th>Subscription</th></tr></thead><tbody>'+rows.map(function(c){return '<tr><td>'+safe(c.name||'-')+'</td><td>'+safe(c.mobile)+'</td><td>'+safe(c.area||'-')+'</td><td>'+safe(c.gridId||'Location needed')+'</td><td>'+(c.distanceKm==null?'-':Number(c.distanceKm).toFixed(1)+' km')+'</td><td><span class="svcStatus '+safe(c.b2cService)+'">'+safe(c.b2cService)+'</span></td><td><span class="svcStatus '+safe(c.b2bService)+'">'+safe(c.b2bService)+'</span></td><td>'+safe(c.subscriptionStatus||'-')+'</td></tr>'}).join('')+'</tbody></table>';
+  }
+  function renderApartmentTable961(){
+    var host=q('svcApartmentTableV961');if(!host||!DATA961)return;var rows=DATA961.apartments||[];
+    host.innerHTML='<table><thead><tr><th>Apartment</th><th>Contact</th><th>Grid</th><th>Status</th><th>Subscription</th></tr></thead><tbody>'+(rows.length?rows.map(function(a){return '<tr><td>'+safe(a.name)+'<div class="svcSmall">'+safe(a.address||'')+'</div></td><td>'+safe(a.contactName||'-')+'<div class="svcSmall">'+safe(a.mobile||'')+'</div></td><td>'+safe(a.gridId)+'</td><td><span class="svcStatus '+safe(a.status)+'">'+safe(a.status)+'</span></td><td>'+(a.subscriptionOnly?'Approved exception':'-')+'</td></tr>'}).join(''):'<tr><td colspan="5" class="muted">No apartment exceptions approved yet.</td></tr>')+'</tbody></table>';
+  }
+  function saveApartment961(){
+    var p={apartmentName:q('aptNameV961').value,contactName:q('aptContactV961').value,mobile:q('aptMobileV961').value,address:q('aptAddressV961').value,lat:q('aptLatV961').value,lng:q('aptLngV961').value,status:'APPROVED',notes:q('aptNotesV961').value};
+    if(!p.apartmentName||!p.lat||!p.lng){notify('Apartment name, latitude and longitude are required');return}
+    if(!confirm('Approve subscription service for '+p.apartmentName+' only?'))return;
+    var c=credentials();run('saveApartmentServiceOverrideV961',[c[0],c[1],p],function(r){notify('Apartment approved in '+(r&&r.gridId||'service grid'));['aptNameV961','aptContactV961','aptMobileV961','aptAddressV961','aptLatV961','aptLngV961','aptNotesV961'].forEach(function(id){if(q(id))q(id).value=''});loadServiceabilityV961()});
+  }
+  window.getAdminServiceabilityHealthV961=function(){return {ok:true,version:'9.6.1',squareGridKm:1.5,b2cKm:3,b2bKm:20,customersFromExistingMaster:true,apartmentApproval:true}};
+  document.readyState==='loading'?document.addEventListener('DOMContentLoaded',install,{once:true}):install();setTimeout(install,0);
+})();
+</script>
