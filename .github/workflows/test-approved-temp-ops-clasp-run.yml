@@ -1,4 +1,4 @@
-name: Test Approved Temp Ops Clasp Run
+name: Inspect Apps Script Deployments For Approved E2E
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  probe:
+  inspect:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -44,53 +44,5 @@ jobs:
           printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
           chmod 600 "$HOME/.clasprc.json"
 
-      - name: Push owner-only temporary API configuration to Apps Script HEAD
-        run: npx clasp push -f
-
-      - name: Create temporary API executable deployment
-        shell: bash
-        run: |
-          set -euo pipefail
-          npx clasp deploy -d "TEMP owner-only E2E probe $GITHUB_SHA" 2>&1 | tee /tmp/nel-temp-deploy.txt
-          ID="$(grep -oE 'AKfy[A-Za-z0-9_-]+' /tmp/nel-temp-deploy.txt | head -1 || true)"
-          if [ -z "$ID" ]; then
-            echo "Could not parse temporary deployment ID."
-            exit 1
-          fi
-          echo "TEMP_DEPLOYMENT_ID=$ID" >> "$GITHUB_ENV"
-          echo "Temporary API deployment created."
-
-      - name: Probe Apps Script Execution API read-only
-        shell: bash
-        run: |
-          set -euo pipefail
-          for attempt in 1 2 3 4; do
-            echo "Execution API probe attempt $attempt"
-            OUT="$(npx clasp run getBarcodeRealTestHealthV959 --nondev 2>&1 || true)"
-            echo "$OUT"
-            if echo "$OUT" | grep -q '"ok"'; then
-              echo "Execution API probe succeeded."
-              exit 0
-            fi
-            sleep $((attempt*3))
-          done
-          echo "Execution API probe did not return the expected health object."
-          exit 1
-
-      - name: Delete temporary API deployment
-        if: always()
-        shell: bash
-        run: |
-          if [ -n "${TEMP_DEPLOYMENT_ID:-}" ]; then
-            npx clasp undeploy "$TEMP_DEPLOYMENT_ID" || npx clasp delete-deployment "$TEMP_DEPLOYMENT_ID" || true
-          fi
-
-      - name: Restore production Apps Script HEAD from main
-        if: always()
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin main
-          git checkout origin/main -- src
-          npx clasp push -f
-          echo "Apps Script HEAD restored from main. Existing production deployments were never redeployed by this test."
+      - name: List existing Apps Script deployments read-only
+        run: npx clasp deployments
