@@ -2,11 +2,8 @@
 #adminBarcodeV926 .abCameraBox{margin:0 0 12px;padding:12px;border:1px solid #cfe0d3;border-radius:14px;background:#f5faf6}
 #adminBarcodeV926 .abCameraHead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
 #adminBarcodeV926 .abCameraActions{display:flex;gap:7px;flex-wrap:wrap}
-#adminBarcodeV926 .abCameraFrame{position:relative;overflow:hidden;border-radius:13px;background:#102218;aspect-ratio:16/9;min-height:180px;display:none}
-#adminBarcodeV926 .abCameraFrame.active{display:block}
-#adminBarcodeV926 .abCameraFrame video{width:100%;height:100%;object-fit:cover;display:block}
-#adminBarcodeV926 .abCameraGuide{position:absolute;left:10%;right:10%;top:35%;height:30%;border:2px solid rgba(255,255,255,.9);border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.18);pointer-events:none}
-#adminBarcodeV926 .abCameraStatus{font-size:12px;color:#496253;margin-top:8px;line-height:1.4}
+#adminBarcodeV926 .abCameraStatus{font-size:12px;color:#496253;margin-top:8px;line-height:1.45}
+#adminBarcodeV926 .abCameraNote{margin-top:8px;padding:9px 11px;border-radius:11px;background:#edf7f0;border:1px solid #d0e7d6;color:#315941;font-size:12px;line-height:1.45}
 #adminBarcodeV926 .abMockBar{display:none;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border:1px solid #f2c66d;border-radius:13px;background:#fff8e6;color:#684b0a}
 #adminBarcodeV926 .abMockBar.active{display:flex}
 #adminBarcodeV926 .abMockBadge{font-weight:950;letter-spacing:.3px}
@@ -18,7 +15,9 @@
 (function(){
   if(window.NEL_ADMIN_BARCODE_CAMERA_MOCK_V958)return;window.NEL_ADMIN_BARCODE_CAMERA_MOCK_V958=true;
 
-  let CAM_STREAM=null,CAM_TIMER=null,CAM_DETECTOR=null,CAM_BUSY=false;
+  const SCANNER_ORIGIN='https://nativeelaneeru.github.io';
+  const SCANNER_URL='https://nativeelaneeru.github.io/native-elaneeru-app/scanner/?v=958';
+  let SCANNER_WINDOW=null;
   let MOCK=null;
   const oldSubtab=window.adminBarcodeSubtabV926;
   const oldAssign=window.adminBarcodeAssignV926;
@@ -60,71 +59,33 @@
     return '<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mock barcode '+safe(value)+'" viewBox="0 0 '+total+' 68" preserveAspectRatio="xMidYMid meet"><rect width="100%" height="100%" fill="#fff"/>'+bars.join('')+'<text x="'+(total/2)+'" y="65" text-anchor="middle" font-family="monospace" font-size="9" fill="#000">'+safe(value)+'</text></svg>';
   }
 
-  async function makeDetector(){
-    CAM_DETECTOR=null;
-    if(!('BarcodeDetector' in window))return false;
-    try{
-      let formats=['code_39','code_128','ean_13','ean_8','qr_code'];
-      if(typeof BarcodeDetector.getSupportedFormats==='function'){
-        const supported=await BarcodeDetector.getSupportedFormats();
-        formats=formats.filter(function(x){return supported.indexOf(x)>=0});
-      }
-      if(!formats.length)return false;
-      CAM_DETECTOR=new BarcodeDetector({formats:formats});
-      return true;
-    }catch(e){CAM_DETECTOR=null;return false}
+  function receiveScan(event){
+    if(event.origin!==SCANNER_ORIGIN)return;
+    const data=event.data&&typeof event.data==='object'?event.data:{};
+    if(data.type!=='NEL_BARCODE_SCAN_V958')return;
+    const raw=String(data.barcode||'').trim();if(!raw)return;
+    const input=q('abAssignBarcode');if(input)input.value=raw;
+    camMsg('Scanned: '+raw,true);
+    mainMsg('Barcode '+raw+' captured from camera.',true);
+    try{if(SCANNER_WINDOW&&!SCANNER_WINDOW.closed)SCANNER_WINDOW.close()}catch(e){}
+    SCANNER_WINDOW=null;
+    setTimeout(function(){const x=q('abOrderId');if(x)x.focus()},80);
   }
+  window.addEventListener('message',receiveScan);
 
-  async function scanTick(){
-    if(!CAM_STREAM||!CAM_DETECTOR||CAM_BUSY)return;
-    const video=q('abCameraVideo');if(!video)return;
-    CAM_BUSY=true;
+  window.startAdminBarcodeCameraV958=function(){
     try{
-      if(video.readyState>=2){
-        const found=await CAM_DETECTOR.detect(video);
-        if(found&&found.length){
-          const raw=String(found[0].rawValue||'').trim();
-          if(raw){
-            const input=q('abAssignBarcode');if(input)input.value=raw;
-            camMsg('Scanned: '+raw,true);mainMsg('Barcode '+raw+' captured from camera.',true);
-            window.stopAdminBarcodeCameraV958();
-            return;
-          }
-        }
-      }
-    }catch(e){}
-    finally{CAM_BUSY=false}
-    if(CAM_STREAM)CAM_TIMER=setTimeout(scanTick,180);
-  }
-
-  window.startAdminBarcodeCameraV958=async function(){
-    if(CAM_STREAM)return;
-    const frame=q('abCameraFrame'),video=q('abCameraVideo');
-    if(!frame||!video)return;
-    if(!navigator.mediaDevices||typeof navigator.mediaDevices.getUserMedia!=='function'){
-      camMsg('Camera access is not available in this browser. Use a USB/Bluetooth scanner or paste the barcode.',false);return;
-    }
-    try{
-      camMsg('Requesting camera permission…',true);
-      CAM_STREAM=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
-      video.srcObject=CAM_STREAM;frame.classList.add('active');
-      try{await video.play()}catch(e){}
-      const canDetect=await makeDetector();
-      if(canDetect){camMsg('Camera open. Point the printed barcode inside the box.',true);scanTick()}
-      else camMsg('Camera open. Automatic barcode reading is not supported by this browser; keep the preview open and use a scanner/manual entry.',true);
-    }catch(e){
-      CAM_STREAM=null;frame.classList.remove('active');
-      const name=String(e&&e.name||'');
-      camMsg(name==='NotAllowedError'?'Camera permission was blocked. Allow camera permission for this site and tap Open Camera again.':'Could not open camera: '+String(e&&e.message||e),false);
-    }
+      if(SCANNER_WINDOW&&!SCANNER_WINDOW.closed){SCANNER_WINDOW.focus();camMsg('Camera scanner is already open.',true);return}
+      SCANNER_WINDOW=window.open(SCANNER_URL,'nelBarcodeScannerV958','popup=yes,width=620,height=760,resizable=yes,scrollbars=yes');
+      if(!SCANNER_WINDOW){camMsg('Camera popup was blocked. Allow popups for this Admin page, then tap Open Camera again.',false);return}
+      camMsg('Camera scanner opened securely. Allow camera permission in the scanner window and point it at the printed barcode.',true);
+    }catch(e){camMsg('Could not open camera scanner: '+String(e&&e.message||e),false)}
   };
 
   window.stopAdminBarcodeCameraV958=function(){
-    if(CAM_TIMER){clearTimeout(CAM_TIMER);CAM_TIMER=null}
-    if(CAM_STREAM){try{CAM_STREAM.getTracks().forEach(function(t){t.stop()})}catch(e){}CAM_STREAM=null}
-    CAM_DETECTOR=null;CAM_BUSY=false;
-    const video=q('abCameraVideo');if(video)video.srcObject=null;
-    const frame=q('abCameraFrame');if(frame)frame.classList.remove('active');
+    try{if(SCANNER_WINDOW&&!SCANNER_WINDOW.closed)SCANNER_WINDOW.close()}catch(e){}
+    SCANNER_WINDOW=null;
+    camMsg('Camera scanner closed.',true);
   };
 
   function renderMockLabel(){
@@ -215,12 +176,12 @@
     if(help&&help.parentNode)help.parentNode.insertBefore(start,help.nextSibling);else batchPane.insertBefore(start,batchPane.firstChild);
 
     const camera=document.createElement('div');camera.id='abCameraBox';camera.className='abCameraBox';
-    camera.innerHTML='<div class="abCameraHead"><div><b>📷 Barcode Camera</b><div class="muted">Opens automatically on Step 2. Best on Chrome/Android with the rear camera.</div></div><div class="abCameraActions"><button type="button" onclick="startAdminBarcodeCameraV958()">Open Camera</button><button type="button" class="secondary" onclick="stopAdminBarcodeCameraV958()">Stop</button></div></div><div id="abCameraFrame" class="abCameraFrame"><video id="abCameraVideo" playsinline muted></video><div class="abCameraGuide"></div></div><div id="abCameraStatus" class="abCameraStatus">Camera is off. Open Step 2 or tap Open Camera.</div>';
+    camera.innerHTML='<div class="abCameraHead"><div><b>📷 Barcode Camera</b><div class="muted">Opens automatically when Step 2 is selected.</div></div><div class="abCameraActions"><button type="button" onclick="startAdminBarcodeCameraV958()">📷 Open Camera</button><button type="button" class="secondary" onclick="stopAdminBarcodeCameraV958()">Close Camera</button></div></div><div id="abCameraStatus" class="abCameraStatus">Camera is ready to open.</div><div class="abCameraNote">Google Apps Script blocks camera/microphone access inside its sandboxed Admin iframe. Native Elaneeru therefore opens the camera in our secure GitHub Pages scanner and sends only the scanned barcode back to this field.</div>';
     const assignHelp=assignPane.querySelector('.abHelp');
     if(assignHelp&&assignHelp.parentNode)assignHelp.parentNode.insertBefore(camera,assignHelp.nextSibling);else assignPane.insertBefore(camera,assignPane.firstChild);
 
     mockUi();
-    document.addEventListener('visibilitychange',function(){if(document.hidden)window.stopAdminBarcodeCameraV958()});
+    document.addEventListener('visibilitychange',function(){if(document.hidden&&SCANNER_WINDOW&&SCANNER_WINDOW.closed)SCANNER_WINDOW=null});
     const tabs=document.querySelector('#dash .tabs');if(tabs)tabs.addEventListener('click',function(e){const b=e.target.closest('button');if(b&&b.id!=='tAdminBarcode')window.stopAdminBarcodeCameraV958()});
   }
 
