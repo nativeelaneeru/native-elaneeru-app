@@ -7,6 +7,7 @@ on:
       - 'b2c/subscription-cashback-v10540.js'
       - 'b2c/subscription-schemes-v10580.js'
       - 'b2c/pricing-hierarchy-v10581.js'
+      - 'b2c/pricing-hierarchy-v10582.js'
       - 'b2c/config.js'
       - 'b2c/sw.js'
       - 'src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V954_SubscriptionsCashback.gs'
