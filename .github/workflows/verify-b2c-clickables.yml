@@ -1,0 +1,40 @@
+name: Verify Native Elaneeru B2C Clickables
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'b2c/**'
+      - 'scripts/clickable-browser-e2e.mjs'
+      - '.github/workflows/verify-b2c-clickables.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-clickables:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      SITE_URL: https://nativeelaneeru.github.io/native-elaneeru-app/
+    steps:
+      - uses: actions/checkout@v5
+      - name: Wait for current B2C build on Pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=$(sed -n "s/.*appVersion: '\([^']*\)'.*/\1/p" b2c/config.js | head -1)
+          echo "Expected B2C version: $expected"
+          for i in $(seq 1 40); do
+            live=$(curl -fsSL "$SITE_URL/b2c/config.js?sha=$GITHUB_SHA&t=$i" || true)
+            if printf '%s' "$live" | grep -Fq "$expected"; then
+              echo "Live Pages is serving $expected"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Timed out waiting for Pages to serve $expected" >&2
+          exit 1
+      - name: Click visible B2C controls in Chrome
+        run: node scripts/clickable-browser-e2e.mjs
