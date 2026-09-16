@@ -10,7 +10,7 @@
     return (n(p&&p.offerQty1)>0&&n(p&&p.offerPrice1)>0)||(n(p&&p.offerQty2)>0&&n(p&&p.offerPrice2)>0)||yes(p&&p.onOffer)||yes(p&&p.offerActive);
   }
   function isFresh(p){
-    if(p&&('freshToday'in p||'isFreshToday'in p||'fresh'in p))return yes(p.freshToday)||yes(p.isFreshToday)||yes(p.fresh);
+    if(p&&('freshToday' in p||'isFreshToday' in p||'fresh' in p))return yes(p.freshToday)||yes(p.isFreshToday)||yes(p.fresh);
     var t=text(p);
     if(/dehusked|dry coconut|copra|mature coconut/.test(t))return false;
     return /tender coconut|elaneeru|green coconut|nariyal pani|coconut/.test(t);
@@ -19,7 +19,7 @@
     return yes(p&&p.bulk)||yes(p&&p.bulkEligible)||n(p&&p.moq)>=5||n(p&&p.offerQty1)>=5||n(p&&p.offerQty2)>=5;
   }
   function isQuick(p){
-    if(p&&('quickDelivery'in p||'isQuickDelivery'in p))return yes(p.quickDelivery)||yes(p.isQuickDelivery);
+    if(p&&('quickDelivery' in p||'isQuickDelivery' in p))return yes(p.quickDelivery)||yes(p.isQuickDelivery);
     var mins=n(p&&p.deliveryMinutes)||n(p&&p.deliveryMins);
     return mins>0&&mins<=60;
   }
@@ -52,9 +52,14 @@
     if(mode==='best')return 'Bestsellers will appear after enough order history is available.';
     return 'No matching products.';
   }
+  function findFilter(mode){
+    var words={all:'ALL',fresh:'FRESH TODAY',offers:'OFFERS',best:'BESTSELLERS',bulk:'BULK ORDER',quick:'QUICK DELIVERY'};
+    var needle=words[mode]||'';
+    return Array.from(document.querySelectorAll('.filters .filter')).find(function(b){return String(b.textContent||'').toUpperCase().includes(needle)})||null;
+  }
   function setFilterVisual(mode,btn){
     document.querySelectorAll('.filter').forEach(function(x){x.classList.remove('on')});
-    var target=btn||document.querySelector('.filter[onclick*="\''+mode+'\'"]');
+    var target=btn||findFilter(mode);
     if(target)target.classList.add('on');
     document.body.setAttribute('data-filter-mode',mode);
   }
@@ -85,12 +90,12 @@
     renderDistinct();
     if(mode==='offers')go('offers');else go('shop');
   }
-  function wireFreshHeader(){
+  function wireHeaderTabs(){
     var tabs=document.querySelectorAll('.tabs .tab');
-    if(tabs&&tabs[0])tabs[0].onclick=function(){applyFilter('fresh',document.querySelector('.filter[onclick*="\'fresh\'"]'))};
-    if(tabs&&tabs[1])tabs[1].onclick=function(){applyFilter('quick',document.getElementById('nelQuickFilter'))};
-    if(tabs&&tabs[2])tabs[2].onclick=function(){applyFilter('offers',document.querySelector('.filter[onclick*="\'offers\'"]'))};
-    if(tabs&&tabs[3])tabs[3].onclick=function(){applyFilter('bulk',document.querySelector('.filter[onclick*="\'bulk\'"]'))};
+    if(tabs&&tabs[0])tabs[0].onclick=function(){applyFilter('fresh',findFilter('fresh'))};
+    if(tabs&&tabs[1])tabs[1].onclick=function(){applyFilter('quick',findFilter('quick'))};
+    if(tabs&&tabs[2])tabs[2].onclick=function(){applyFilter('offers',findFilter('offers'))};
+    if(tabs&&tabs[3])tabs[3].onclick=function(){applyFilter('bulk',findFilter('bulk'))};
   }
   function boot(){
     try{S.filterMode=S.filterMode||'all'}catch(e){}
@@ -98,10 +103,10 @@
     window.filteredProducts=function(){var mode='all';try{mode=S.filterMode||'all'}catch(e){}return subset(mode)};
     window.filterProducts=applyFilter;
     window.renderProducts=renderDistinct;
-    wireFreshHeader();
+    wireHeaderTabs();
     renderDistinct();
-    setFilterVisual('all',document.querySelector('.filter[onclick*="\'all\'"]'));
-    setTimeout(function(){wireFreshHeader();renderDistinct()},400);
+    setFilterVisual('all',findFilter('all'));
+    setTimeout(function(){wireHeaderTabs();renderDistinct()},400);
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
