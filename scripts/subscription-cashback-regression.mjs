@@ -2,7 +2,7 @@ import fs from 'node:fs';
 // Keep Admin route wiring covered so subscription controls cannot disappear from production.
 function ok(v,m){if(!v)throw new Error(m);console.log('✓',m)}
 const ui=fs.readFileSync('b2c/subscription-schemes-v10580.js','utf8');
-const pricingUi=fs.readFileSync('b2c/pricing-hierarchy-v10581.js','utf8');
+const pricingUi=fs.readFileSync('b2c/pricing-hierarchy-v10582.js','utf8');
 const simple=fs.readFileSync('b2c/simple-catalog-v10580.js','utf8');
 const backend=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V955_SubscriptionSchemes.gs','utf8');
 const offerBackend=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V956_SubscriptionOfferPricing.gs','utf8');
@@ -25,8 +25,11 @@ ok(/Bundle Qty 1/.test(offerBackend)&&/Bundle Price 1/.test(offerBackend)&&/Bund
 ok(/normalUnitPrice:normalUnit/.test(offerBackend)&&/offerUnitPrice:offerUnit/.test(offerBackend)&&/subscriptionUnitPrice:planUnit/.test(offerBackend),'Backend exposes normal, offer and plan price hierarchy');
 ok(/Plan total cannot exceed the current B2C offer total/.test(offerBackend),'Admin scheme validation prevents plan total above applicable customer offer total');
 ok(/Normal /.test(pricingUi)&&/Offer /.test(pricingUi)&&/Plan /.test(pricingUi),'B2C clearly labels normal, offer and plan pricing');
+ok(/offerQty1/.test(pricingUi)&&/offerPrice1/.test(pricingUi)&&/offerQty2/.test(pricingUi)&&/offerPrice2/.test(pricingUi)&&/Offer for /.test(pricingUi),'B2C product cards surface configured bundle offer totals');
+ok(/regular=sell\*c\.qty/.test(pricingUi)&&/c\.total<regular/.test(pricingUi)&&/Save /.test(pricingUi),'B2C bundle display scratches the non-offer total and shows real savings only');
 ok(/Offer total/.test(pricingUi)&&/Plan /.test(pricingUi)&&/versus the current offer/.test(pricingUi),'B2C displays offer total before the lower plan total');
 ok(!/saveOrder\s*\(/.test(pricingUi)&&!/placeOrder\s*\(/.test(pricingUi)&&!/saveOrder\s*\(/.test(offerBackend)&&!/placeOrder\s*\(/.test(offerBackend),'Pricing hierarchy cannot create production orders');
+ok(!/B2B Default Price/.test(pricingUi)&&!/B2B Base Price/.test(pricingUi),'B2C pricing display does not read B2B prices');
 ok(/autoOrderEnabled:false/.test(backend)&&!/saveOrder\s*\(/.test(backend)&&!/placeOrder\s*\(/.test(backend),'V9.5.5 cannot create production orders');
 ok(/subscriptionAutoOrderSupported:false/.test(rewards)&&/subscriptionAutoOrderEnabled:false/.test(rewards),'Automatic subscription order creation remains hard-off');
 ok(/creditsCashbackByDefault:false/.test(rewards)&&/NEL_TARGET_CASHBACK_AUTO_CREDIT/.test(rewards),'NE Cash automatic crediting defaults off behind an admin flag');
@@ -35,7 +38,7 @@ ok(/Reward Key/.test(rewards)&&/duplicate/.test(rewards)&&/LockService/.test(rew
 ok(/Subscription Schemes/.test(admin)&&/saveSchemeV955/.test(admin),'Admin UI can create and edit subscription schemes');
 ok(/AdminOffersSubscriptionsV930/.test(routes),'Admin route appends Offers & Subscriptions UI');
 ok(/QUICK DELIVERY/.test(simple)&&/style\.display='none'/.test(simple),'B2C simplifier removes unnecessary catalogue filter rows');
-ok(/subscription-schemes-v10580\.js/.test(config)&&/simple-catalog-v10580\.js/.test(config)&&/pricing-hierarchy-v10581\.js/.test(config),'B2C production config loads subscription schemes, simplified catalogue and pricing hierarchy');
+ok(/subscription-schemes-v10580\.js/.test(config)&&/simple-catalog-v10580\.js/.test(config)&&/pricing-hierarchy-v10582\.js/.test(config),'B2C production config loads subscription schemes, simplified catalogue and pricing hierarchy');
 ok(!/subscription-cashback-v10540\.js/.test(config),'Legacy subscription renderer is no longer loaded, preventing UI races');
-ok(/subscription-schemes-v10580\.js/.test(sw)&&/simple-catalog-v10580\.js/.test(sw)&&/pricing-hierarchy-v10581\.js/.test(sw),'B2C service worker caches and refreshes the subscription pricing modules');
+ok(/subscription-schemes-v10580\.js/.test(sw)&&/simple-catalog-v10580\.js/.test(sw)&&/pricing-hierarchy-v10582\.js/.test(sw),'B2C service worker caches and refreshes the subscription pricing modules');
 console.log('Subscription schemes + offer pricing + NE Cash regression checks passed.');
