@@ -1,0 +1,43 @@
+name: Test Approved Temp Ops Clasp Run
+
+on:
+  push:
+    branches: [ test/approved-temp-ops-e2e ]
+    paths:
+      - '.github/workflows/test-approved-temp-ops-clasp-run.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install dependencies
+        run: npm install
+      - name: Configure clasp project
+        shell: bash
+        run: |
+          cat > .clasp.json <<JSON
+          {
+            "scriptId": "${{ secrets.APPS_SCRIPT_ID }}",
+            "rootDir": "src"
+          }
+          JSON
+      - name: Configure Google auth
+        shell: bash
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+      - name: Probe Apps Script Execution API read-only
+        run: npx clasp run getBarcodeRealTestHealthV959
