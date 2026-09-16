@@ -1,6 +1,6 @@
 window.NEL_CONFIG = {
   apiUrl: 'https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec',
-  appVersion: '10.57.4-pwa',
+  appVersion: '10.58.0-pwa',
   paymentRelease: '10.35.0-pwa',
   supportPhone: '7411807675',
   supportWhatsApp: '917411807675',
@@ -29,10 +29,11 @@ document.write('<script src="./order-sync-v1.js?v=10350"></script>');
 document.write('<script src="./separate-links.js?v=10350"></script>');
 document.write('<script src="./cart-visibility-v10320.js?v=10350"></script>');
 document.write('<script src="./customer-growth-v10330.js?v=10350"></script>');
-document.write('<script src="./subscription-cashback-v10540.js?v=10540"></script>');
+document.write('<script src="./subscription-schemes-v10580.js?v=10580"></script>');
 document.write('<script src="./ux-polish-v10561.js?v=10561"></script>');
 document.write('<script src="./clickable-fix-v10573.js?v=10573"></script>');
 document.write('<script src="./catalog-filter-v10574.js?v=10574"></script>');
+document.write('<script src="./simple-catalog-v10580.js?v=10580"></script>');
 document.write('<script src="./referral-reward-v10340.js?v=10360"></script>');
 document.write('<script src="./payment-upi-v10350.js?v=10350"></script>');
 document.write('<script src="./update-notifier.js?v=10360"></script>');
