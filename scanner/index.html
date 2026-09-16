@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b6b3a">
+  <title>Native Elaneeru Barcode Scanner</title>
+  <style>
+    :root{--g:#0b6b3a;--bg:#f3f7f4;--ink:#142019;--muted:#617067;--line:#d8e5da;--red:#a1261c}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter,system-ui,Arial;color:var(--ink)}
+    header{padding:16px;background:linear-gradient(135deg,#075d32,#13834a);color:#fff}.head{max-width:720px;margin:auto}.brand{font-size:20px;font-weight:950}.sub{font-size:12px;opacity:.85;margin-top:3px}
+    main{max-width:720px;margin:auto;padding:14px}.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 4px 18px #0000000b}.status{font-size:13px;line-height:1.45;margin-bottom:10px;color:var(--muted)}
+    .camera{position:relative;background:#102218;border-radius:14px;overflow:hidden;aspect-ratio:3/4;min-height:360px}.camera video{width:100%;height:100%;object-fit:cover;display:block}.guide{position:absolute;left:8%;right:8%;top:37%;height:25%;border:2px solid rgba(255,255,255,.95);border-radius:14px;box-shadow:0 0 0 999px rgba(0,0,0,.2);pointer-events:none}.guide:after{content:'Align barcode here';position:absolute;left:50%;bottom:-30px;transform:translateX(-50%);white-space:nowrap;color:#fff;font-weight:800;font-size:12px;text-shadow:0 1px 3px #000}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.btn{border:0;border-radius:11px;padding:12px 14px;background:var(--g);color:#fff;font-weight:900;cursor:pointer;min-height:44px}.btn.secondary{background:#edf6ef;color:var(--g);border:1px solid #d1e5d6}.field{width:100%;min-height:46px;padding:11px 12px;border:1px solid var(--line);border-radius:11px;font:inherit;margin-top:12px}.help{font-size:12px;color:var(--muted);line-height:1.45;margin-top:10px}.ok{color:var(--g)}.bad{color:var(--red)}
+    @media(max-width:520px){main{padding:10px}.camera{min-height:58vh}.actions .btn{flex:1}}
+  </style>
+</head>
+<body>
+<header><div class="head"><div class="brand">🥥 Native Elaneeru — Barcode Camera</div><div class="sub">Secure camera scanner for Admin Barcode & Batch Control</div></div></header>
+<main>
+  <div class="card">
+    <div id="status" class="status">Starting camera…</div>
+    <div class="camera"><video id="video" playsinline muted></video><div class="guide"></div></div>
+    <div class="actions"><button id="startBtn" class="btn" type="button">📷 Start Camera</button><button id="stopBtn" class="btn secondary" type="button">Stop</button></div>
+    <input id="manual" class="field" autocomplete="off" placeholder="Or type / paste barcode">
+    <button id="sendBtn" class="btn" type="button" style="width:100%;margin-top:8px">Send Barcode to Admin</button>
+    <div class="help">Only the detected barcode text is sent back to the Native Elaneeru Admin window. No image or video is uploaded.</div>
+  </div>
+</main>
+<script>
+(function(){
+  const TYPE='NEL_BARCODE_SCAN_V958';
+  const video=document.getElementById('video'),status=document.getElementById('status'),manual=document.getElementById('manual');
+  let stream=null,detector=null,timer=null,busy=false,last='';
+  function setStatus(text,ok){status.textContent=text;status.className='status '+(ok===true?'ok':ok===false?'bad':'')}
+  function stop(){
+    if(timer){clearTimeout(timer);timer=null}
+    if(stream){try{stream.getTracks().forEach(t=>t.stop())}catch(e){}stream=null}
+    video.srcObject=null;busy=false;
+  }
+  async function buildDetector(){
+    if(!('BarcodeDetector' in window))return null;
+    try{
+      let formats=['code_39','code_128','ean_13','ean_8','qr_code'];
+      if(typeof BarcodeDetector.getSupportedFormats==='function'){
+        const supported=await BarcodeDetector.getSupportedFormats();
+        formats=formats.filter(x=>supported.includes(x));
+      }
+      if(!formats.length)return null;
+      return new BarcodeDetector({formats});
+    }catch(e){return null}
+  }
+  function send(raw){
+    raw=String(raw||'').trim();if(!raw){setStatus('Enter or scan a barcode first.',false);return}
+    last=raw;manual.value=raw;
+    try{
+      if(window.opener&&!window.opener.closed){
+        window.opener.postMessage({type:TYPE,barcode:raw},'*');
+        setStatus('Barcode sent to Admin: '+raw,true);
+        stop();setTimeout(()=>window.close(),650);return;
+      }
+    }catch(e){}
+    setStatus('Barcode captured: '+raw+'. Return to Admin and paste it manually.',true);
+  }
+  async function tick(){
+    if(!stream||!detector||busy)return;
+    busy=true;
+    try{
+      if(video.readyState>=2){
+        const found=await detector.detect(video);
+        if(found&&found.length){const raw=String(found[0].rawValue||'').trim();if(raw&&raw!==last){send(raw);return}}
+      }
+    }catch(e){}
+    finally{busy=false}
+    if(stream)timer=setTimeout(tick,180);
+  }
+  async function start(){
+    if(stream)return;
+    if(!navigator.mediaDevices||typeof navigator.mediaDevices.getUserMedia!=='function'){setStatus('Camera API is unavailable in this browser. Use Chrome or enter the barcode manually.',false);return}
+    try{
+      setStatus('Requesting camera permission…');
+      stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
+      video.srcObject=stream;await video.play();
+      detector=await buildDetector();
+      if(detector){setStatus('Camera open. Point the printed barcode inside the box.',true);tick()}
+      else setStatus('Camera is open, but automatic barcode detection is unavailable. Use Chrome or enter the barcode manually below.',false);
+    }catch(e){stream=null;setStatus((e&&e.name)==='NotAllowedError'?'Camera permission was blocked. Allow camera access and tap Start Camera again.':'Could not open camera: '+String(e&&e.message||e),false)}
+  }
+  document.getElementById('startBtn').addEventListener('click',start);
+  document.getElementById('stopBtn').addEventListener('click',function(){stop();setStatus('Camera stopped.')});
+  document.getElementById('sendBtn').addEventListener('click',()=>send(manual.value));
+  manual.addEventListener('keydown',e=>{if(e.key==='Enter')send(manual.value)});
+  window.addEventListener('beforeunload',stop);
+  start();
+})();
+</script>
+</body>
+</html>
