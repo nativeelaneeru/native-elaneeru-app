@@ -1,4 +1,4 @@
-/** Native Elaneeru V9.5.2 — simple channel-aware product administration with customer-visible base prices. */
+/** Native Elaneeru V9.5.5 — channel-aware product administration + fast B2C presentation. */
 const V951_CHANNEL_IMAGE_HEADERS=['B2C Image URL','B2B Image URL','B2C Base Price','B2B Base Price'];
 
 function v951EnsureChannelImageHeaders_(){
@@ -40,7 +40,7 @@ function v951AdminDto_(row){
 function getProductsAdminV951(email,pin){
   requireAdmin_(email,pin);
   const list=v951Rows_().filter(function(r){return s_(r['Product ID'])}).sort(function(a,b){return n_(a['Sort Order'])-n_(b['Sort Order'])||s_(a['Product Name']).localeCompare(s_(b['Product Name']))});
-  return {success:true,version:'9.5.2',products:list.map(v951AdminDto_)};
+  return {success:true,version:'9.5.5',products:list.map(v951AdminDto_)};
 }
 
 function saveProductAdminV951(email,pin,p){
@@ -78,11 +78,22 @@ function saveProductAdminV951(email,pin,p){
   return {success:true,created:!!(saved&&saved.created),product:v951AdminDto_(fresh)};
 }
 
-/* Preserve all existing catalogue/order safeguards; replace only channel presentation metadata. */
+/*
+ * Preserve all existing catalogue/order safeguards. The fast public catalogue
+ * now already carries B2C image + base-price metadata from the same Products
+ * read. Re-reading Products here defeated the catalogue cache and made first
+ * loads slow, so only fall back to the legacy enrichment when those fields are
+ * absent (for compatibility with older callers/deployments).
+ */
 const V951_BASE_GET_APP_CONFIG=getAppConfig;
 getAppConfig=function(){
   const out=V951_BASE_GET_APP_CONFIG.apply(this,arguments);
   try{
+    const products=out&&Array.isArray(out.products)?out.products:[];
+    const alreadyEnriched=products.length&&products.every(function(p){
+      return p&&Object.prototype.hasOwnProperty.call(p,'b2cBasePrice');
+    });
+    if(alreadyEnriched)return out;
     const byId={};v951Rows_().forEach(function(r){byId[s_(r['Product ID'])]=r});
     if(out&&Array.isArray(out.products))out.products=out.products.map(function(p){
       const r=byId[s_(p.productId)];
@@ -105,5 +116,5 @@ b2bProducts_=function(vendorId){
 };
 
 function getProductChannelHealthV951(){
-  return {ok:true,version:'9.5.2',singleMaster:true,independentVisibility:true,b2cOnlySupported:true,b2bOnlySupported:true,separateChannelImages:true,b2bImageFallsBackToShared:true,channelBasePrices:true,basePriceCustomerVisible:true};
+  return {ok:true,version:'9.5.5',singleMaster:true,independentVisibility:true,b2cOnlySupported:true,b2bOnlySupported:true,separateChannelImages:true,b2bImageFallsBackToShared:true,channelBasePrices:true,basePriceCustomerVisible:true,fastB2CPresentation:true};
 }
