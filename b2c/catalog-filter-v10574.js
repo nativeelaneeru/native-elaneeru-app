@@ -7,7 +7,11 @@
   function text(p){return (String(p&&p.productName||'')+' '+String(p&&p.category||'')+' '+String(p&&p.description||'')).toLowerCase()}
   function allProducts(){try{return S&&S.cfg&&Array.isArray(S.cfg.products)?S.cfg.products:[]}catch(e){return []}}
   function hasOffer(p){
-    return (n(p&&p.offerQty1)>0&&n(p&&p.offerPrice1)>0)||(n(p&&p.offerQty2)>0&&n(p&&p.offerPrice2)>0)||yes(p&&p.onOffer)||yes(p&&p.offerActive);
+    if(yes(p&&p.onOffer)||yes(p&&p.offerActive))return true;
+    var unit=n(p&&p.basePrice)||n(p&&p.price);
+    if(unit<=0)return false;
+    var q1=n(p&&p.offerQty1),v1=n(p&&p.offerPrice1),q2=n(p&&p.offerQty2),v2=n(p&&p.offerPrice2);
+    return (q1>0&&v1>0&&v1<unit*q1)||(q2>0&&v2>0&&v2<unit*q2);
   }
   function isFresh(p){
     if(p&&('freshToday' in p||'isFreshToday' in p||'fresh' in p))return yes(p.freshToday)||yes(p.isFreshToday)||yes(p.fresh);
@@ -45,7 +49,7 @@
     return 'All products · '+count;
   }
   function empty(mode){
-    if(mode==='offers')return 'No active offers right now.';
+    if(mode==='offers')return 'No active discounts right now.';
     if(mode==='fresh')return 'No fresh-today products are live right now.';
     if(mode==='bulk')return 'No bulk packs are live right now.';
     if(mode==='quick')return 'Quick-delivery products are not configured yet.';
