@@ -1,0 +1,127 @@
+name: Verify Native Elaneeru All Apps
+
+on:
+  push:
+    branches:
+      - main
+      - 'test/all-apps-*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  safe-all-app-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Core PWA smoke
+        run: node scripts/smoke-check.mjs
+
+      - name: Cross-feature regression
+        run: node scripts/feature-regression.mjs
+
+      - name: Staff and operations app regression
+        run: node scripts/full-app-regression.mjs
+
+      - name: Customer authentication regression
+        run: node scripts/customer-auth-regression.mjs
+
+      - name: Product channel regression
+        run: node scripts/verify-product-channels.mjs
+
+      - name: Independent B2C and B2B base price regression
+        run: node scripts/base-price-regression.mjs
+
+      - name: Live pricing regression
+        run: node scripts/live-pricing-regression.mjs
+
+      - name: Subscription and NE Cash safety regression
+        run: node scripts/subscription-cashback-regression.mjs
+
+      - name: Vendor onboarding capture regression
+        run: node scripts/vendor-onboarding-capture-regression.mjs
+
+      - name: Barcode camera regression
+        run: node scripts/barcode-camera-mock-regression.mjs
+
+      - name: Real barcode E2E wiring and cleanup regression
+        run: node scripts/barcode-real-e2e-regression.mjs
+
+      - name: Read-only live Apps Script route smoke
+        env:
+          APP_URL: https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec
+        run: |
+          node <<'NODE'
+          const routes = [
+            ['Admin','admin'],
+            ['Sales','sales'],
+            ['Picker','picker'],
+            ['Barcode','barcode'],
+            ['Inventory','inventory'],
+            ['Vendor Onboarding','vendor'],
+            ['Driver','driver'],
+            ['Delivery','delivery'],
+            ['Vendor Onboarding entry','onboard']
+          ];
+          const sleep = ms => new Promise(r=>setTimeout(r,ms));
+          async function fetchRoute(label,page){
+            let last;
+            for(let attempt=1; attempt<=3; attempt++){
+              const controller=new AbortController();
+              const timer=setTimeout(()=>controller.abort(),30000);
+              try{
+                const url=process.env.APP_URL+'?page='+encodeURIComponent(page)+'&_audit='+Date.now();
+                const res=await fetch(url,{redirect:'follow',cache:'no-store',signal:controller.signal});
+                const text=await res.text();
+                if(res.ok && text.length>100 && !/Exception:|Script function not found/i.test(text)){
+                  console.log(`✓ ${label} live route HTTP ${res.status}`);
+                  return;
+                }
+                last=new Error(`${label} returned HTTP ${res.status} or invalid body`);
+              }catch(err){last=err}
+              finally{clearTimeout(timer)}
+              if(attempt<3) await sleep(1500*attempt);
+            }
+            throw last || new Error(`${label} route failed`);
+          }
+          for(const [label,page] of routes) await fetchRoute(label,page);
+          console.log('Read-only live staff/operations route smoke passed. No production records were created.');
+          NODE
+
+      - name: Read-only live B2C and B2B page availability
+        run: |
+          node <<'NODE'
+          const urls = [
+            ['B2C','https://nativeelaneeru.github.io/native-elaneeru-app/b2c/'],
+            ['B2B','https://nativeelaneeru.github.io/native-elaneeru-app/b2b/'],
+            ['Barcode Scanner','https://nativeelaneeru.github.io/native-elaneeru-app/scanner/']
+          ];
+          for(const [label,url] of urls){
+            const controller=new AbortController();
+            const timer=setTimeout(()=>controller.abort(),20000);
+            try{
+              const res=await fetch(url,{redirect:'follow',cache:'no-store',signal:controller.signal});
+              const text=await res.text();
+              if(!res.ok || text.length<100) throw new Error(`${label} unavailable: HTTP ${res.status}`);
+              console.log(`✓ ${label} live page HTTP ${res.status}`);
+            } finally { clearTimeout(timer); }
+          }
+          console.log('Live public page availability passed. No login/order/payment action was performed.');
+          NODE
+
+      - name: Safety summary
+        run: |
+          echo 'SAFE ALL-APP AUDIT PASSED'
+          echo 'No production order, payment, cashback/NE Cash credit, subscription write, customer creation, or vendor creation was performed by this workflow.'
