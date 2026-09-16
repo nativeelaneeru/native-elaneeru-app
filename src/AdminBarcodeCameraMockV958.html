@@ -1,0 +1,229 @@
+<style>
+#adminBarcodeV926 .abCameraBox{margin:0 0 12px;padding:12px;border:1px solid #cfe0d3;border-radius:14px;background:#f5faf6}
+#adminBarcodeV926 .abCameraHead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+#adminBarcodeV926 .abCameraActions{display:flex;gap:7px;flex-wrap:wrap}
+#adminBarcodeV926 .abCameraFrame{position:relative;overflow:hidden;border-radius:13px;background:#102218;aspect-ratio:16/9;min-height:180px;display:none}
+#adminBarcodeV926 .abCameraFrame.active{display:block}
+#adminBarcodeV926 .abCameraFrame video{width:100%;height:100%;object-fit:cover;display:block}
+#adminBarcodeV926 .abCameraGuide{position:absolute;left:10%;right:10%;top:35%;height:30%;border:2px solid rgba(255,255,255,.9);border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.18);pointer-events:none}
+#adminBarcodeV926 .abCameraStatus{font-size:12px;color:#496253;margin-top:8px;line-height:1.4}
+#adminBarcodeV926 .abMockBar{display:none;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border:1px solid #f2c66d;border-radius:13px;background:#fff8e6;color:#684b0a}
+#adminBarcodeV926 .abMockBar.active{display:flex}
+#adminBarcodeV926 .abMockBadge{font-weight:950;letter-spacing:.3px}
+#adminBarcodeV926 .abMockActions{display:flex;gap:7px;flex-wrap:wrap}
+#adminBarcodeV926 .abMockHint{margin-top:9px;padding:10px 12px;border-radius:12px;background:#fff9ec;border:1px dashed #e7c675;color:#6b5318;font-size:12px;line-height:1.45}
+@media(max-width:760px){#adminBarcodeV926 .abCameraHead{align-items:flex-start}#adminBarcodeV926 .abCameraActions button,#adminBarcodeV926 .abMockActions button{min-height:44px}}
+</style>
+<script>
+(function(){
+  if(window.NEL_ADMIN_BARCODE_CAMERA_MOCK_V958)return;window.NEL_ADMIN_BARCODE_CAMERA_MOCK_V958=true;
+
+  let CAM_STREAM=null,CAM_TIMER=null,CAM_DETECTOR=null,CAM_BUSY=false;
+  let MOCK=null;
+  const oldSubtab=window.adminBarcodeSubtabV926;
+  const oldAssign=window.adminBarcodeAssignV926;
+  const oldPrintCurrent=window.adminBarcodePrintCurrentV926;
+  const oldAssignCurrent=window.adminBarcodeAssignCurrentV926;
+
+  function q(id){return document.getElementById(id)}
+  function safe(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})}
+  function mainMsg(text,ok){const el=q('abMsg');if(!el)return;el.style.color=ok?'#155b2b':'#9a3412';el.textContent=text||''}
+  function camMsg(text,ok){const el=q('abCameraStatus');if(!el)return;el.style.color=ok===false?'#9a3412':'#496253';el.textContent=text||''}
+  function mockUi(){
+    const bar=q('abMockBar');if(bar)bar.classList.toggle('active',!!MOCK);
+    const btn=q('abAssignBtn');if(btn)btn.textContent=MOCK?'Validate mock assignment':'Validate & assign';
+    const start=q('abStartMock');if(start)start.textContent=MOCK?'Restart Mock Test':'🧪 Start Safe Mock Test';
+  }
+
+  const CODE39={
+    '0':0x034,'1':0x121,'2':0x061,'3':0x160,'4':0x031,'5':0x130,'6':0x070,'7':0x025,'8':0x124,'9':0x064,
+    'A':0x109,'B':0x049,'C':0x148,'D':0x019,'E':0x118,'F':0x058,'G':0x00D,'H':0x10C,'I':0x04C,'J':0x01C,
+    'K':0x103,'L':0x043,'M':0x142,'N':0x013,'O':0x112,'P':0x052,'Q':0x007,'R':0x106,'S':0x046,'T':0x016,
+    'U':0x181,'V':0x0C1,'W':0x1C0,'X':0x091,'Y':0x190,'Z':0x0D0,
+    '-':0x085,'.':0x184,' ':0x0C4,'$':0x0A8,'/':0x0A2,'+':0x08A,'%':0x02A,'*':0x094
+  };
+  function code39Svg(raw){
+    const value=String(raw||'').trim().toUpperCase();
+    if(!value)throw new Error('Barcode value is empty.');
+    for(const c of value)if(CODE39[c]==null)throw new Error('Barcode contains unsupported character: '+c);
+    const encoded='*'+value+'*',unit=2,wide=5,quiet=12;let x=quiet,bars=[];
+    for(let ci=0;ci<encoded.length;ci++){
+      const pattern=CODE39[encoded[ci]];
+      for(let i=0;i<9;i++){
+        const w=((pattern>>(8-i))&1)?wide:unit;
+        if(i%2===0)bars.push('<rect x="'+x+'" y="0" width="'+w+'" height="52" fill="#000"/>');
+        x+=w;
+      }
+      if(ci<encoded.length-1)x+=unit;
+    }
+    const total=x+quiet;
+    return '<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mock barcode '+safe(value)+'" viewBox="0 0 '+total+' 68" preserveAspectRatio="xMidYMid meet"><rect width="100%" height="100%" fill="#fff"/>'+bars.join('')+'<text x="'+(total/2)+'" y="65" text-anchor="middle" font-family="monospace" font-size="9" fill="#000">'+safe(value)+'</text></svg>';
+  }
+
+  async function makeDetector(){
+    CAM_DETECTOR=null;
+    if(!('BarcodeDetector' in window))return false;
+    try{
+      let formats=['code_39','code_128','ean_13','ean_8','qr_code'];
+      if(typeof BarcodeDetector.getSupportedFormats==='function'){
+        const supported=await BarcodeDetector.getSupportedFormats();
+        formats=formats.filter(function(x){return supported.indexOf(x)>=0});
+      }
+      if(!formats.length)return false;
+      CAM_DETECTOR=new BarcodeDetector({formats:formats});
+      return true;
+    }catch(e){CAM_DETECTOR=null;return false}
+  }
+
+  async function scanTick(){
+    if(!CAM_STREAM||!CAM_DETECTOR||CAM_BUSY)return;
+    const video=q('abCameraVideo');if(!video)return;
+    CAM_BUSY=true;
+    try{
+      if(video.readyState>=2){
+        const found=await CAM_DETECTOR.detect(video);
+        if(found&&found.length){
+          const raw=String(found[0].rawValue||'').trim();
+          if(raw){
+            const input=q('abAssignBarcode');if(input)input.value=raw;
+            camMsg('Scanned: '+raw,true);mainMsg('Barcode '+raw+' captured from camera.',true);
+            window.stopAdminBarcodeCameraV958();
+            return;
+          }
+        }
+      }
+    }catch(e){}
+    finally{CAM_BUSY=false}
+    if(CAM_STREAM)CAM_TIMER=setTimeout(scanTick,180);
+  }
+
+  window.startAdminBarcodeCameraV958=async function(){
+    if(CAM_STREAM)return;
+    const frame=q('abCameraFrame'),video=q('abCameraVideo');
+    if(!frame||!video)return;
+    if(!navigator.mediaDevices||typeof navigator.mediaDevices.getUserMedia!=='function'){
+      camMsg('Camera access is not available in this browser. Use a USB/Bluetooth scanner or paste the barcode.',false);return;
+    }
+    try{
+      camMsg('Requesting camera permission…',true);
+      CAM_STREAM=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
+      video.srcObject=CAM_STREAM;frame.classList.add('active');
+      try{await video.play()}catch(e){}
+      const canDetect=await makeDetector();
+      if(canDetect){camMsg('Camera open. Point the printed barcode inside the box.',true);scanTick()}
+      else camMsg('Camera open. Automatic barcode reading is not supported by this browser; keep the preview open and use a scanner/manual entry.',true);
+    }catch(e){
+      CAM_STREAM=null;frame.classList.remove('active');
+      const name=String(e&&e.name||'');
+      camMsg(name==='NotAllowedError'?'Camera permission was blocked. Allow camera permission for this site and tap Open Camera again.':'Could not open camera: '+String(e&&e.message||e),false);
+    }
+  };
+
+  window.stopAdminBarcodeCameraV958=function(){
+    if(CAM_TIMER){clearTimeout(CAM_TIMER);CAM_TIMER=null}
+    if(CAM_STREAM){try{CAM_STREAM.getTracks().forEach(function(t){t.stop()})}catch(e){}CAM_STREAM=null}
+    CAM_DETECTOR=null;CAM_BUSY=false;
+    const video=q('abCameraVideo');if(video)video.srcObject=null;
+    const frame=q('abCameraFrame');if(frame)frame.classList.remove('active');
+  };
+
+  function renderMockLabel(){
+    if(!MOCK)return;
+    const print=q('abPrintArea');if(print)print.classList.remove('hidden');
+    if(q('abName'))q('abName').textContent=MOCK.product;
+    if(q('abBatch'))q('abBatch').textContent='Batch: '+MOCK.batchId;
+    if(q('abBarcode'))q('abBarcode').textContent=MOCK.barcode;
+    if(q('abQtyLabel'))q('abQtyLabel').textContent='Qty: '+MOCK.qty;
+    if(q('abLocationLabel'))q('abLocationLabel').textContent='Location: '+MOCK.location;
+    if(q('abSvg'))q('abSvg').innerHTML=code39Svg(MOCK.barcode);
+  }
+
+  window.startAdminBarcodeMockV958=function(){
+    window.stopAdminBarcodeCameraV958();
+    const product=q('abProduct'),qty=Math.max(1,Number(q('abQty')&&q('abQty').value||10)),location=String(q('abLocation')&&q('abLocation').value||'HUB').trim()||'HUB';
+    const productName=product&&product.options&&product.selectedIndex>=0?String(product.options[product.selectedIndex].text||'Tender Coconut'):'Tender Coconut';
+    const token=Date.now().toString(36).toUpperCase().slice(-8);
+    MOCK={batchId:'MOCK-'+token,barcode:'MOCK-'+token,product:productName,qty:qty,remaining:qty,location:location};
+    renderMockLabel();
+    const key=q('abAssignBarcode');if(key)key.value='';
+    if(q('abOrderId'))q('abOrderId').value='MOCK-ORDER-001';
+    if(q('abAssignQty'))q('abAssignQty').value=Math.min(5,qty);
+    mockUi();
+    mainMsg('SAFE MOCK MODE started. No batch, order, stock or Google Sheet record will be created.',true);
+    const hint=q('abMockHint');if(hint)hint.textContent='Step 1 ready: mock batch '+MOCK.batchId+' with barcode '+MOCK.barcode+'. Print it or show it on another device, then move to Step 2 and scan it with the camera.';
+  };
+
+  window.exitAdminBarcodeMockV958=function(){
+    MOCK=null;mockUi();window.stopAdminBarcodeCameraV958();
+    const hint=q('abMockHint');if(hint)hint.textContent='Mock mode is off. Real Generate/Assign buttons use the production backend.';
+    const key=q('abAssignBarcode');if(key)key.value='';
+    const oid=q('abOrderId');if(oid&&String(oid.value||'').indexOf('MOCK-')===0)oid.value='';
+    const area=q('abPrintArea');if(area)area.classList.add('hidden');
+    mainMsg('Mock mode ended. Production data was not changed.',true);
+  };
+
+  window.fillAdminBarcodeMockV958=function(){
+    if(!MOCK)return mainMsg('Start Safe Mock Test first.',false);
+    const key=q('abAssignBarcode');if(key)key.value=MOCK.barcode;
+    mainMsg('Mock barcode filled manually. You can now validate the mock assignment.',true);
+  };
+
+  window.adminBarcodeSubtabV926=function(name){
+    if(typeof oldSubtab==='function')oldSubtab(name);
+    if(name==='assign')window.startAdminBarcodeCameraV958();
+    else window.stopAdminBarcodeCameraV958();
+  };
+
+  window.adminBarcodeAssignV926=async function(){
+    if(!MOCK){if(typeof oldAssign==='function')return oldAssign();return}
+    const key=String(q('abAssignBarcode')&&q('abAssignBarcode').value||'').trim(),orderId=String(q('abOrderId')&&q('abOrderId').value||'').trim(),qty=Number(q('abAssignQty')&&q('abAssignQty').value||0);
+    if(!key||!orderId||!(qty>0))return mainMsg('Mock Barcode/Batch ID, Order ID and quantity are required.',false);
+    if(key!==MOCK.barcode&&key!==MOCK.batchId)return mainMsg('Mock scan mismatch. Expected '+MOCK.barcode+'.',false);
+    if(qty>MOCK.remaining)return mainMsg('Mock quantity exceeds remaining '+MOCK.remaining+'.',false);
+    MOCK.remaining-=qty;
+    mainMsg('MOCK PASS: assigned '+qty+' to '+orderId+'. Mock remaining '+MOCK.remaining+'. No production data was written.',true);
+    const hint=q('abMockHint');if(hint)hint.textContent='Step 2 passed. Camera/barcode capture and assignment validation flow worked in safe mock mode. No Google Sheet rows were created.';
+  };
+
+  window.adminBarcodePrintCurrentV926=function(){
+    if(MOCK){renderMockLabel();window.print();return}
+    if(typeof oldPrintCurrent==='function')return oldPrintCurrent();
+  };
+
+  window.adminBarcodeAssignCurrentV926=function(){
+    if(MOCK){
+      const key=q('abAssignBarcode');if(key)key.value='';
+      window.adminBarcodeSubtabV926('assign');
+      mainMsg('Mock barcode is ready. Scan the printed label with the camera, or use Fill Mock Barcode for a one-device functional test.',true);return;
+    }
+    if(typeof oldAssignCurrent==='function')return oldAssignCurrent();
+  };
+
+  function install(){
+    const root=q('adminBarcodeV926');if(!root||q('abCameraBox'))return;
+    const batchPane=root.querySelector('[data-abpane="batch"]');
+    const assignPane=root.querySelector('[data-abpane="assign"]');
+    if(!batchPane||!assignPane)return;
+
+    const mockBar=document.createElement('div');mockBar.id='abMockBar';mockBar.className='abMockBar';
+    mockBar.innerHTML='<div><span class="abMockBadge">🧪 SAFE MOCK MODE</span><div class="muted">Client-side only · no production batch/order/stock writes</div></div><div class="abMockActions"><button type="button" class="secondary" onclick="fillAdminBarcodeMockV958()">Fill Mock Barcode</button><button type="button" class="secondary" onclick="exitAdminBarcodeMockV958()">Exit Mock</button></div>';
+    root.insertBefore(mockBar,root.querySelector('.abSubtabs'));
+
+    const help=batchPane.querySelector('.abHelp');
+    const start=document.createElement('div');start.className='abMockHint';start.id='abMockHint';
+    start.innerHTML='<b>Want to test from Step 1 without touching production?</b><br><button id="abStartMock" type="button" class="secondary" style="margin-top:8px" onclick="startAdminBarcodeMockV958()">🧪 Start Safe Mock Test</button> <span>Generates a temporary mock barcode only in this browser.</span>';
+    if(help&&help.parentNode)help.parentNode.insertBefore(start,help.nextSibling);else batchPane.insertBefore(start,batchPane.firstChild);
+
+    const camera=document.createElement('div');camera.id='abCameraBox';camera.className='abCameraBox';
+    camera.innerHTML='<div class="abCameraHead"><div><b>📷 Barcode Camera</b><div class="muted">Opens automatically on Step 2. Best on Chrome/Android with the rear camera.</div></div><div class="abCameraActions"><button type="button" onclick="startAdminBarcodeCameraV958()">Open Camera</button><button type="button" class="secondary" onclick="stopAdminBarcodeCameraV958()">Stop</button></div></div><div id="abCameraFrame" class="abCameraFrame"><video id="abCameraVideo" playsinline muted></video><div class="abCameraGuide"></div></div><div id="abCameraStatus" class="abCameraStatus">Camera is off. Open Step 2 or tap Open Camera.</div>';
+    const assignHelp=assignPane.querySelector('.abHelp');
+    if(assignHelp&&assignHelp.parentNode)assignHelp.parentNode.insertBefore(camera,assignHelp.nextSibling);else assignPane.insertBefore(camera,assignPane.firstChild);
+
+    mockUi();
+    document.addEventListener('visibilitychange',function(){if(document.hidden)window.stopAdminBarcodeCameraV958()});
+    const tabs=document.querySelector('#dash .tabs');if(tabs)tabs.addEventListener('click',function(e){const b=e.target.closest('button');if(b&&b.id!=='tAdminBarcode')window.stopAdminBarcodeCameraV958()});
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(install,0)},{once:true});else setTimeout(install,0);
+})();
+</script>
