@@ -2,50 +2,73 @@
 #serviceability .svcPartyBadge{display:inline-block;padding:3px 7px;border-radius:999px;font-size:10px;font-weight:800;white-space:nowrap}
 #serviceability .svcPartyBadge.B2C{background:#e8f1ff;color:#1f5fae}
 #serviceability .svcPartyBadge.B2B{background:#e7f6eb;color:#1f7a3b}
+#serviceability .svcPartyBadge.B2B_PENDING{background:#fff2d8;color:#8a6100}
 #serviceability .svcPopulationNote{margin-top:8px;padding:9px 11px;border-radius:10px;background:#f5f8f5;border:1px solid #e3e9e4;font-size:12px;color:#5b685f}
+#serviceability .svcSyncNote{font-size:11px;color:#68736d;margin-top:5px}
 </style>
 <script>
 (function(){
   if(window.NEL_ADMIN_SERVICEABILITY_POPULATION_V962)return;window.NEL_ADMIN_SERVICEABILITY_POPULATION_V962=true;
-  var POP962=null;
+  var POP962=null,SYNC_TIMER962=null,LAST_SYNC962='',SYNCING962=false,AUTO_REFRESH_MS962=30000;
   function q(id){return document.getElementById(id)}
   function safe(v){return typeof esc==='function'?esc(v):String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})}
-  function run(fn,args,ok){if(typeof gs==='function'){gs(fn,args,ok);return}var r=google.script.run.withSuccessHandler(ok);r[fn].apply(r,args||[])}
+  function run(fn,args,ok,fail){if(typeof gs==='function'){gs(fn,args,ok,fail);return}var r=google.script.run.withSuccessHandler(ok).withFailureHandler(function(e){if(fail)fail(e)});r[fn].apply(r,args||[])}
   function credentials(){return [typeof E!=='undefined'?E:'',typeof P!=='undefined'?P:'']}
+  function panelVisible(){var p=q('serviceability');return !!(p&&!p.classList.contains('hidden')&&p.offsetParent!==null)}
+  function nowLabel(){try{return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'})}catch(e){return new Date().toLocaleTimeString()}}
   function patchCopy(){
     var panel=q('serviceability');if(!panel){setTimeout(patchCopy,100);return}
     var muted=panel.querySelectorAll('.muted');
     Array.prototype.forEach.call(muted,function(el){
-      if(/current Customers sheet plotted automatically/i.test(el.textContent||''))el.textContent='1.5 km square grids • B2C launch 3 km • B2B up to 20 km • B2C Customers + approved B2B Vendors plotted automatically';
-      if(/Every record comes from the existing Customers sheet/i.test(el.textContent||''))el.textContent='Approved B2C customers come from Customers; approved B2B customers come from B2B_Vendors. Records without GPS remain visible as Location needed.';
+      if(/current Customers sheet plotted automatically/i.test(el.textContent||''))el.textContent='1.5 km square grids • B2C launch 3 km • B2B up to 20 km • live B2C Customers + approved B2B Vendors + pending/manual B2B leads with GPS';
+      if(/Every record comes from the existing Customers sheet/i.test(el.textContent||''))el.textContent='B2C comes from Customers; approved B2B comes from B2B_Vendors; pending/manual B2B leads come from Vendor_Onboarding. Sheet edits refresh automatically while this tab is open.';
     });
     var card=q('svcCustomerTableV961')&&q('svcCustomerTableV961').closest('.svcCard');
     if(card&&!q('svcPopulationNoteV962')){
-      var note=document.createElement('div');note.id='svcPopulationNoteV962';note.className='svcPopulationNote';note.textContent='Population source: B2C Customers + approved B2B Vendors. Pending B2B onboarding is tracked separately and is not counted as an approved customer.';
+      var note=document.createElement('div');note.id='svcPopulationNoteV962';note.className='svcPopulationNote';note.textContent='Population source: B2C Customers + approved B2B Vendors. Pending/manual onboarding leads are visible on the map but are not counted as approved customers.';
       var table=q('svcCustomerTableV961');card.insertBefore(note,table);
     }
+    if(card&&!q('svcSyncNoteV962')){
+      var sync=document.createElement('div');sync.id='svcSyncNoteV962';sync.className='svcSyncNote';sync.textContent='Live Sheet sync: waiting for refresh…';
+      var note2=q('svcPopulationNoteV962');if(note2&&note2.nextSibling)card.insertBefore(sync,note2.nextSibling);else card.appendChild(sync);
+    }
   }
-  function fetchPopulation(){
-    var c=credentials();if(!c[0]||!c[1])return;
-    run('getServiceabilityAdminV961',[c[0],c[1]],function(d){POP962=d||{};renderUnifiedTable();renderPopulationSummary()});
+  function fetchPopulation(done){
+    var c=credentials();if(!c[0]||!c[1]){if(done)done();return}
+    run('getServiceabilityAdminV961',[c[0],c[1]],function(d){
+      POP962=d||{};LAST_SYNC962=nowLabel();renderUnifiedTable();renderPopulationSummary();renderSyncNote();if(done)done();
+    },function(){if(done)done()});
   }
+  function renderSyncNote(){var el=q('svcSyncNoteV962');if(el)el.textContent='Live Sheet sync: '+(LAST_SYNC962||'waiting')+' • auto-refresh every 30 sec while Service Areas is open';}
   function renderPopulationSummary(){
     var panel=q('serviceability'),s=POP962&&POP962.summary||{};if(!panel)return;
-    var note=q('svcPopulationNoteV962');if(note)note.innerHTML='Population source: <b>'+Number(s.b2cCustomers||0)+' B2C</b> + <b>'+Number(s.b2bCustomers||0)+' approved B2B</b>. <b>'+Number(s.pendingB2BOnboarding||0)+' pending B2B onboarding</b> tracked separately. <b>'+Number(s.customersNeedLocation||0)+'</b> approved record(s) still need GPS.';
+    var note=q('svcPopulationNoteV962');if(note)note.innerHTML='Population source: <b>'+Number(s.b2cCustomers||0)+' B2C</b> + <b>'+Number(s.b2bCustomers||0)+' approved B2B</b>. <b>'+Number(s.pendingB2BOnboarding||0)+' pending/manual B2B lead(s)</b> are plotted separately and do not increase approved counts. <b>'+Number(s.pendingB2BMapped||0)+'</b> pending lead(s) have GPS. <b>'+Number(s.customersNeedLocation||0)+'</b> approved record(s) still need GPS.';
   }
   function renderUnifiedTable(){
     var host=q('svcCustomerTableV961');if(!host||!POP962)return;
     var term=String(q('svcCustomerSearchV961')&&q('svcCustomerSearchV961').value||'').trim().toLowerCase();
-    var rows=(POP962.customers||[]).filter(function(c){return !term||[c.partyType,c.name,c.businessName,c.ownerName,c.mobile,c.area,c.address,c.gridId].join(' ').toLowerCase().indexOf(term)>=0});
-    host.innerHTML='<table><thead><tr><th>Type</th><th>Customer / Business</th><th>Mobile</th><th>Area</th><th>Grid</th><th>Distance</th><th>B2C</th><th>B2B</th><th>Expected DRR</th><th>Subscription</th></tr></thead><tbody>'+rows.map(function(c){var type=c.partyType||'B2C';return '<tr><td><span class="svcPartyBadge '+safe(type)+'">'+safe(type)+'</span></td><td>'+safe(c.name||'-')+(c.ownerName&&c.ownerName!==c.name?'<div class="svcSmall">'+safe(c.ownerName)+'</div>':'')+'</td><td>'+safe(c.mobile)+'</td><td>'+safe(c.area||'-')+'</td><td>'+safe(c.gridId||'Location needed')+'</td><td>'+(c.distanceKm==null?'-':Number(c.distanceKm).toFixed(1)+' km')+'</td><td><span class="svcStatus '+safe(c.b2cService)+'">'+safe(c.b2cService)+'</span></td><td><span class="svcStatus '+safe(c.b2bService)+'">'+safe(c.b2bService)+'</span></td><td>'+(type==='B2B'?(Number(c.expectedDailyQty||0)||'-'):'-')+'</td><td>'+safe(c.subscriptionStatus||'-')+'</td></tr>'}).join('')+'</tbody></table>';
+    var rows=(POP962.customers||[]).filter(function(c){return !term||[c.partyType,c.name,c.businessName,c.ownerName,c.mobile,c.area,c.address,c.gridId,c.status].join(' ').toLowerCase().indexOf(term)>=0});
+    host.innerHTML='<table><thead><tr><th>Type</th><th>Customer / Business</th><th>Mobile</th><th>Area</th><th>Grid</th><th>Distance</th><th>B2C</th><th>B2B</th><th>Expected DRR</th><th>Status</th><th>Subscription</th></tr></thead><tbody>'+rows.map(function(c){var type=c.partyType||'B2C',label=type==='B2B_PENDING'?'B2B LEAD':type;return '<tr><td><span class="svcPartyBadge '+safe(type)+'">'+safe(label)+'</span></td><td>'+safe(c.name||'-')+(c.ownerName&&c.ownerName!==c.name?'<div class="svcSmall">'+safe(c.ownerName)+'</div>':'')+'</td><td>'+safe(c.mobile)+'</td><td>'+safe(c.area||'-')+'</td><td>'+safe(c.gridId||'Location needed')+'</td><td>'+(c.distanceKm==null?'-':Number(c.distanceKm).toFixed(1)+' km')+'</td><td><span class="svcStatus '+safe(c.b2cService)+'">'+safe(c.b2cService||'-')+'</span></td><td><span class="svcStatus '+safe(c.b2bService)+'">'+safe(c.b2bService||'-')+'</span></td><td>'+(type!=='B2C'?(Number(c.expectedDailyQty||0)||'-'):'-')+'</td><td>'+safe(c.status||'-')+'</td><td>'+safe(c.subscriptionStatus||'-')+'</td></tr>'}).join('')+'</tbody></table>';
+  }
+  function refreshAll962(){
+    if(SYNCING962||!panelVisible())return;SYNCING962=true;patchCopy();
+    try{if(typeof window.loadServiceabilityV961==='function')window.loadServiceabilityV961()}catch(e){}
+    setTimeout(function(){fetchPopulation(function(){SYNCING962=false})},350);
+    setTimeout(function(){SYNCING962=false},5000);
+  }
+  function ensureAutoRefresh(){
+    if(SYNC_TIMER962)return;
+    SYNC_TIMER962=setInterval(function(){if(panelVisible()&&document.visibilityState!=='hidden')refreshAll962()},AUTO_REFRESH_MS962);
   }
   function install(){
-    patchCopy();
+    patchCopy();ensureAutoRefresh();
     var search=q('svcCustomerSearchV961');if(search&&search.dataset.populationV962!=='1'){search.dataset.populationV962='1';search.addEventListener('input',function(){setTimeout(renderUnifiedTable,0)})}
     var refresh=q('svcRefreshV961');if(refresh&&refresh.dataset.populationV962!=='1'){refresh.dataset.populationV962='1';refresh.addEventListener('click',function(){setTimeout(fetchPopulation,350)})}
-    var tab=q('tServiceability');if(tab&&tab.dataset.populationV962!=='1'){tab.dataset.populationV962='1';tab.addEventListener('click',function(){setTimeout(function(){patchCopy();fetchPopulation()},350)})}
+    var tab=q('tServiceability');if(tab&&tab.dataset.populationV962!=='1'){tab.dataset.populationV962='1';tab.addEventListener('click',function(){setTimeout(refreshAll962,250)})}
   }
-  window.getAdminServiceabilityPopulationHealthV962=function(){return {ok:true,version:'9.6.2',unifiedB2CAndB2B:true,pendingSeparate:true}};
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&panelVisible())setTimeout(refreshAll962,150)});
+  window.addEventListener('focus',function(){if(panelVisible())setTimeout(refreshAll962,150)});
+  window.getAdminServiceabilityPopulationHealthV962=function(){return {ok:true,version:'9.6.5',unifiedB2CAndB2B:true,pendingVisibleOnMap:true,pendingExcludedFromApprovedCounts:true,autoRefreshSeconds:30}};
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',install,{once:true}):install();setTimeout(install,150);setTimeout(install,600);
 })();
 </script>
