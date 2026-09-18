@@ -9,6 +9,8 @@ const admin=read('src/AdminProductsSimpleV951.html');
 const b2cLive=read('b2c/live-pricing-v10440.js');
 const b2bLive=read('b2b/live-pricing-v950.js');
 const b2cDisplay=read('b2c/base-price-v10450.js');
+const b2cIndex=read('b2c/index.html');
+const b2cHistory=read('b2c/ui-v125.js');
 const b2bDisplay=read('b2b/base-price-v952.js');
 const b2cConfig=read('b2c/config.js');
 const b2bConfig=read('b2b/config.js');
@@ -32,13 +34,18 @@ ok(/num\(a\.basePrice\)!==num\(b\.basePrice\)/.test(b2cLive)&&/basePrice:num\(fr
 ok(/num\(old\.basePrice\)!==num\(fresh\.basePrice\)/.test(b2bLive)&&/basePrice:num\(fresh\.basePrice\)/.test(b2bLive),'B2B live sync updates base-price display without page refresh');
 ok(/seen\[id\].*price/.test(b2bLive)&&!/seen\[id\].*basePrice/.test(b2bLive),'B2B market notifications remain based on selling-price changes only');
 
-ok(/base>sell&&sell>0/.test(b2cDisplay)&&/nelBasePriceStrike/.test(b2cDisplay),'B2C crosses out base price only when it is genuinely higher');
+ok(/base>sell&&sell>0/.test(b2cDisplay)&&/nelBasePriceStrike/.test(b2cDisplay),'B2C fallback decorator crosses out base price only when it is genuinely higher');
+ok(/nelNativePrice10600/.test(b2cIndex)&&/nelNormalPrice10600/.test(b2cIndex)&&/<s class=/.test(b2cIndex)&&/Normal/.test(b2cIndex)&&/Offer/.test(b2cIndex),'B2C product cards render Normal struck price and Offer price directly');
+ok(/base>sell&&sell>0/.test(b2cIndex)&&/Save/.test(b2cIndex),'B2C direct price markup appears only for a genuine per-unit discount and shows savings');
+ok(/realBundleOffer10600/.test(b2cIndex)&&/c\.t<sell\*c\.q/.test(b2cIndex),'B2C bundle copy is shown as an offer only when the bundle total is genuinely lower');
+ok(/nelNativePrice10600/.test(b2cHistory)&&/nelNormalPrice10600/.test(b2cHistory),'B2C Fresh Picks / Order Again cards keep the same scratched-price hierarchy');
+ok(/nelNativePrice10600/.test(b2cDisplay)&&/row\.remove/.test(b2cDisplay),'Legacy base-price decorator avoids duplicating the native price hierarchy');
 ok(/base>sell&&sell>0/.test(b2bDisplay)&&/nelBasePriceStrike/.test(b2bDisplay),'B2B crosses out base price only when it is genuinely higher');
 ok(/Update Qty/.test(b2bDisplay)&&/Cart quantity updated/.test(b2bDisplay),'B2B cart update wording is unambiguous');
 ok(/base-price-v10450\.js/.test(b2cConfig)&&/base-price-v10450/.test(b2cWorker),'B2C production config and service worker load base-price display');
 ok(/base-price-v952\.js/.test(b2bConfig)&&/base-price-v952/.test(b2bWorker),'B2B production config and service worker load base-price display');
 
-try{new Function(channels);new Function(liveBackend);new Function(b2cLive);new Function(b2bLive);new Function(b2cDisplay);new Function(b2bDisplay);ok(true,'base-price backend and client JavaScript parse')}catch(e){ok(false,'base-price backend and client JavaScript parse: '+e.message)}
+try{new Function(channels);new Function(liveBackend);new Function(b2cLive);new Function(b2bLive);new Function(b2cDisplay);new Function(b2bDisplay);new Function(b2cHistory);ok(true,'base-price backend and client JavaScript parse')}catch(e){ok(false,'base-price backend and client JavaScript parse: '+e.message)}
 try{[...admin.matchAll(/<script>([\s\S]*?)<\/script>/g)].forEach(x=>new Function(x[1]));ok(true,'base-price Admin JavaScript parses')}catch(e){ok(false,'base-price Admin JavaScript parses: '+e.message)}
 
 if(process.exitCode)process.exit(process.exitCode);
