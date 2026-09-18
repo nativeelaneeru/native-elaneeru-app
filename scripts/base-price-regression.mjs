@@ -44,7 +44,7 @@ ok(/base>sell&&sell>0/.test(b2bDisplay)&&/nelBasePriceStrike/.test(b2bDisplay),'
 ok(/Update Qty/.test(b2bDisplay)&&/Cart quantity updated/.test(b2bDisplay),'B2B cart update wording is unambiguous');
 ok(/base-price-v10450\.js/.test(b2cConfig)&&/base-price-v10450/.test(b2cWorker),'B2C production config and service worker load base-price display');
 ok(/appVersion:\s*'10\.60\.1-pwa'/.test(b2cConfig)&&/native-elaneeru-b2c-v10\.60\.1/.test(b2cWorker),'B2C cache version is bumped for the scratched-price release');
-ok(/request\.mode==='navigate'[\s\S]*networkFirst\(request,navigationFallback\(url\)\)/.test(b2cWorker),'B2C navigation fetches the latest HTML first when online');
+ok(/request\.mode==='navigate'[\s\S]*staleWhileRevalidate\(request,navigationFallback\(url\)\)/.test(b2cWorker),'B2C repeat navigation keeps its immediate cached launch');
 ok(/critical[\s\S]*networkFirst\(request\)/.test(b2cWorker),'B2C critical scripts/config fetch latest pricing UI first when online');
 ok(/base-price-v952\.js/.test(b2bConfig)&&/base-price-v952/.test(b2bWorker),'B2B production config and service worker load base-price display');
 
