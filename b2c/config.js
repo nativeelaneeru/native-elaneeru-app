@@ -1,6 +1,6 @@
 window.NEL_CONFIG = {
   apiUrl: 'https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec',
-  appVersion: '10.60.0-pwa',
+  appVersion: '10.60.1-pwa',
   paymentRelease: '10.35.0-pwa',
   supportPhone: '7411807675',
   supportWhatsApp: '917411807675',
