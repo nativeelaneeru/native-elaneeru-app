@@ -86,7 +86,7 @@ self.addEventListener('fetch',event=>{
   if(url.origin!==self.location.origin)return;
 
   if(request.mode==='navigate'){
-    event.respondWith(networkFirst(request,navigationFallback(url)));
+    event.respondWith(staleWhileRevalidate(request,navigationFallback(url)));
     return;
   }
 
