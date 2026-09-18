@@ -21,6 +21,7 @@
   }
   function decorateCard(card){
     var p=findProduct(card),priceEl=card.querySelector('.price'),row=card.querySelector('.nelBasePriceRow');
+    if(card.querySelector('.nelNativePrice10600')){if(row)row.remove();return}
     if(!p||!priceEl){if(row)row.remove();return}
     var sell=num(p.price),base=num(p.basePrice),show=base>sell&&sell>0;
     if(!show){if(row)row.remove();return}
