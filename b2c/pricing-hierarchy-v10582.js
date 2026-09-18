@@ -38,8 +38,10 @@
   }
   function decorateProduct(card){
     var p=productForCard(card);if(!p)return;
+    var nativePrice=card.querySelector('.nelNativePrice10600');
     var sell=n(p.price),base=n(p.basePrice),unitDiscount=base>sell&&sell>0,offer=bundleOffer(p);
-    card.classList.toggle('nelOfferPrice10582',unitDiscount);
+    if(nativePrice){card.classList.remove('nelOfferPrice10582');var oldBase=card.querySelector('.nelBasePriceRow');if(oldBase)oldBase.remove();}
+    if(!nativePrice)card.classList.toggle('nelOfferPrice10582',unitDiscount);
     var row=card.querySelector('.nelBundleOffer10582');
     if(!offer){if(row)row.remove();return}
     var sig=[sell,offer.qty,offer.total].join('|');

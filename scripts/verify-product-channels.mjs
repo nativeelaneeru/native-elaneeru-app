@@ -39,7 +39,8 @@ ok(/v905B2CProducts_/.test(guards)&&/B2C Stock Override/.test(guards),'B2C check
 ok(/v916B2BQuote_/.test(guards)&&/is out of stock/.test(guards),'B2B checkout rejects OOS server-side');
 ok(/stockStatus/.test(b2cStock)&&/OUT OF STOCK/.test(b2cStock)&&/window\.add=function/.test(b2cStock),'B2C UI visibly blocks OOS add actions');
 ok(/stock-status-v10590\.js/.test(b2cConfig),'B2C production config loads OOS status guard');
-ok(/stock-status-v10590/.test(sw)&&/v10\.59\.0/.test(sw),'B2C service worker refreshes and caches OOS guard');
+const b2cVersion=(b2cConfig.match(/appVersion:\s*'(\d+\.\d+\.\d+)-pwa'/)||[])[1]||'';
+ok(/stock-status-v10590/.test(sw)&&!!b2cVersion&&sw.includes('native-elaneeru-b2c-v'+b2cVersion),'B2C service worker refreshes and caches OOS guard using the current app version');
 
 const scripts=[...ui.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(x=>x[1]);
 try{scripts.forEach(s=>new Function(s));ok(true,'simplified Products JavaScript parses')}catch(e){ok(false,'simplified Products JavaScript parses: '+e.message)}

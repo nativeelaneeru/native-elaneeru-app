@@ -67,6 +67,12 @@ async function test(){
   try{
     await login(page);
 
+    const discounted=await page.eval(`(()=>{const p=(S.cfg.products||[]).find(x=>Number(x.basePrice||x.b2cBasePrice||0)>Number(x.price||0)&&Number(x.price||0)>0);if(!p)return {configured:false};const card=[...document.querySelectorAll('.product,.fav')].find(c=>String(c.dataset.productId||'')===String(p.productId||'')||String(c.textContent||'').includes(String(p.productName||'')));return {configured:true,productId:p.productId,base:Number(p.basePrice||p.b2cBasePrice||0),price:Number(p.price||0),hasStrike:!!(card&&card.querySelector('.nelNormalPrice10600')),strikeText:card&&card.querySelector('.nelNormalPrice10600')?card.querySelector('.nelNormalPrice10600').textContent:'',cardText:card?card.textContent:''}})()`);
+    if(discounted.configured){
+      assert(discounted.hasStrike,'B2C discounted product shows the Normal price as a real strikethrough in Chrome');
+      assert(discounted.cardText.includes('Offer')&&discounted.cardText.includes('Save'),'B2C discounted product labels Offer price and customer savings');
+    }else pass('B2C has no configured per-unit discount to strike at this moment');
+
     for(const [name,id] of [['Shop','shopPage'],['Orders','ordersPage'],['Offers','offersPage'],['Account','accountPage'],['Home','homePage']]){
       await click(page,`.navIn button[data-page="${name.toLowerCase()}"]`,`${name} bottom navigation`);
       await page.wait(`!document.getElementById('${id}').classList.contains('hide')`,5000,`${name} page visible`);
