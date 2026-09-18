@@ -5,17 +5,50 @@
 #serviceability .svcPartyBadge.B2B_PENDING{background:#fff2d8;color:#8a6100}
 #serviceability .svcPopulationNote{margin-top:8px;padding:9px 11px;border-radius:10px;background:#f5f8f5;border:1px solid #e3e9e4;font-size:12px;color:#5b685f}
 #serviceability .svcSyncNote{font-size:11px;color:#68736d;margin-top:5px}
+#serviceability .svcLocationTools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+#serviceability .svcLocationMissingRow{background:#fffaf0}
+#serviceability .svcLocationState{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border-radius:999px;font-size:10px;font-weight:800;white-space:nowrap}
+#serviceability .svcLocationState.OK{background:#e7f6eb;color:#1f7a3b}
+#serviceability .svcLocationState.MISSING{background:#fff0d8;color:#8a5700;border:1px solid #f1cc8b}
+#serviceability .svcLocationBtn{padding:7px 10px!important;font-size:11px!important;white-space:nowrap}
+#svcLocationModalV966{position:fixed;inset:0;background:#0e2018aa;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px}
+#svcLocationModalV966.hidden{display:none!important}
+#svcLocationModalV966 .svcLocDialog{width:min(620px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 70px #0005;padding:18px}
+#svcLocationModalV966 .svcLocHead{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+#svcLocationModalV966 .svcLocMeta{padding:10px 12px;border:1px solid #e2e9e3;background:#f8faf8;border-radius:12px;margin:10px 0;font-size:12px;line-height:1.5}
+#svcLocationModalV966 label{display:block;font-size:12px;font-weight:800;color:#35453b;margin-top:10px}
+#svcLocationModalV966 input{width:100%;box-sizing:border-box;padding:10px 11px;border:1px solid #cfd9d1;border-radius:10px;margin-top:5px;font-size:14px}
+#svcLocationModalV966 .svcLocGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#svcLocationModalV966 .svcLocActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#svcLocationModalV966 .svcLocStatus{font-size:12px;color:#657269;margin-top:9px;min-height:18px}
+#svcLocationModalV966 .svcLocHint{font-size:11px;color:#6d786f;margin-top:5px;line-height:1.45}
+@media(max-width:640px){#svcLocationModalV966 .svcLocGrid{grid-template-columns:1fr}#serviceability .svcLocationBtn{padding:6px 8px!important}}
 </style>
 <script>
 (function(){
   if(window.NEL_ADMIN_SERVICEABILITY_POPULATION_V962)return;window.NEL_ADMIN_SERVICEABILITY_POPULATION_V962=true;
-  var POP962=null,SYNC_TIMER962=null,LAST_SYNC962='',SYNCING962=false,AUTO_REFRESH_MS962=30000;
+  var POP962=null,SYNC_TIMER962=null,LAST_SYNC962='',SYNCING962=false,AUTO_REFRESH_MS962=30000,EDITING966=null;
   function q(id){return document.getElementById(id)}
   function safe(v){return typeof esc==='function'?esc(v):String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})}
   function run(fn,args,ok,fail){if(typeof gs==='function'){gs(fn,args,ok,fail);return}var r=google.script.run.withSuccessHandler(ok).withFailureHandler(function(e){if(fail)fail(e)});r[fn].apply(r,args||[])}
   function credentials(){return [typeof E!=='undefined'?E:'',typeof P!=='undefined'?P:'']}
   function panelVisible(){var p=q('serviceability');return !!(p&&!p.classList.contains('hidden')&&p.offsetParent!==null)}
   function nowLabel(){try{return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'})}catch(e){return new Date().toLocaleTimeString()}}
+  function tell(message){if(typeof notify==='function')notify(message);else window.alert(message)}
+  function refId(c){var t=c&&c.partyType||'B2C';return t==='B2B_PENDING'?(c.onboardingId||c.customerId||''):t==='B2B'?(c.vendorId||c.customerId||''):(c.customerId||'')}
+  function validLatLng(lat,lng){lat=Number(lat);lng=Number(lng);return isFinite(lat)&&isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180&&lat!==0&&lng!==0}
+  function parseCoordinates(value){
+    var text=String(value||'').trim(),decoded=text;
+    try{decoded=decodeURIComponent(text)}catch(e){}
+    var patterns=[
+      /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/i,
+      /@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/,
+      /[?&](?:q|query|ll|center)=(-?\d+(?:\.\d+)?)[,%20\s]+(-?\d+(?:\.\d+)?)/i,
+      /^\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)\s*$/
+    ];
+    for(var i=0;i<patterns.length;i++){var m=decoded.match(patterns[i]);if(m&&validLatLng(m[1],m[2]))return {lat:Number(m[1]),lng:Number(m[2])}}
+    return null;
+  }
   function patchCopy(){
     var panel=q('serviceability');if(!panel){setTimeout(patchCopy,100);return}
     var muted=panel.querySelectorAll('.muted');
@@ -32,6 +65,74 @@
       var sync=document.createElement('div');sync.id='svcSyncNoteV962';sync.className='svcSyncNote';sync.textContent='Live Sheet sync: waiting for refresh…';
       var note2=q('svcPopulationNoteV962');if(note2&&note2.nextSibling)card.insertBefore(sync,note2.nextSibling);else card.appendChild(sync);
     }
+    if(card&&!q('svcLocationToolsV966')){
+      var tools=document.createElement('div');tools.id='svcLocationToolsV966';tools.className='svcLocationTools';
+      tools.innerHTML='<b style="font-size:12px">Location:</b><select id="svcLocationFilterV966"><option value="ALL">All customers / vendors</option><option value="MISSING">Location missing</option><option value="MAPPED">Mapped</option></select><span class="svcSmall">Missing GPS stays in this list and is highlighted until corrected.</span>';
+      var table2=q('svcCustomerTableV961');card.insertBefore(tools,table2);
+      q('svcLocationFilterV966').addEventListener('change',renderUnifiedTable);
+    }
+    ensureLocationModal966();
+  }
+  function ensureLocationModal966(){
+    if(q('svcLocationModalV966'))return;
+    var modal=document.createElement('div');modal.id='svcLocationModalV966';modal.className='hidden';
+    modal.innerHTML='<div class="svcLocDialog" role="dialog" aria-modal="true" aria-labelledby="svcLocTitleV966">'+
+      '<div class="svcLocHead"><div><h3 id="svcLocTitleV966" style="margin:0">Add / Correct Location</h3><div class="muted">Updates the selected existing record only.</div></div><button type="button" class="secondary" id="svcLocCloseV966">✕ Close</button></div>'+
+      '<div class="svcLocMeta" id="svcLocMetaV966"></div>'+
+      '<label>Google Maps link or coordinates</label><input id="svcLocMapLinkV966" placeholder="Paste a full Google Maps URL or 12.9716, 77.5946">'+
+      '<div class="svcLocActions"><button type="button" class="secondary" id="svcLocParseV966">📌 Use from link</button><button type="button" class="secondary" id="svcLocGpsV966">📍 Use current GPS</button></div>'+
+      '<div class="svcLocHint">Full Maps URLs containing coordinates are supported. Short maps.app.goo.gl links may not expose coordinates; in that case use Current GPS or enter Latitude / Longitude manually.</div>'+
+      '<div class="svcLocGrid"><div><label>Latitude</label><input id="svcLocLatV966" inputmode="decimal" placeholder="12.971600"></div><div><label>Longitude</label><input id="svcLocLngV966" inputmode="decimal" placeholder="77.594600"></div></div>'+
+      '<div class="svcLocStatus" id="svcLocStatusV966"></div>'+
+      '<div class="svcLocActions"><button type="button" id="svcLocSaveV966">Save Location</button><button type="button" class="secondary" id="svcLocCancelV966">Cancel</button></div>'+
+      '</div>';
+    document.body.appendChild(modal);
+    q('svcLocCloseV966').addEventListener('click',closeLocationEditor966);
+    q('svcLocCancelV966').addEventListener('click',closeLocationEditor966);
+    modal.addEventListener('click',function(e){if(e.target===modal)closeLocationEditor966()});
+    q('svcLocParseV966').addEventListener('click',parseLocationLink966);
+    q('svcLocGpsV966').addEventListener('click',captureGps966);
+    q('svcLocSaveV966').addEventListener('click',saveLocation966);
+  }
+  function openLocationEditor966(index){
+    ensureLocationModal966();
+    var rows=POP962&&POP962.customers||[],c=rows[index];if(!c)return;
+    EDITING966=c;
+    q('svcLocMetaV966').innerHTML='<b>'+safe(c.name||c.businessName||c.ownerName||'Customer / Vendor')+'</b><br>'+safe(c.partyType==='B2B_PENDING'?'B2B LEAD':c.partyType||'B2C')+' • '+safe(c.mobile||'-')+' • '+safe(c.area||'-')+'<br><span class="svcSmall">Source: '+safe(c.source||'-')+' • Ref: '+safe(refId(c))+'</span>';
+    q('svcLocMapLinkV966').value='';
+    q('svcLocLatV966').value=c.hasLocation&&c.lat!=null?String(c.lat):'';
+    q('svcLocLngV966').value=c.hasLocation&&c.lng!=null?String(c.lng):'';
+    q('svcLocStatusV966').textContent=c.hasLocation?'Current coordinates loaded. Correct them and Save Location.':'Location is missing. Add coordinates using any option below.';
+    q('svcLocationModalV966').classList.remove('hidden');
+    setTimeout(function(){(c.hasLocation?q('svcLocLatV966'):q('svcLocMapLinkV966')).focus()},50);
+  }
+  function closeLocationEditor966(){EDITING966=null;var m=q('svcLocationModalV966');if(m)m.classList.add('hidden')}
+  function parseLocationLink966(){
+    var p=parseCoordinates(q('svcLocMapLinkV966').value);
+    if(!p){q('svcLocStatusV966').textContent='Could not find coordinates in that value. Paste a full Maps URL, enter lat/lng manually, or use Current GPS.';return}
+    q('svcLocLatV966').value=p.lat.toFixed(7);q('svcLocLngV966').value=p.lng.toFixed(7);q('svcLocStatusV966').textContent='Coordinates extracted. Review and Save Location.';
+  }
+  function captureGps966(){
+    var status=q('svcLocStatusV966');if(!navigator.geolocation){status.textContent='This browser does not provide GPS. Enter coordinates manually or paste a full Maps link.';return}
+    status.textContent='Requesting current GPS… Allow location permission if your browser asks.';
+    navigator.geolocation.getCurrentPosition(function(pos){
+      q('svcLocLatV966').value=Number(pos.coords.latitude).toFixed(7);q('svcLocLngV966').value=Number(pos.coords.longitude).toFixed(7);
+      status.textContent='Current GPS captured'+(pos.coords.accuracy?(' (about '+Math.round(pos.coords.accuracy)+' m accuracy)'):'')+'. Review and Save Location.';
+    },function(err){status.textContent='GPS could not be captured'+(err&&err.message?(': '+err.message):'.')+' Use a Maps link or enter coordinates manually.'},{enableHighAccuracy:true,timeout:12000,maximumAge:0});
+  }
+  function saveLocation966(){
+    if(!EDITING966)return;
+    var c=credentials(),lat=Number(q('svcLocLatV966').value),lng=Number(q('svcLocLngV966').value),status=q('svcLocStatusV966'),btn=q('svcLocSaveV966');
+    if(!validLatLng(lat,lng)){status.textContent='Enter valid Latitude and Longitude before saving.';return}
+    var source=EDITING966.source||'',referenceId=refId(EDITING966);
+    if(!source||!referenceId){status.textContent='This record has no safe source/reference. Refresh Service Areas and try again.';return}
+    btn.disabled=true;status.textContent='Saving location and verifying the Sheet…';
+    run('saveAdminPartyLocationV966',[c[0],c[1],{source:source,referenceId:referenceId,latitude:lat,longitude:lng}],function(r){
+      btn.disabled=false;
+      if(!r||r.success!==true){status.textContent='Location save did not return confirmation.';return}
+      status.textContent='Location saved and verified. Refreshing map…';
+      setTimeout(function(){closeLocationEditor966();tell('Location updated successfully.');refreshAll962()},450);
+    },function(e){btn.disabled=false;status.textContent=(e&&e.message)||'Location save failed.'});
   }
   function fetchPopulation(done){
     var c=credentials();if(!c[0]||!c[1]){if(done)done();return}
@@ -42,13 +143,24 @@
   function renderSyncNote(){var el=q('svcSyncNoteV962');if(el)el.textContent='Live Sheet sync: '+(LAST_SYNC962||'waiting')+' • auto-refresh every 30 sec while Service Areas is open';}
   function renderPopulationSummary(){
     var panel=q('serviceability'),s=POP962&&POP962.summary||{};if(!panel)return;
-    var note=q('svcPopulationNoteV962');if(note)note.innerHTML='Population source: <b>'+Number(s.b2cCustomers||0)+' B2C</b> + <b>'+Number(s.b2bCustomers||0)+' approved B2B</b>. <b>'+Number(s.pendingB2BOnboarding||0)+' pending/manual B2B lead(s)</b> are plotted separately and do not increase approved counts. <b>'+Number(s.pendingB2BMapped||0)+'</b> pending lead(s) have GPS. <b>'+Number(s.customersNeedLocation||0)+'</b> approved record(s) still need GPS.';
+    var all=POP962&&POP962.customers||[],missing=all.filter(function(c){return !c.hasLocation}).length;
+    var note=q('svcPopulationNoteV962');if(note)note.innerHTML='Population source: <b>'+Number(s.b2cCustomers||0)+' B2C</b> + <b>'+Number(s.b2bCustomers||0)+' approved B2B</b>. <b>'+Number(s.pendingB2BOnboarding||0)+' pending/manual B2B lead(s)</b> are listed separately. <b>'+missing+' total record(s)</b> currently need GPS and are highlighted below.';
   }
   function renderUnifiedTable(){
     var host=q('svcCustomerTableV961');if(!host||!POP962)return;
     var term=String(q('svcCustomerSearchV961')&&q('svcCustomerSearchV961').value||'').trim().toLowerCase();
-    var rows=(POP962.customers||[]).filter(function(c){return !term||[c.partyType,c.name,c.businessName,c.ownerName,c.mobile,c.area,c.address,c.gridId,c.status].join(' ').toLowerCase().indexOf(term)>=0});
-    host.innerHTML='<table><thead><tr><th>Type</th><th>Customer / Business</th><th>Mobile</th><th>Area</th><th>Grid</th><th>Distance</th><th>B2C</th><th>B2B</th><th>Expected DRR</th><th>Status</th><th>Subscription</th></tr></thead><tbody>'+rows.map(function(c){var type=c.partyType||'B2C',label=type==='B2B_PENDING'?'B2B LEAD':type;return '<tr><td><span class="svcPartyBadge '+safe(type)+'">'+safe(label)+'</span></td><td>'+safe(c.name||'-')+(c.ownerName&&c.ownerName!==c.name?'<div class="svcSmall">'+safe(c.ownerName)+'</div>':'')+'</td><td>'+safe(c.mobile)+'</td><td>'+safe(c.area||'-')+'</td><td>'+safe(c.gridId||'Location needed')+'</td><td>'+(c.distanceKm==null?'-':Number(c.distanceKm).toFixed(1)+' km')+'</td><td><span class="svcStatus '+safe(c.b2cService)+'">'+safe(c.b2cService||'-')+'</span></td><td><span class="svcStatus '+safe(c.b2bService)+'">'+safe(c.b2bService||'-')+'</span></td><td>'+(type!=='B2C'?(Number(c.expectedDailyQty||0)||'-'):'-')+'</td><td>'+safe(c.status||'-')+'</td><td>'+safe(c.subscriptionStatus||'-')+'</td></tr>'}).join('')+'</tbody></table>';
+    var locationFilter=String(q('svcLocationFilterV966')&&q('svcLocationFilterV966').value||'ALL');
+    var all=POP962.customers||[];
+    var indexed=all.map(function(c,i){return {c:c,i:i}}).filter(function(x){
+      var c=x.c,searchOk=!term||[c.partyType,c.name,c.businessName,c.ownerName,c.mobile,c.area,c.address,c.gridId,c.status].join(' ').toLowerCase().indexOf(term)>=0;
+      var locationOk=locationFilter==='ALL'||(locationFilter==='MISSING'?!c.hasLocation:!!c.hasLocation);
+      return searchOk&&locationOk;
+    });
+    host.innerHTML='<table><thead><tr><th>Type</th><th>Customer / Business</th><th>Mobile</th><th>Area</th><th>Location</th><th>Grid</th><th>Distance</th><th>B2C</th><th>B2B</th><th>Expected DRR</th><th>Status</th><th>Action</th></tr></thead><tbody>'+indexed.map(function(x){
+      var c=x.c,type=c.partyType||'B2C',label=type==='B2B_PENDING'?'B2B LEAD':type,has=!!c.hasLocation;
+      return '<tr class="'+(has?'':'svcLocationMissingRow')+'"><td><span class="svcPartyBadge '+safe(type)+'">'+safe(label)+'</span></td><td>'+safe(c.name||'-')+(c.ownerName&&c.ownerName!==c.name?'<div class="svcSmall">'+safe(c.ownerName)+'</div>':'')+'</td><td>'+safe(c.mobile)+'</td><td>'+safe(c.area||'-')+'</td><td><span class="svcLocationState '+(has?'OK':'MISSING')+'">'+(has?'✓ Mapped':'⚠ Location Missing')+'</span>'+(has?'<div class="svcSmall">'+Number(c.lat).toFixed(5)+', '+Number(c.lng).toFixed(5)+'</div>':'')+'</td><td>'+safe(c.gridId||'Location needed')+'</td><td>'+(c.distanceKm==null?'-':Number(c.distanceKm).toFixed(1)+' km')+'</td><td><span class="svcStatus '+safe(c.b2cService)+'">'+safe(c.b2cService||'-')+'</span></td><td><span class="svcStatus '+safe(c.b2bService)+'">'+safe(c.b2bService||'-')+'</span></td><td>'+(type!=='B2C'?(Number(c.expectedDailyQty||0)||'-'):'-')+'</td><td>'+safe(c.status||'-')+'</td><td><button type="button" class="secondary svcLocationBtn" data-loc-index="'+x.i+'">'+(has?'✏️ Correct Location':'📍 Add Location')+'</button></td></tr>';
+    }).join('')+'</tbody></table>';
+    Array.prototype.forEach.call(host.querySelectorAll('[data-loc-index]'),function(btn){btn.addEventListener('click',function(){openLocationEditor966(Number(btn.getAttribute('data-loc-index')))})});
   }
   function refreshAll962(){
     if(SYNCING962||!panelVisible())return;SYNCING962=true;patchCopy();
@@ -68,7 +180,7 @@
   }
   document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&panelVisible())setTimeout(refreshAll962,150)});
   window.addEventListener('focus',function(){if(panelVisible())setTimeout(refreshAll962,150)});
-  window.getAdminServiceabilityPopulationHealthV962=function(){return {ok:true,version:'9.6.5',unifiedB2CAndB2B:true,pendingVisibleOnMap:true,pendingExcludedFromApprovedCounts:true,autoRefreshSeconds:30}};
+  window.getAdminServiceabilityPopulationHealthV962=function(){return {ok:true,version:'9.6.6',unifiedB2CAndB2B:true,pendingVisibleOnMap:true,pendingExcludedFromApprovedCounts:true,locationCorrection:true,autoRefreshSeconds:30}};
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',install,{once:true}):install();setTimeout(install,150);setTimeout(install,600);
 })();
 </script>
