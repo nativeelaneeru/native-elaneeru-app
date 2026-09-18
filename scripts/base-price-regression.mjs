@@ -43,6 +43,9 @@ ok(/nelNativePrice10600/.test(b2cDisplay)&&/row\.remove/.test(b2cDisplay),'Legac
 ok(/base>sell&&sell>0/.test(b2bDisplay)&&/nelBasePriceStrike/.test(b2bDisplay),'B2B crosses out base price only when it is genuinely higher');
 ok(/Update Qty/.test(b2bDisplay)&&/Cart quantity updated/.test(b2bDisplay),'B2B cart update wording is unambiguous');
 ok(/base-price-v10450\.js/.test(b2cConfig)&&/base-price-v10450/.test(b2cWorker),'B2C production config and service worker load base-price display');
+ok(/appVersion:\s*'10\.60\.1-pwa'/.test(b2cConfig)&&/native-elaneeru-b2c-v10\.60\.1/.test(b2cWorker),'B2C cache version is bumped for the scratched-price release');
+ok(/request\.mode==='navigate'[\s\S]*staleWhileRevalidate\(request,navigationFallback\(url\)\)/.test(b2cWorker),'B2C repeat navigation keeps its immediate cached launch');
+ok(/pricingCritical[\s\S]*networkFirst\(request\)/.test(b2cWorker)&&/config\|ui-v125\|live-pricing-v10440\|base-price-v10450\|pricing-hierarchy-v10582/.test(b2cWorker),'B2C pricing/config scripts fetch latest scratched-price UI first when online');
 ok(/base-price-v952\.js/.test(b2bConfig)&&/base-price-v952/.test(b2bWorker),'B2B production config and service worker load base-price display');
 
 try{new Function(channels);new Function(liveBackend);new Function(b2cLive);new Function(b2bLive);new Function(b2cDisplay);new Function(b2bDisplay);new Function(b2cHistory);ok(true,'base-price backend and client JavaScript parse')}catch(e){ok(false,'base-price backend and client JavaScript parse: '+e.message)}

@@ -1,4 +1,4 @@
-const CACHE='native-elaneeru-b2c-v10.60.0';
+const CACHE='native-elaneeru-b2c-v10.60.1';
 const SHELL=[
   './','./index.html','./login/index.html','./config.js','./manifest.webmanifest','./idb-v1.js','./order-sync-v1.js',
   './boot-recovery-v10360.js','./image-fallback-v918.js','./product-images-v10380.js','./ui-v108.js','./ui-v110.js','./ui-v111.js','./ui-v112.js','./ui-v113.js','./ui-v125.js','./ui-v127.js',
@@ -90,7 +90,16 @@ self.addEventListener('fetch',event=>{
     return;
   }
 
-  const critical=/\/(?:config|boot-recovery-v10360|image-fallback-v918|product-images-v10380|idb-v1|order-sync-v1|ui-v108|ui-v110|ui-v111|ui-v112|ui-v113|ui-v125|ui-v127|separate-links|cart-visibility-v10320|customer-growth-v10330|subscription-schemes-v10580|ux-polish-v10561|clickable-fix-v10573|catalog-filter-v10574|simple-catalog-v10580|referral-reward-v10340|payment-upi-v10350|update-notifier|install-analytics-v10420|coming-soon-banner-v10430|live-pricing-v10440|base-price-v10450|pricing-hierarchy-v10582|stock-status-v10590|i18n-v102|i18n-v104)\.js$/;
+  // Pricing/config must be fresh on the first online load so base-price changes
+  // cannot be hidden behind an older PWA shell. Other runtime assets keep the
+  // faster stale-while-revalidate strategy.
+  const pricingCritical=/\/(?:config|ui-v125|live-pricing-v10440|base-price-v10450|pricing-hierarchy-v10582)\.js$/;
+  if(pricingCritical.test(url.pathname)){
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  const critical=/\/(?:boot-recovery-v10360|image-fallback-v918|product-images-v10380|idb-v1|order-sync-v1|ui-v108|ui-v110|ui-v111|ui-v112|ui-v113|ui-v127|separate-links|cart-visibility-v10320|customer-growth-v10330|subscription-schemes-v10580|ux-polish-v10561|clickable-fix-v10573|catalog-filter-v10574|simple-catalog-v10580|referral-reward-v10340|payment-upi-v10350|update-notifier|install-analytics-v10420|coming-soon-banner-v10430|stock-status-v10590|i18n-v102|i18n-v104)\.js$/;
   if(critical.test(url.pathname)||url.pathname.endsWith('/manifest.webmanifest')){
     event.respondWith(staleWhileRevalidate(request));
     return;
