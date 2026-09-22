@@ -1,0 +1,110 @@
+<script>
+(function(){
+  if(window.NEL_VENDOR_PROSPECTS_V965)return;window.NEL_VENDOR_PROSPECTS_V965=true;
+  const q=id=>document.getElementById(id);
+  const invoke=(fn,args=[])=>new Promise((resolve,reject)=>google.script.run.withSuccessHandler(resolve).withFailureHandler(e=>reject(new Error(e&&e.message?e.message:String(e))))[fn](...args));
+  const SESSION_KEY='nel_vendor_onboarding_session_v949';
+  let PROSPECTS=[],AREAS=[],ACTIVE_PROSPECT='',LOADED=false,LOADING=false;
+
+  function sessionToken(){try{return String(localStorage.getItem(SESSION_KEY)||sessionStorage.getItem(SESSION_KEY)||'')}catch(e){return ''}}
+  function html(s){return typeof esc==='function'?esc(s):String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+  function inject(){
+    if(q('vendorProspectCard'))return;
+    const flow=q('flow'),sales=q('salesBox');if(!flow||!sales)return;
+    const card=document.createElement('div');card.id='vendorProspectCard';card.className='card';
+    card.innerHTML='<div style="display:flex;gap:10px;align-items:flex-start"><div style="flex:1"><h3 style="margin:0">🥥 Prospect Queue</h3><div class="muted" style="margin-top:4px">Bengaluru coconut vendors to visit and onboard</div></div><span id="vpCount" style="font-size:11px;background:#e8f6ec;color:#0b6b3a;border-radius:999px;padding:6px 9px;font-weight:900">—</span></div>'+
+      '<div class="grid" style="margin-top:12px"><input id="vpSearch" class="field" placeholder="Search shop, area, phone or ID"><select id="vpPriority" class="field"><option value="">All priorities</option><option>P1</option><option>P2</option><option>P3</option></select></div>'+
+      '<div class="grid" style="margin-top:8px"><select id="vpArea" class="field"><option value="">All areas</option></select><button type="button" id="vpRefresh" class="btn alt">Refresh prospects</button></div>'+
+      '<div id="vpMsg" class="muted" style="margin-top:10px"></div><div id="vpList" style="display:grid;gap:9px;margin-top:10px"></div>';
+    sales.insertAdjacentElement('afterend',card);
+    q('vpSearch').addEventListener('input',render);
+    q('vpPriority').addEventListener('change',render);
+    q('vpArea').addEventListener('change',render);
+    q('vpRefresh').onclick=()=>load(true);
+  }
+  function pclass(p){return p==='P1'?'#d9ead3':p==='P2'?'#fff2cc':'#fce5cd'}
+  function render(){
+    const list=q('vpList');if(!list)return;
+    const s=String(q('vpSearch')&&q('vpSearch').value||'').trim().toLowerCase();
+    const pri=String(q('vpPriority')&&q('vpPriority').value||'').toUpperCase();
+    const area=String(q('vpArea')&&q('vpArea').value||'');
+    let rows=PROSPECTS.filter(p=>{
+      if(pri&&p.priority!==pri)return false;if(area&&p.area!==area)return false;
+      if(!s)return true;
+      return [p.prospectId,p.businessName,p.phone,p.area,p.address].join(' ').toLowerCase().includes(s);
+    });
+    q('vpCount').textContent=rows.length+' / '+PROSPECTS.length;
+    if(!rows.length){list.innerHTML='<div class="muted" style="padding:12px 2px">No matching prospects.</div>';return}
+    list.innerHTML=rows.slice(0,60).map(p=>{
+      const phone=p.phone?'<a href="tel:'+html(p.phone)+'" style="color:#0b6b3a;text-decoration:none;font-weight:800">'+html(p.phone)+'</a>':'<span class="muted">Phone not listed</span>';
+      return '<div style="border:1px solid #dfe7e0;border-radius:14px;padding:11px;background:#fbfffc">'+
+        '<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1;min-width:0"><b>'+html(p.businessName)+'</b><div class="muted">'+html(p.prospectId)+' · '+html(p.area)+' · '+html(p.leadConfidence)+' confidence</div></div><span style="padding:4px 7px;border-radius:999px;background:'+pclass(p.priority)+';font-size:10px;font-weight:950">'+html(p.priority)+'</span></div>'+
+        '<div class="muted" style="margin-top:7px">'+html(p.address)+'</div><div style="margin-top:6px">'+phone+'</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px"><a class="btn alt" style="text-align:center;text-decoration:none" href="'+html(p.directionsUrl)+'" target="_blank" rel="noopener">📍 Directions</a><button type="button" class="btn" onclick="v965StartProspect(\''+html(p.prospectId)+'\')">Start onboarding</button></div>'+
+        '</div>';
+    }).join('');
+    if(rows.length>60)list.innerHTML+='<div class="muted" style="padding:5px">Showing first 60. Use search/area filter to narrow the list.</div>';
+  }
+  async function load(force){
+    if(LOADING||(!force&&LOADED))return;
+    const token=sessionToken(),flow=q('flow');if(!token||!flow||flow.style.display==='none')return;
+    inject();LOADING=true;if(q('vpMsg'))q('vpMsg').textContent='Loading prospects…';
+    try{
+      const raw=await invoke('getVendorProspectsV965',[token,{}]);
+      PROSPECTS=raw&&Array.isArray(raw.prospects)?raw.prospects:[];AREAS=raw&&Array.isArray(raw.areas)?raw.areas:[];
+      const area=q('vpArea');if(area)area.innerHTML='<option value="">All areas</option>'+AREAS.map(a=>'<option value="'+html(a)+'">'+html(a)+'</option>').join('');
+      LOADED=true;if(q('vpMsg'))q('vpMsg').textContent='P1 = mapped + public phone. P2 = mapped without phone. P3 = field-verification lead.';
+      render();
+    }catch(e){if(q('vpMsg'))q('vpMsg').textContent=e.message||String(e)}
+    finally{LOADING=false}
+  }
+  async function mark(id,status,note){
+    const token=sessionToken();if(!token)return;
+    try{
+      const raw=await invoke('updateVendorProspectStatusV965',[token,id,status,note||'']);
+      if(raw&&raw.ok&&['ONBOARDED','NOT_INTERESTED','DUPLICATE','REJECTED'].includes(status)){
+        PROSPECTS=PROSPECTS.filter(p=>p.prospectId!==id);render();
+      }
+    }catch(e){}
+  }
+  window.v965StartProspect=function(id){
+    const p=PROSPECTS.find(x=>x.prospectId===id);if(!p)return;
+    ACTIVE_PROSPECT=id;
+    if(q('business'))q('business').value=p.businessName||'';
+    if(q('mobile'))q('mobile').value=p.phone||'';
+    if(q('whatsapp'))q('whatsapp').value=p.phone||'';
+    if(q('area'))q('area').value=p.area||'';
+    if(q('address'))q('address').value=p.address||'';
+    if(q('owner'))q('owner').value=p.ownerName||'';
+    const type=q('type');if(type){const opt=[...type.options].find(o=>o.value==='Local Tender Coconut Vendor');if(opt)type.value=opt.value}
+    if(typeof PRODUCTS!=='undefined'&&Array.isArray(PRODUCTS)){
+      const tc=PRODUCTS.find(x=>String(x.productId).toUpperCase()==='TC'||/Tender Coconut/i.test(String(x.productName||'')));
+      if(tc&&typeof selectProduct==='function')selectProduct(tc.productId);
+    }
+    if(q('remarks')){
+      const lead='Prospect '+p.prospectId+' · '+p.priority+' · '+p.leadConfidence+' confidence';
+      q('remarks').value=(q('remarks').value? q('remarks').value+'\n':'')+lead;
+    }
+    if(typeof show==='function')show(1);
+    if(typeof msg==='function')msg('Prospect loaded. Verify owner/mobile, then capture live GPS and photos at the shop.',true);
+    mark(id,'VISIT_PLANNED','Started onboarding from Prospect Queue.');
+    const form=q('formCard');if(form)form.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  function wrapSubmit(){
+    const base=window.submitForm;if(typeof base!=='function'||base.__v965)return;
+    const wrapped=async function(){
+      const id=ACTIVE_PROSPECT;
+      await base.apply(this,arguments);
+      const form=q('formCard'),success=!!(form&&/B2B account activated/i.test(form.textContent||''));
+      if(success&&id){await mark(id,'ONBOARDED','B2B vendor activated from onboarding flow.');ACTIVE_PROSPECT='';}
+    };
+    wrapped.__v965=true;window.submitForm=wrapped;try{submitForm=wrapped}catch(e){}
+  }
+  function start(){
+    inject();wrapSubmit();
+    let tries=0;
+    const timer=setInterval(()=>{tries++;inject();wrapSubmit();load(false);if(tries>120)clearInterval(timer)},750);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
