@@ -101,6 +101,7 @@ jobs:
           if(!/getB2CPaymentEngineHealthV913:getB2CPaymentEngineHealthV913/.test(publicRead))throw new Error('B2C payment engine health is not exposed through the read-only health endpoint.');
           if(!/getB2BPaymentEngineHealthV916:getB2BPaymentEngineHealthV916/.test(publicRead))throw new Error('B2B payment engine health is not exposed through the read-only health endpoint.');
           if(!/getCumulativeDashboardHealthV914:getCumulativeDashboardHealthV914/.test(publicRead))throw new Error('Cumulative dashboard health is not exposed through the read-only health endpoint.');
+          if(!/getVendorProspectsHealthV965:getVendorProspectsHealthV965/.test(publicRead))throw new Error('Vendor prospect queue health is not exposed through the read-only health endpoint.');
           console.log('Apps Script feature validation passed across all routed app UIs.');
           NODE
 
@@ -221,6 +222,10 @@ jobs:
             const dashboardHealth=await jsonp(process.env.MAIN_API_URL,'getCumulativeDashboardHealthV914');
             if(!dashboardHealth||dashboardHealth.ok!==true||dashboardHealth.version!=='9.1.4'||dashboardHealth.readOnly!==true||dashboardHealth.singleWorkbook!==true||!Array.isArray(dashboardHealth.includes)||!dashboardHealth.includes.includes('B2B')||!dashboardHealth.includes.includes('VENDOR_ONBOARDING'))throw new Error('Cumulative dashboard health contract failed.');
             console.log('✓ Cumulative dashboard: read-only, single-workbook B2C+B2B+growth+payments+onboarding summary');
+
+            const prospectHealth=await jsonp(process.env.MAIN_API_URL,'getVendorProspectsHealthV965');
+            if(!prospectHealth||prospectHealth.ok!==true||prospectHealth.version!=='9.6.5'||Number(prospectHealth.prospectCount||0)<200||prospectHealth.createsVendor!==false||prospectHealth.createsOrder!==false)throw new Error('Vendor prospect queue health failed or contains fewer than 200 prospects.');
+            console.log('✓ Vendor prospect queue: '+prospectHealth.prospectCount+' prospects available; read-only health creates no vendor/order');
 
             const catalogue=await jsonp(process.env.MAIN_API_URL,'getAppConfig');
             const products=catalogue&&Array.isArray(catalogue.products)?catalogue.products:[];
