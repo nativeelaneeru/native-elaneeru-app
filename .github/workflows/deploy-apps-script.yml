@@ -39,7 +39,7 @@ jobs:
           const fs=require('fs');
           const htmlFiles=[
             'src/Admin.html','src/AdminFixesV915.html','src/AdminAccessV917.html',
-            'src/VendorOnboardingV910.html','src/VendorApproval.html','src/VendorApprovalFixV916.html',
+            'src/VendorOnboardingV910.html','src/VendorProspectsV965.html','src/VendorApproval.html','src/VendorApprovalFixV916.html',
             'src/PaymentVerification.html','src/CumulativeDashboard.html','src/Sales.html','src/Picker.html',
             'src/Barcode.html','src/Inventory.html','src/Delivery.html','src/Driver.html','src/SharedUX.html'
           ];
@@ -60,6 +60,8 @@ jobs:
           if(!/submitVendorOnboardingV840/.test(onboarding)||!/ownerPhotoData/.test(onboarding)||!/shopPhotoData/.test(onboarding))throw new Error('Vendor onboarding production wiring is incomplete.');
           const onboardingBackend=fs.readFileSync('src/ZZZZZZZZ_V840_VendorApproval.gs','utf8');
           new Function(onboardingBackend);
+          const prospectBackend=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V965_VendorProspects.gs','utf8');
+          new Function(prospectBackend);
           if(!/\['COD','UPI','CREDIT'\]/.test(onboardingBackend)||!/VENDOR_ONBOARDING_PHOTO_FOLDER_ID/.test(onboardingBackend)||!/already active as B2B vendor/.test(onboardingBackend)||!/already pending/.test(onboardingBackend))throw new Error('Vendor onboarding commercial/duplicate protections are incomplete.');
           const approval=fs.readFileSync('src/VendorApproval.html','utf8');
           if(!/approveVendorOnboardingV840/.test(approval)||!/Initial B2B PIN/.test(approval))throw new Error('Vendor approval/PIN wiring is incomplete.');
