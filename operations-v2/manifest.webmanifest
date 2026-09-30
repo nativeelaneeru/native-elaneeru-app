@@ -1,0 +1,10 @@
+{
+  "name": "Native Elaneeru Operations V2",
+  "short_name": "NE Ops V2",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7f4",
+  "theme_color": "#0b6b3a",
+  "description": "Native Elaneeru inwarding, barcode and inventory operations"
+}
