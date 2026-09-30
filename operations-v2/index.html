@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b6b3a">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Native Elaneeru Operations V2</title>
+<style>
+:root{--g:#0b6b3a;--g2:#13834a;--bg:#f4f7f4;--card:#fff;--ink:#15231a;--muted:#66746a;--line:#dce6de;--warn:#a15c00;--red:#a1261c}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,#075d32,#13834a);color:#fff;padding:14px 16px;box-shadow:0 2px 12px #0002}.head{max-width:1180px;margin:auto;display:flex;justify-content:space-between;gap:12px;align-items:center}.brand{font-weight:950;font-size:20px}.sub{font-size:12px;opacity:.86;margin-top:2px}.badge{font-size:11px;padding:6px 9px;border-radius:99px;background:#ffffff22;border:1px solid #ffffff33}
+.wrap{max-width:1180px;margin:auto;padding:14px}.tabs{display:flex;gap:8px;overflow:auto;padding-bottom:8px;position:sticky;top:72px;background:var(--bg);z-index:10}.tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 13px;font-weight:850;color:var(--g);cursor:pointer;white-space:nowrap}.tab.active{background:var(--g);color:#fff;border-color:var(--g)}
+.panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:15px;box-shadow:0 4px 18px #0000000b;margin-bottom:12px}.metric b{font-size:24px;display:block}.metric span{font-size:12px;color:var(--muted)}
+.row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.field{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;font:inherit;background:#fff}.field:focus{outline:none;border-color:#6aae80;box-shadow:0 0 0 3px #e7f5ea}.btn{border:0;border-radius:11px;padding:12px 14px;font-weight:900;cursor:pointer;background:var(--g);color:#fff}.btn.alt{background:#edf7ef;color:var(--g);border:1px solid #d5e7da}.btn.warn{background:#fff5e6;color:#8b5200;border:1px solid #f1d7aa}.btn.red{background:#fff0ef;color:var(--red);border:1px solid #efcecb}.actions{display:flex;gap:8px;flex-wrap:wrap}.muted{font-size:12px;color:var(--muted);line-height:1.5}.msg{font-size:12px;margin-top:8px}.ok{color:var(--g)}.bad{color:var(--red)}
+.tableWrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:900px}th,td{padding:10px;border-bottom:1px solid #edf1ee;text-align:left;font-size:12px}th{font-size:11px;color:var(--muted);text-transform:uppercase}.pill{font-size:10px;padding:4px 7px;border-radius:99px;background:#e9f7ed;color:var(--g);font-weight:900}.pill.warn{background:#fff4df;color:#875100}
+.camera{position:relative;background:#122319;border-radius:14px;overflow:hidden;aspect-ratio:4/3;min-height:280px}.camera video{width:100%;height:100%;object-fit:cover;display:block}.guide{position:absolute;left:9%;right:9%;top:36%;height:28%;border:2px solid #fff;border-radius:12px;box-shadow:0 0 0 999px #0003;pointer-events:none}.guide:after{content:'Align barcode here';position:absolute;left:50%;bottom:-28px;transform:translateX(-50%);color:#fff;font-size:12px;font-weight:900;white-space:nowrap}.labelWrap{display:flex;justify-content:center;background:#eef2ee;border-radius:14px;padding:16px}.label{width:100mm;min-height:50mm;background:#fff;border:1px solid #bbb;padding:5mm;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center}.labelBrand{font-weight:950}.labelMeta{font-size:10px}.label svg{width:92mm;max-width:100%;height:23mm}.mono{font-family:ui-monospace,Menlo,monospace;font-size:10px;letter-spacing:1px}.loginCover{position:fixed;inset:0;background:#eef5ef;z-index:50;display:flex;align-items:center;justify-content:center;padding:18px}.loginBox{width:min(430px,100%);background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 20px 50px #0002}.loginBox h1{margin:0 0 6px;font-size:24px}.hidden{display:none!important}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:640px){.grid,.row{grid-template-columns:1fr}.wrap{padding:10px}.tabs{top:68px}.label{width:100%}.head{align-items:flex-start}.badge{display:none}}
+@media print{@page{margin:6mm}body *{visibility:hidden!important}#printArea,#printArea *{visibility:visible!important}#printArea{position:absolute;left:0;top:0;width:100%;border:0!important;box-shadow:none!important}.noPrint{display:none!important}}
+</style>
+</head>
+<body>
+<div id="loginCover" class="loginCover">
+  <div class="loginBox">
+    <div style="font-size:36px">🥥</div>
+    <h1>NE Operations V2</h1>
+    <div class="muted">New operations system. B2B and B2C apps are separate and untouched.</div>
+    <div style="height:14px"></div>
+    <input id="loginName" class="field" placeholder="Employee name">
+    <div style="height:8px"></div>
+    <select id="loginRole" class="field"><option>Admin</option><option>Warehouse</option><option>Picker</option><option>Driver</option></select>
+    <div style="height:8px"></div>
+    <input id="loginPin" class="field" type="password" inputmode="numeric" maxlength="6" placeholder="PIN (prototype only)">
+    <button class="btn" style="width:100%;margin-top:10px" onclick="enterApp()">Open Operations</button>
+    <div id="loginMsg" class="msg"></div>
+    <div class="muted" style="margin-top:10px">Phase 1 uses device-local storage. Production employee authentication and Google Sheets/API sync will be connected next.</div>
+  </div>
+</div>
+<header><div class="head"><div><div class="brand">🥥 Native Elaneeru · Operations V2</div><div class="sub">Inward → Barcode → Stock → FIFO → Fulfilment</div></div><div class="badge" id="who">Not signed in</div></div></header>
+<main class="wrap">
+  <div class="tabs noPrint">
+    <button class="tab active" data-panel="dashboard">Dashboard</button>
+    <button class="tab" data-panel="inward">New Inward</button>
+    <button class="tab" data-panel="barcode">Barcode</button>
+    <button class="tab" data-panel="scanner">Scan</button>
+    <button class="tab" data-panel="stock">Inventory</button>
+  </div>
+
+  <section id="dashboard" class="panel active">
+    <div class="grid">
+      <div class="card metric"><b id="mInwards">0</b><span>Total inwards</span></div>
+      <div class="card metric"><b id="mBunches">0</b><span>Available bunches</span></div>
+      <div class="card metric"><b id="mQty">0</b><span>Available coconuts</span></div>
+      <div class="card metric"><b id="mOldest">—</b><span>Oldest FIFO stock</span></div>
+    </div>
+    <div class="card"><h3 style="margin-top:0">Phase 1 workflow</h3><div class="muted">1. Create inward → 2. Generate bunch barcodes → 3. Print labels → 4. Scan any bunch → 5. See FIFO inventory. This V2 is isolated from the current B2B/B2C production apps.</div></div>
+  </section>
+
+  <section id="inward" class="panel">
+    <div class="card">
+      <h3 style="margin-top:0">Create inward</h3>
+      <div class="row"><input id="supplier" class="field" placeholder="Supplier / Farm"><input id="inwardDate" class="field" type="date"></div><div style="height:8px"></div>
+      <div class="row"><input id="totalQty" class="field" type="number" min="1" placeholder="Total coconut quantity"><input id="bunchCount" class="field" type="number" min="1" placeholder="Number of bunches"></div><div style="height:8px"></div>
+      <div class="row"><input id="location" class="field" value="HALL" placeholder="Storage location"><input id="note" class="field" placeholder="Notes (optional)"></div>
+      <button class="btn" style="width:100%;margin-top:10px" onclick="createInward()">Create Inward & Generate Bunch Barcodes</button>
+      <div id="inwardMsg" class="msg"></div>
+    </div>
+  </section>
+
+  <section id="barcode" class="panel">
+    <div class="card noPrint"><div class="row"><select id="barcodeSelect" class="field" onchange="showSelectedLabel()"></select><button class="btn alt" onclick="showSelectedLabel()">Show label</button></div></div>
+    <div id="printArea" class="card" style="display:none">
+      <div class="labelWrap"><div class="label"><div class="labelBrand">🥥 NATIVE ELANEERU</div><div id="labelMeta" class="labelMeta"></div><div id="barcodeSvg"></div><div id="barcodeText" class="mono"></div><div id="labelBottom" class="labelMeta"></div></div></div>
+      <div class="actions noPrint" style="justify-content:center;margin-top:10px"><button class="btn" onclick="window.print()">🖨️ Print Barcode</button></div>
+    </div>
+  </section>
+
+  <section id="scanner" class="panel">
+    <div class="card">
+      <div id="scanStatus" class="muted">Camera stopped.</div><div style="height:8px"></div>
+      <div class="camera"><video id="video" playsinline muted></video><div class="guide"></div></div>
+      <div class="actions" style="margin-top:10px"><button class="btn" onclick="startCamera()">📷 Start Camera</button><button class="btn alt" onclick="stopCamera()">Stop</button></div>
+      <input id="manualScan" class="field" style="margin-top:10px" placeholder="Or type / paste barcode">
+      <button class="btn" style="width:100%;margin-top:8px" onclick="lookupBarcode(document.getElementById('manualScan').value)">Lookup Barcode</button>
+    </div>
+    <div id="scanResult" class="card" style="display:none"></div>
+  </section>
+
+  <section id="stock" class="panel">
+    <div class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><h3 style="margin:0">Live inventory</h3><div class="muted">FIFO: oldest available inward first.</div></div><div class="actions"><button class="btn alt" onclick="exportJson()">Export JSON</button><button class="btn red" onclick="clearPrototype()">Clear Prototype Data</button></div></div></div>
+    <div class="card tableWrap"><table><thead><tr><th>FIFO</th><th>Barcode</th><th>Inward</th><th>Supplier</th><th>Date</th><th>Qty</th><th>Location</th><th>Status</th></tr></thead><tbody id="stockRows"></tbody></table></div>
+  </section>
+</main>
+<script>
+const KEY='nel_ops_v2_data_1',USERKEY='nel_ops_v2_user_1';
+let db={inwards:[],bunches:[]},stream=null,detector=null,timer=null,lastScan='';
+function $(id){return document.getElementById(id)}function pad(n,l=3){return String(n).padStart(l,'0')}function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function save(){localStorage.setItem(KEY,JSON.stringify(db));renderAll()}function load(){try{db=JSON.parse(localStorage.getItem(KEY)||'null')||{inwards:[],bunches:[]}}catch(e){db={inwards:[],bunches:[]}}renderAll()}
+function enterApp(){const name=$('loginName').value.trim(),pin=$('loginPin').value.trim(),role=$('loginRole').value;if(!name||pin.length<4){$('loginMsg').textContent='Enter employee name and at least 4-digit PIN.';$('loginMsg').className='msg bad';return}localStorage.setItem(USERKEY,JSON.stringify({name,role}));$('loginCover').classList.add('hidden');$('who').textContent=name+' · '+role;}
+function restoreUser(){try{const u=JSON.parse(localStorage.getItem(USERKEY)||'null');if(u&&u.name){$('loginCover').classList.add('hidden');$('who').textContent=u.name+' · '+u.role}}catch(e){}}
+function switchPanel(id){document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===id));document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.panel===id));if(id==='scanner'){}else stopCamera()}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>switchPanel(b.dataset.panel)));
+function createInward(){const supplier=$('supplier').value.trim(),date=$('inwardDate').value,qty=Number($('totalQty').value),count=Number($('bunchCount').value),location=$('location').value.trim()||'HALL',note=$('note').value.trim();if(!supplier||!date||qty<=0||count<=0){$('inwardMsg').textContent='Supplier, inward date, total quantity and bunch count are required.';$('inwardMsg').className='msg bad';return}const sameDay=db.inwards.filter(x=>x.date===date).length+1;const ymd=date.slice(2).replaceAll('-','');const inwardId='INW-'+ymd+'-'+pad(sameDay);const base=Math.floor(qty/count),rem=qty%count;const inward={id:inwardId,supplier,date,totalQty:qty,bunchCount:count,location,note,createdAt:new Date().toISOString()};db.inwards.push(inward);for(let i=1;i<=count;i++){const bqty=base+(i<=rem?1:0);db.bunches.push({barcode:'NE-'+ymd+'-'+pad(sameDay)+'-'+pad(i),inwardId,supplier,date,qty:bqty,availableQty:bqty,location,status:'AVAILABLE',bunchNo:i,createdAt:new Date().toISOString()})}save();$('inwardMsg').textContent='Created '+inwardId+' with '+count+' bunch barcodes.';$('inwardMsg').className='msg ok';switchPanel('barcode');}
+const CODE39={'0':0x034,'1':0x121,'2':0x061,'3':0x160,'4':0x031,'5':0x130,'6':0x070,'7':0x025,'8':0x124,'9':0x064,'A':0x109,'B':0x049,'C':0x148,'D':0x019,'E':0x118,'F':0x058,'G':0x00D,'H':0x10C,'I':0x04C,'J':0x01C,'K':0x103,'L':0x043,'M':0x142,'N':0x013,'O':0x112,'P':0x052,'Q':0x007,'R':0x106,'S':0x046,'T':0x016,'U':0x181,'V':0x0C1,'W':0x1C0,'X':0x091,'Y':0x190,'Z':0x0D0,'-':0x085,'.':0x184,' ':0x0C4,'$':0x0A8,'/':0x0A2,'+':0x08A,'%':0x02A,'*':0x094};
+function code39Svg(raw){let value=String(raw||'').trim().toUpperCase(),encoded='*'+value+'*',unit=2,wide=5,quiet=12,x=quiet,bars=[];for(const c of value)if(CODE39[c]==null)throw new Error('Unsupported barcode character '+c);for(let ci=0;ci<encoded.length;ci++){let p=CODE39[encoded[ci]];for(let i=0;i<9;i++){let w=((p>>(8-i))&1)?wide:unit;if(i%2===0)bars.push('<rect x="'+x+'" y="0" width="'+w+'" height="52" fill="#000"/>');x+=w}if(ci<encoded.length-1)x+=unit}let total=x+quiet;return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+total+' 68" preserveAspectRatio="xMidYMid meet"><rect width="100%" height="100%" fill="#fff"/>'+bars.join('')+'<text x="'+(total/2)+'" y="65" text-anchor="middle" font-family="monospace" font-size="9">'+esc(value)+'</text></svg>'}
+function showSelectedLabel(){const b=db.bunches.find(x=>x.barcode===$('barcodeSelect').value);if(!b){$('printArea').style.display='none';return}$('labelMeta').textContent='Tender Coconut · '+b.inwardId;$('barcodeSvg').innerHTML=code39Svg(b.barcode);$('barcodeText').textContent=b.barcode;$('labelBottom').textContent='Qty: '+b.qty+' · '+b.location+' · '+b.date;$('printArea').style.display='block'}
+async function startCamera(){if(stream)return;if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){$('scanStatus').textContent='Camera unavailable. Use manual barcode entry.';return}try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});$('video').srcObject=stream;await $('video').play();if('BarcodeDetector'in window){let fmts=['code_39','code_128','ean_13','ean_8','qr_code'];try{const sup=await BarcodeDetector.getSupportedFormats();fmts=fmts.filter(x=>sup.includes(x))}catch(e){}detector=fmts.length?new BarcodeDetector({formats:fmts}):null}else detector=null;$('scanStatus').textContent=detector?'Camera ready. Point at barcode.':'Camera open, but auto detection is unavailable. Use manual entry.';if(detector)scanTick()}catch(e){$('scanStatus').textContent='Could not open camera: '+(e.message||e)}}
+async function scanTick(){if(!stream||!detector)return;try{if($('video').readyState>=2){const f=await detector.detect($('video'));if(f&&f.length){const raw=String(f[0].rawValue||'').trim();if(raw&&raw!==lastScan){lastScan=raw;lookupBarcode(raw);return}}}}catch(e){}timer=setTimeout(scanTick,220)}
+function stopCamera(){if(timer){clearTimeout(timer);timer=null}if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}$('video').srcObject=null}
+function lookupBarcode(raw){raw=String(raw||'').trim().toUpperCase();if(!raw)return;const b=db.bunches.find(x=>x.barcode.toUpperCase()===raw);$('manualScan').value=raw;$('scanResult').style.display='block';if(!b){$('scanResult').innerHTML='<b>Barcode not found</b><div class="muted">'+esc(raw)+' is not in Operations V2 stock.</div>';return}$('scanResult').innerHTML='<h3 style="margin-top:0">'+esc(b.barcode)+'</h3><div class="row"><div><div class="muted">Inward</div><b>'+esc(b.inwardId)+'</b></div><div><div class="muted">Supplier</div><b>'+esc(b.supplier)+'</b></div><div><div class="muted">Available Qty</div><b>'+b.availableQty+'</b></div><div><div class="muted">Location</div><b>'+esc(b.location)+'</b></div></div><div style="margin-top:10px"><span class="pill">'+esc(b.status)+'</span></div>';stopCamera()}
+function renderAll(){const available=db.bunches.filter(b=>b.status==='AVAILABLE'&&b.availableQty>0).sort((a,b)=>a.date.localeCompare(b.date)||a.createdAt.localeCompare(b.createdAt));$('mInwards').textContent=db.inwards.length;$('mBunches').textContent=available.length;$('mQty').textContent=available.reduce((s,b)=>s+Number(b.availableQty||0),0);$('mOldest').textContent=available[0]?available[0].date:'—';$('barcodeSelect').innerHTML=db.bunches.length?db.bunches.slice().reverse().map(b=>'<option value="'+esc(b.barcode)+'">'+esc(b.barcode)+' · Qty '+b.qty+'</option>').join(''):'<option value="">No barcodes yet</option>';$('stockRows').innerHTML=available.length?available.map((b,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(b.barcode)+'</b></td><td>'+esc(b.inwardId)+'</td><td>'+esc(b.supplier)+'</td><td>'+esc(b.date)+'</td><td>'+b.availableQty+'</td><td>'+esc(b.location)+'</td><td><span class="pill">'+esc(b.status)+'</span></td></tr>').join(''):'<tr><td colspan="8">No stock yet. Create an inward first.</td></tr>';if(db.bunches.length)showSelectedLabel()}
+function exportJson(){const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ne-operations-v2-data.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function clearPrototype(){if(!confirm('Clear all Operations V2 prototype data on this device?'))return;localStorage.removeItem(KEY);db={inwards:[],bunches:[]};renderAll();$('printArea').style.display='none'}
+$('inwardDate').value=new Date().toISOString().slice(0,10);restoreUser();load();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
