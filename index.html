@@ -3,117 +3,55 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#073c2b">
-<title>Native Elaneeru — Built for Local Coconut Vendors</title>
-<meta name="description" content="Native Elaneeru is building a stronger local tender-coconut ecosystem for farmers, roadside vendors and the customers they serve.">
+<meta name="theme-color" content="#073d2b">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<title>Native Elaneeru | Grow Farmers. Empower Vendors. Serve Everyone.</title>
+<meta name="description" content="Native Elaneeru is building a stronger tender-coconut ecosystem around farmers, roadside vendors and the communities they serve.">
 <link rel="canonical" href="https://nativeelaneeru.github.io/native-elaneeru-app/">
 <link rel="icon" href="./icons/icon-192.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-<style>
-:root{--forest:#073c2b;--deep:#042a1e;--leaf:#14824b;--leaf2:#1a9859;--mint:#eaf5ec;--cream:#f7f2e7;--paper:#fffdf8;--ink:#16231d;--muted:#65736c;--line:#dbe5de;--gold:#e8c65f;--white:#fff;--shadow:0 28px 80px rgba(4,42,30,.16)}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font-family:"DM Sans",system-ui,-apple-system,sans-serif;overflow-x:hidden}a{text-decoration:none;color:inherit}button,input{font:inherit}.wrap{width:min(1220px,calc(100% - 40px));margin:auto}.kicker{font:800 11px "Manrope";letter-spacing:.17em;text-transform:uppercase;color:var(--leaf)}.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--leaf);border-radius:999px;padding:14px 21px;background:var(--leaf);color:#fff;font:800 13px "Manrope";cursor:pointer;transition:.25s ease}.btn:hover{transform:translateY(-2px);box-shadow:0 14px 30px rgba(20,130,75,.22)}.btn.light{background:#fff;border-color:#fff;color:var(--forest)}.btn.outline{background:transparent;color:var(--forest);border-color:#b9ccbf}.btn.darkOutline{background:transparent;color:#fff;border-color:#ffffff45}
-header{position:fixed;inset:0 0 auto;z-index:50;background:linear-gradient(180deg,rgba(4,42,30,.86),rgba(4,42,30,.05));transition:.25s ease}header.scrolled{background:rgba(4,42,30,.96);backdrop-filter:blur(16px);box-shadow:0 10px 30px rgba(0,0,0,.12)}.nav{height:82px;display:flex;align-items:center;gap:13px;color:#fff}.logo{width:48px;height:48px}.brand b{display:block;font:800 18px "Manrope"}.brand span{display:block;font-size:10px;color:#c7ddd1;margin-top:1px}.grow{flex:1}.links{display:flex;align-items:center;gap:26px;font:700 12px "Manrope"}.links a{color:#dcebe3}.links a:hover{color:#fff}.navCta{padding:11px 17px;border-radius:999px;background:#fff;color:var(--forest)!important;font-weight:800}
-.hero{position:relative;min-height:100svh;background:var(--deep);color:#fff;overflow:hidden}.heroMedia{position:absolute;inset:0}.heroMedia img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(.88) contrast(1.04)}.heroShade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,34,24,.95) 0%,rgba(3,34,24,.83) 38%,rgba(3,34,24,.28) 72%,rgba(3,34,24,.12) 100%),linear-gradient(0deg,rgba(3,34,24,.5),transparent 45%)}.heroGlow{position:absolute;width:700px;height:700px;border-radius:50%;background:#1a985955;filter:blur(20px);left:-300px;bottom:-430px}.heroInner{position:relative;z-index:4;min-height:100svh;display:flex;align-items:flex-end;padding:150px 0 84px}.heroCopy{max-width:890px}.hero .kicker{color:#b4e5c4}.hero h1{font:800 clamp(55px,7.8vw,106px)/.88 "Manrope";letter-spacing:-.067em;margin:15px 0 26px;max-width:1000px}.hero h1 em{font-style:normal;color:#bde7c8}.heroLead{max-width:710px;font-size:20px;line-height:1.65;color:#d9e8e0;margin:0}.heroActions{display:flex;gap:11px;flex-wrap:wrap;margin-top:30px}.heroFoot{margin-top:54px;padding-top:20px;border-top:1px solid #ffffff25;display:flex;align-items:center;gap:18px;color:#c6d9cf;font-size:12px}.heroFoot strong{color:#fff;font:800 12px "Manrope"}.heroFoot i{width:5px;height:5px;border-radius:50%;background:#87c99f}
-.manifesto{background:var(--cream);padding:124px 0}.manifestoGrid{display:grid;grid-template-columns:.62fr 1.38fr;gap:76px}.manifesto h2{font:800 clamp(48px,6.3vw,82px)/.94 "Manrope";letter-spacing:-.055em;color:var(--forest);margin:12px 0 0}.manifestoStory{padding-top:4px}.manifestoStory p{font-size:21px;line-height:1.72;color:#4f6157;margin:0 0 22px}.manifestoStory p:first-child{font-size:28px;line-height:1.48;color:var(--forest);font-weight:600}.quote{margin-top:38px;border-left:3px solid var(--leaf);padding:3px 0 3px 22px;font:700 22px/1.5 "Manrope";color:var(--forest)}
-.story{background:#fff;padding:118px 0}.storyHead{max-width:840px;margin-bottom:54px}.storyHead h2{font:800 clamp(46px,5.8vw,76px)/.95 "Manrope";letter-spacing:-.055em;color:var(--forest);margin:12px 0 16px}.storyHead p{font-size:18px;line-height:1.72;color:var(--muted);margin:0}.storyRail{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.chapter{position:relative;min-height:520px;border-radius:30px;overflow:hidden;background:var(--forest);box-shadow:var(--shadow)}.chapter img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .8s ease}.chapter:hover img{transform:scale(1.035)}.chapter:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(3,36,25,.91),rgba(3,36,25,.08) 70%)}.chapterCopy{position:absolute;z-index:2;left:27px;right:27px;bottom:27px;color:#fff}.chapterNo{font:800 10px "Manrope";letter-spacing:.16em;text-transform:uppercase;color:#b6e5c6}.chapter h3{font:800 31px/1.03 "Manrope";letter-spacing:-.04em;margin:8px 0 10px}.chapter p{font-size:14px;line-height:1.62;color:#d6e5dd;margin:0}.chapter:nth-child(2){transform:translateY(34px)}
-.promise{padding:145px 0 118px;background:var(--forest);color:#fff}.promiseTop{display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:end}.promise h2{font:800 clamp(50px,6.6vw,88px)/.9 "Manrope";letter-spacing:-.06em;margin:13px 0 0}.promiseLead{font-size:20px;line-height:1.7;color:#bfd5c9;margin:0}.promiseLines{margin-top:66px;border-top:1px solid #ffffff22}.promiseLine{display:grid;grid-template-columns:70px .8fr 1.2fr;gap:26px;align-items:center;padding:31px 0;border-bottom:1px solid #ffffff22}.promiseLine span{font:800 11px "Manrope";color:#8fc6a4}.promiseLine b{font:800 25px "Manrope"}.promiseLine p{margin:0;color:#b8d0c4;font-size:14px;line-height:1.65}.promiseNote{margin-top:34px;color:#9ebcae;font-size:12px}.promiseNote strong{color:#d9efe1}
-.mission{padding:118px 0;background:var(--paper)}.missionHead{text-align:center;max-width:900px;margin:0 auto 54px}.missionHead h2{font:800 clamp(47px,6vw,78px)/.94 "Manrope";letter-spacing:-.055em;color:var(--forest);margin:12px 0 15px}.missionHead p{font-size:18px;line-height:1.7;color:var(--muted);margin:0}.missionGrid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.missionItem{padding:42px 38px 46px}.missionItem+ .missionItem{border-left:1px solid var(--line)}.missionItem small{font:800 10px "Manrope";letter-spacing:.16em;text-transform:uppercase;color:var(--leaf)}.missionItem h3{font:800 34px/1 "Manrope";letter-spacing:-.04em;color:var(--forest);margin:10px 0 13px}.missionItem p{font-size:14px;line-height:1.7;color:var(--muted);margin:0}.missionBand{margin-top:45px;text-align:center;font:800 clamp(26px,4vw,48px)/1.1 "Manrope";letter-spacing:-.04em;color:var(--forest)}.missionBand span{color:var(--leaf)}
-.business{padding:118px 0;background:var(--mint)}.businessGrid{display:grid;grid-template-columns:1fr 1fr;gap:62px;align-items:center}.businessVisual{position:relative;min-height:610px}.businessVisual .mainPic{position:absolute;inset:0 12% 0 0;border-radius:34px;overflow:hidden;box-shadow:var(--shadow)}.businessVisual .mainPic img{width:100%;height:100%;object-fit:cover}.businessBadge{position:absolute;right:0;bottom:40px;width:280px;border-radius:24px;background:#fff;padding:22px;box-shadow:0 24px 60px rgba(4,42,30,.15)}.businessBadge img{width:54px;height:54px}.businessBadge b{display:block;font:800 19px/1.15 "Manrope";color:var(--forest);margin-top:12px}.businessBadge span{display:block;font-size:12px;line-height:1.55;color:var(--muted);margin-top:6px}.businessCopy h2{font:800 clamp(46px,5.7vw,74px)/.94 "Manrope";letter-spacing:-.055em;color:var(--forest);margin:12px 0 18px}.businessCopy>p{font-size:18px;line-height:1.72;color:var(--muted);margin:0}.businessPoints{margin-top:31px;border-top:1px solid #cddfd2}.businessPoint{display:grid;grid-template-columns:30px 1fr;gap:12px;padding:17px 0;border-bottom:1px solid #cddfd2}.businessPoint span{width:27px;height:27px;border-radius:50%;display:grid;place-items:center;background:#fff;color:var(--leaf);font:800 11px "Manrope"}.businessPoint b{font:800 14px "Manrope";color:var(--forest)}.businessPoint small{display:block;color:var(--muted);font-size:12px;line-height:1.5;margin-top:3px}.businessActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:27px}
-.visit{padding:118px 0;background:var(--cream)}.visitGrid{display:grid;grid-template-columns:.9fr 1.1fr;gap:70px;align-items:center}.visitCopy h2{font:800 clamp(48px,6vw,78px)/.93 "Manrope";letter-spacing:-.055em;color:var(--forest);margin:13px 0 18px}.visitCopy p{font-size:18px;line-height:1.72;color:var(--muted)}.visitFlow{margin-top:30px;display:grid;gap:14px}.visitFlow div{display:flex;gap:13px;align-items:flex-start}.visitFlow span{width:34px;height:34px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;background:var(--forest);color:#fff;font:800 11px "Manrope"}.visitFlow b{display:block;color:var(--forest);font:800 14px "Manrope"}.visitFlow small{display:block;color:var(--muted);font-size:12px;margin-top:3px}.visitCard{background:#fff;border:1px solid #e2ded3;border-radius:32px;padding:32px;box-shadow:0 26px 70px rgba(42,49,43,.09)}.visitCard h3{font:800 31px/1.07 "Manrope";letter-spacing:-.035em;color:var(--forest);margin:0}.visitCard>p{font-size:13px;line-height:1.6;color:var(--muted);margin:8px 0 22px}.field{margin-top:15px}.field label{display:block;font:800 11px "Manrope";color:#40584c;margin-bottom:7px}.field input{width:100%;padding:14px 15px;border:1px solid #d9e3dc;border-radius:14px;background:#fbfdfb;color:var(--ink);outline:none}.field input:focus{border-color:#70af89;box-shadow:0 0 0 3px rgba(20,130,75,.08)}.locationRow{display:grid;grid-template-columns:1fr auto;gap:9px}.locationBtn{border:1px solid #c9ddcf;border-radius:14px;background:#edf7f0;color:var(--leaf);padding:0 15px;font:800 11px "Manrope";cursor:pointer;white-space:nowrap}.submitBtn{width:100%;margin-top:20px;border:0}.privacy{font-size:10px;color:#87958e;line-height:1.5;margin-top:11px}.status{min-height:20px;margin-top:9px;font-size:12px;font-weight:700;color:var(--leaf)}
-.closing{position:relative;min-height:560px;background:var(--deep);color:#fff;display:flex;align-items:center;overflow:hidden}.closing img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.38}.closing:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(4,42,30,.96),rgba(4,42,30,.48))}.closingInner{position:relative;z-index:2;padding:90px 0}.closing h2{font:800 clamp(50px,7vw,92px)/.91 "Manrope";letter-spacing:-.06em;max-width:850px;margin:12px 0 19px}.closing p{font-size:18px;line-height:1.7;color:#d0e2d8;max-width:680px;margin:0}.closingActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
-footer{background:#032419;color:#abc7b9;padding:50px 0 26px}.footerGrid{display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:32px}.footerBrand{display:flex;align-items:center;gap:11px;color:#fff;font:800 18px "Manrope"}.footerBrand img{width:45px}.footerText{font-size:12px;line-height:1.65;margin-top:14px;max-width:340px}.footerGrid h4{color:#fff;font:800 12px "Manrope";margin:0 0 12px}.footerGrid a{display:block;font-size:12px;margin:9px 0}.footerBottom{margin-top:38px;padding-top:22px;border-top:1px solid #ffffff13;font-size:11px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}.reveal{opacity:0;transform:translateY(22px);transition:.75s ease}.reveal.in{opacity:1;transform:none}
-@media(max-width:980px){.links{display:none}.nav{height:74px}.heroInner{padding-top:130px}.manifestoGrid,.promiseTop,.businessGrid,.visitGrid{grid-template-columns:1fr}.manifestoGrid{gap:38px}.storyRail{grid-template-columns:1fr 1fr}.storyRail .chapter:last-child{grid-column:1/-1;min-height:430px}.chapter:nth-child(2){transform:none}.promiseLine{grid-template-columns:55px 1fr}.promiseLine p{grid-column:2}.missionGrid{grid-template-columns:1fr}.missionItem+ .missionItem{border-left:0;border-top:1px solid var(--line)}.businessVisual{min-height:520px}.footerGrid{grid-template-columns:1fr 1fr}}
-@media(max-width:680px){.wrap{width:min(100% - 28px,1220px)}.brand span{display:none}.nav .btn{padding:10px 13px;font-size:11px}.hero h1{font-size:54px}.heroLead{font-size:17px}.heroFoot{align-items:flex-start;flex-wrap:wrap;margin-top:38px}.manifesto,.story,.promise,.mission,.business,.visit{padding:82px 0}.manifesto h2,.storyHead h2,.promise h2,.missionHead h2,.businessCopy h2,.visitCopy h2{font-size:46px}.manifestoStory p:first-child{font-size:22px}.manifestoStory p{font-size:17px}.storyRail{grid-template-columns:1fr}.storyRail .chapter:last-child{grid-column:auto}.chapter{min-height:455px!important}.promiseLine{grid-template-columns:42px 1fr;gap:13px}.promiseLine b{font-size:20px}.missionItem{padding:31px 8px}.businessVisual{min-height:440px}.businessVisual .mainPic{right:6%}.businessBadge{width:235px;padding:17px}.visitCard{padding:23px}.locationRow{grid-template-columns:1fr}.locationBtn{height:44px}.closing{min-height:520px}.closing h2{font-size:50px}.footerGrid{grid-template-columns:1fr}.footerBottom{display:block}.footerBottom span{display:block;margin-top:6px}}
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.chapter img,.btn{transition:none}}
+<meta property="og:type" content="website">
+<meta property="og:title" content="Native Elaneeru | Grow Farmers. Empower Vendors. Serve Everyone.">
+<meta property="og:description" content="Building a stronger tender-coconut ecosystem around farmers, roadside vendors and the communities they serve.">
+<meta property="og:url" content="https://nativeelaneeru.github.io/native-elaneeru-app/">
+<meta property="og:image" content="https://nativeelaneeru.github.io/native-elaneeru-app/icons/icon-512.png">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Native Elaneeru","url":"https://nativeelaneeru.github.io/native-elaneeru-app/"}</script>
+<style id="fallbackStyle">
+:root{--forest:#073d2b;--leaf:#1f8a51;--cream:#f7f3e9;--ink:#173126}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:var(--cream);color:var(--ink)}#siteRoot{min-height:100vh}.fallback{min-height:100vh;display:grid;place-items:center;padding:32px;background:linear-gradient(135deg,#f7f3e9,#eef8f0)}.fallbackCard{max-width:850px;text-align:center}.fallback img{width:92px;height:92px}.fallback h1{font-size:clamp(46px,8vw,92px);line-height:.95;letter-spacing:-.05em;color:var(--forest);margin:20px 0}.fallback h1 span{color:var(--leaf)}.fallback p{font-size:19px;line-height:1.7;color:#556b60}.fallback a{display:inline-block;margin-top:18px;padding:14px 22px;border-radius:999px;background:var(--leaf);color:#fff;text-decoration:none;font-weight:800}
 </style>
 </head>
 <body>
-<header id="siteHeader"><div class="wrap nav"><img class="logo" src="./icons/icon-192.png" alt="Native Elaneeru logo"><div class="brand"><b>Native Elaneeru</b><span>Built for local coconut vendors</span></div><div class="grow"></div><nav class="links"><a href="#story">Our Story</a><a href="#mission">Mission</a><a href="#business">Business</a><a href="#visit">For Vendors</a><a class="navCta" href="#visit">Request a Visit</a></nav><a class="btn light" href="#visit">Vendor Visit</a></div></header>
-
-<main>
-<section class="hero">
-  <div class="heroMedia"><img src="./assets/vendor-supply-delivery-v3.webp" alt="Native Elaneeru supporting local coconut supply"><div class="heroShade"></div><div class="heroGlow"></div></div>
-  <div class="wrap heroInner"><div class="heroCopy reveal">
-    <div class="kicker">A new local coconut ecosystem</div>
-    <h1>Built for the people who keep <em>elaneeru local.</em></h1>
-    <p class="heroLead">Native Elaneeru is building a stronger connection between the people who grow tender coconuts, the roadside vendors who sell them every day, and the neighbourhoods that depend on them.</p>
-    <div class="heroActions"><a class="btn light" href="#story">Discover our story</a><a class="btn darkOutline" href="#visit">Request a vendor visit</a></div>
-    <div class="heroFoot"><strong>Grow Farmers</strong><i></i><strong>Empower Vendors</strong><i></i><strong>Serve Everyone</strong></div>
-  </div></div>
-</section>
-
-<section class="manifesto" id="story"><div class="wrap manifestoGrid reveal">
-  <div><div class="kicker">Why Native Elaneeru exists</div><h2>This is bigger than selling coconuts.</h2></div>
-  <div class="manifestoStory">
-    <p>Across our streets, tender-coconut vendors build their livelihood one customer at a time. They are small businesses, but they are an important part of everyday local life.</p>
-    <p>Native Elaneeru exists to stand beside that vendor. We want local sellers to spend less energy worrying about sourcing and more energy serving their customers, growing their business and earning with confidence.</p>
-    <p>At the same time, we want the value created by this ecosystem to travel back toward the farmers who grow the product at its source.</p>
-    <div class="quote">We are not trying to replace the local coconut vendor. We are building to make the local coconut vendor stronger.</div>
-  </div>
-</div></section>
-
-<section class="story"><div class="wrap">
-  <div class="storyHead reveal"><div class="kicker">The Native Elaneeru story</div><h2>Rooted in farms. Built around vendors.</h2><p>One brand, three human stories. Publicly, we keep the idea simple: support the source, strengthen the seller, and make a better everyday experience for the customer.</p></div>
-  <div class="storyRail">
-    <article class="chapter reveal"><img loading="lazy" src="./assets/direct-executive-delivery-v3.webp" alt="Native Elaneeru field team"><div class="chapterCopy"><div class="chapterNo">Chapter 01 · Farmers</div><h3>Respect the source.</h3><p>Our green stands for where every coconut begins — farms, growers and the work behind every harvest.</p></div></article>
-    <article class="chapter reveal"><img loading="lazy" src="./assets/vendor-supply-delivery-v3.webp" alt="Tender coconut supply reaching local vendors"><div class="chapterCopy"><div class="chapterNo">Chapter 02 · Vendors</div><h3>Strengthen the local seller.</h3><p>Roadside vendors are the heart of our business. Native Elaneeru is being built around their day-to-day reality.</p></div></article>
-    <article class="chapter reveal"><img loading="lazy" src="./assets/vendor-market-v2.webp" alt="Local tender coconut market"><div class="chapterCopy"><div class="chapterNo">Chapter 03 · Everyone</div><h3>Keep neighbourhoods refreshed.</h3><p>When vendors are stronger, customers get a more dependable local experience without losing the human connection they already love.</p></div></article>
-  </div>
-</div></section>
-
-<section class="promise"><div class="wrap">
-  <div class="promiseTop reveal"><div><div class="kicker" style="color:#9ed2b0">Our vendor promise</div><h2>Built around the vendor. Not around a template.</h2></div><p class="promiseLead">A Native Elaneeru vendor should feel that the company understands the street, the season, the customer and the pressure of running a small daily business.</p></div>
-  <div class="promiseLines reveal">
-    <div class="promiseLine"><span>01</span><b>Dependable support</b><p>We aim to make the vendor's everyday business easier and more predictable — without publishing the internal systems behind that promise.</p></div>
-    <div class="promiseLine"><span>02</span><b>Vendor-first relationship</b><p>Technology should support the vendor, not make the vendor work for the technology. Our team remains part of the relationship.</p></div>
-    <div class="promiseLine"><span>03</span><b>Local business growth</b><p>Our success should be visible in stronger local vendors, better customer service and a healthier tender-coconut ecosystem.</p></div>
-  </div>
-  <div class="promiseNote"><strong>What stays private:</strong> internal procurement, inwarding, stock, allocation, routing and operating methods are not presented on the public website.</div>
-</div></section>
-
-<section class="mission" id="mission"><div class="wrap">
-  <div class="missionHead reveal"><div class="kicker">What we stand for</div><h2>Green is not decoration. It is our identity.</h2><p>Our brand begins with farmers and carries that freshness all the way to the roadside vendor. The visual language of Native Elaneeru should always feel grounded, optimistic and unmistakably local.</p></div>
-  <div class="missionGrid reveal">
-    <div class="missionItem"><small>01 · Grow</small><h3>Farmers</h3><p>Respect the people and communities at the source of the tender-coconut economy.</p></div>
-    <div class="missionItem"><small>02 · Empower</small><h3>Vendors</h3><p>Build better support around the local sellers who meet customers every single day.</p></div>
-    <div class="missionItem"><small>03 · Serve</small><h3>Everyone</h3><p>Create a stronger local network so more people can enjoy a dependable neighbourhood experience.</p></div>
-  </div>
-  <div class="missionBand reveal">Grow Farmers <span>•</span> Empower Vendors <span>•</span> Serve Everyone.</div>
-</div></section>
-
-<section class="business" id="business"><div class="wrap businessGrid">
-  <div class="businessVisual reveal"><div class="mainPic"><img loading="lazy" src="./assets/executive-delivery-v2.webp" alt="Native Elaneeru vendor support"></div><div class="businessBadge"><img src="./icons/icon-192.png" alt="Native Elaneeru"><b>Native Elaneeru Business</b><span>A simpler digital touchpoint for approved local vendors.</span></div></div>
-  <div class="businessCopy reveal"><div class="kicker">For approved vendors</div><h2>A business app that stays out of the way.</h2><p>Native Elaneeru Business gives approved vendors a direct digital connection to the brand, while the public website remains focused on the company story and vendor relationship.</p>
-    <div class="businessPoints"><div class="businessPoint"><span>1</span><div><b>Built for vendors</b><small>Purpose-built around the people we serve, not a generic consumer marketplace.</small></div></div><div class="businessPoint"><span>2</span><div><b>Simple repeat experience</b><small>Designed to make ongoing interaction with Native Elaneeru easier.</small></div></div><div class="businessPoint"><span>3</span><div><b>Team-backed relationship</b><small>The app supports the relationship; it does not replace our field team.</small></div></div></div>
-    <div class="businessActions"><a class="btn" href="./b2b/">Open Business App</a><a class="btn outline" href="#visit">I want to become a vendor</a></div>
-  </div>
-</div></section>
-
-<section class="visit" id="visit"><div class="wrap visitGrid">
-  <div class="visitCopy reveal"><div class="kicker">Become a Native Elaneeru vendor</div><h2>You share the shop. Our team comes to you.</h2><p>No long onboarding form on the public website. Tell us your mobile number and shop location. The Native Elaneeru team will contact you and visit your shop to take the next step.</p>
-    <div class="visitFlow"><div><span>1</span><div><b>Share your phone number</b><small>So our team can reach you.</small></div></div><div><span>2</span><div><b>Share your shop location</b><small>Type the area or use your phone location.</small></div></div><div><span>3</span><div><b>Meet the Native Elaneeru team</b><small>We will contact you and visit the shop.</small></div></div></div>
-  </div>
-  <div class="visitCard reveal"><h3>Request a vendor visit</h3><p>For roadside tender-coconut vendors in Bengaluru. This is only a visit request, not full onboarding.</p>
-    <div class="field"><label for="mobile">Mobile number</label><input id="mobile" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number"></div>
-    <div class="field"><label for="shopLocation">Shop location / area</label><div class="locationRow"><input id="shopLocation" placeholder="Example: Bellandur, Bengaluru"><button class="locationBtn" id="locateBtn" type="button">Use my location</button></div></div>
-    <button class="btn submitBtn" id="visitBtn" type="button">Request Team Visit</button><div class="privacy">By submitting, you are asking Native Elaneeru to contact you about a vendor visit. Full onboarding happens separately.</div><div class="status" id="visitStatus"></div>
-  </div>
-</div></section>
-
-<section class="closing"><img loading="lazy" src="./assets/direct-delivery-v2.webp" alt="Native Elaneeru local delivery"><div class="wrap closingInner reveal"><div class="kicker" style="color:#b5e4c5">Native Elaneeru</div><h2>One local vendor at a time.</h2><p>We are building patiently, locally and with purpose — so the people already serving our streets can build stronger businesses for the future.</p><div class="closingActions"><a class="btn light" href="#visit">Request Vendor Visit</a><a class="btn darkOutline" href="./b2b/">Open Business App</a></div></div></section>
-</main>
-
-<footer><div class="wrap"><div class="footerGrid"><div><div class="footerBrand"><img src="./icons/icon-192.png" alt="Native Elaneeru">Native Elaneeru</div><div class="footerText">A vendor-first tender-coconut company being built from Bengaluru for stronger local businesses.</div></div><div><h4>Company</h4><a href="#story">Our Story</a><a href="#mission">Mission</a></div><div><h4>Vendors</h4><a href="#visit">Request a Visit</a><a href="./b2b/">Business App</a></div><div><h4>Our belief</h4><a href="#mission">Grow Farmers</a><a href="#mission">Empower Vendors</a><a href="#mission">Serve Everyone</a></div></div><div class="footerBottom"><span>© 2026 Native Elaneeru</span><span>Bengaluru, Karnataka · Built for local tender-coconut vendors</span></div></div></footer>
-
+<div id="siteRoot">
+  <main class="fallback">
+    <div class="fallbackCard">
+      <img src="./icons/native-elaneeru.svg" alt="Native Elaneeru">
+      <h1>Grow Farmers.<br><span>Empower Vendors.</span><br>Serve Everyone.</h1>
+      <p>Native Elaneeru is building a stronger tender-coconut ecosystem where the people who grow and the people who sell can build more dependable livelihoods.</p>
+      <a href="./b2b/">Native Elaneeru Business</a>
+    </div>
+  </main>
+</div>
 <script>
-const header=document.getElementById('siteHeader');
-const onScroll=()=>header.classList.toggle('scrolled',window.scrollY>24);onScroll();addEventListener('scroll',onScroll,{passive:true});
-const io=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.1});document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
-const mobile=document.getElementById('mobile'),locationInput=document.getElementById('shopLocation'),status=document.getElementById('visitStatus'),locateBtn=document.getElementById('locateBtn');
-locateBtn.addEventListener('click',()=>{if(!navigator.geolocation){status.textContent='Location is not available on this device.';return}status.textContent='Getting your shop location…';navigator.geolocation.getCurrentPosition(p=>{locationInput.value=`${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`;status.textContent='Location added.'},()=>{status.textContent='Could not access location. Please type your area instead.'},{enableHighAccuracy:true,timeout:10000,maximumAge:60000})});
-document.getElementById('visitBtn').addEventListener('click',()=>{const m=mobile.value.replace(/\D/g,''),loc=locationInput.value.trim();if(m.length!==10){status.textContent='Please enter a valid 10-digit mobile number.';mobile.focus();return}if(!loc){status.textContent='Please enter your shop location or use current location.';locationInput.focus();return}status.textContent='Opening your vendor visit request…';const msg=`Native Elaneeru Vendor Visit Request\nMobile: ${m}\nShop location: ${loc}\n\nPlease contact me and arrange a shop visit.`;location.href='https://wa.me/917411807675?text='+encodeURIComponent(msg)});
+(async function(){
+  try{
+    let html=await fetch('./website-demo/index.html?v=20261001',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Public design unavailable');return r.text()});
+    html=html
+      .replaceAll('../icons/','./icons/')
+      .replaceAll('../assets/','./assets/')
+      .replaceAll('../b2b/','./b2b/')
+      .replaceAll('https://commons.wikimedia.org/wiki/Special:Redirect/file/Coconut_farm.jpg?width=1600','./assets/vendor-supply-delivery-v3.webp')
+      .replace('Thank you. Your details are ready for the callback flow.','Thanks. Online callback submission is being enabled; please use the Business app for now.');
+    const parsed=new DOMParser().parseFromString(html,'text/html');
+    parsed.querySelectorAll('style').forEach((style,i)=>{const clone=document.createElement('style');clone.dataset.approvedSite=String(i);clone.textContent=style.textContent;document.head.appendChild(clone)});
+    parsed.querySelectorAll('link[rel="stylesheet"]').forEach(link=>{const href=link.getAttribute('href');if(href&&!document.querySelector('link[href="'+href+'"]')){const clone=document.createElement('link');clone.rel='stylesheet';clone.href=href;document.head.appendChild(clone)}});
+    const scripts=[...parsed.body.querySelectorAll('script')].map(s=>s.textContent);
+    parsed.body.querySelectorAll('script').forEach(s=>s.remove());
+    const root=document.getElementById('siteRoot');
+    root.innerHTML=parsed.body.innerHTML;
+    const fallbackStyle=document.getElementById('fallbackStyle');if(fallbackStyle)fallbackStyle.remove();
+    scripts.forEach(code=>{const s=document.createElement('script');s.textContent=code;document.body.appendChild(s)});
+  }catch(err){console.error(err)}
+})();
 </script>
 </body>
 </html>
