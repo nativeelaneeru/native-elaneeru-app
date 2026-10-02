@@ -3,6 +3,14 @@
   var WHATSAPP_NUMBER='917411807675';
   var capturedMapLink='';
 
+  function mapsFromCoordsValue(){
+    var coordsEl=document.getElementById('coords');
+    var raw=coordsEl?String(coordsEl.value||'').trim():'';
+    var m=raw.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if(!m)return '';
+    return 'https://www.google.com/maps?q='+encodeURIComponent(m[1]+','+m[2]);
+  }
+
   function install(){
     var form=document.getElementById('leadForm');
     var phoneEl=document.getElementById('phone');
@@ -13,25 +21,22 @@
     var btn=form.querySelector('button[type="submit"]');
     if(btn)btn.textContent='Request Callback on WhatsApp';
 
-    var locBtn=form.querySelector('.locBtn');
-    if(locBtn&&!locBtn.dataset.neMapsBound){
-      locBtn.dataset.neMapsBound='1';
+    var locBtn=document.getElementById('locBtn')||form.querySelector('.locBtn');
+    if(locBtn&&!locBtn.dataset.neMapsObserver){
+      locBtn.dataset.neMapsObserver='1';
       locBtn.addEventListener('click',function(){
-        if(!navigator.geolocation){
-          status.textContent='Location is not supported on this device. You can enter your area manually.';
-          return;
-        }
-        status.textContent='Getting your location…';
-        navigator.geolocation.getCurrentPosition(function(pos){
-          var lat=Number(pos.coords.latitude).toFixed(6);
-          var lng=Number(pos.coords.longitude).toFixed(6);
-          capturedMapLink='https://www.google.com/maps?q='+lat+','+lng;
-          if(!String(areaEl.value||'').trim())areaEl.value='Current location';
-          status.textContent='Location captured. Your Google Maps link will be included in WhatsApp.';
-        },function(){
-          capturedMapLink='';
-          status.textContent='Could not capture location. Please allow location access or enter your area manually.';
-        },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+        capturedMapLink='';
+        var attempts=0;
+        var timer=setInterval(function(){
+          attempts++;
+          var link=mapsFromCoordsValue();
+          if(link){
+            capturedMapLink=link;
+            clearInterval(timer);
+          }else if(attempts>=40){
+            clearInterval(timer);
+          }
+        },250);
       });
     }
 
@@ -39,6 +44,7 @@
       e.preventDefault();
       var phone=String(phoneEl.value||'').replace(/\D/g,'').slice(-10);
       var area=String(areaEl.value||'').trim();
+      var mapLink=capturedMapLink||mapsFromCoordsValue();
 
       if(!/^[6-9]\d{9}$/.test(phone)){
         status.textContent='Please enter a valid 10-digit mobile number.';
@@ -56,7 +62,7 @@
         'Mobile: '+phone,
         'Area / Location: '+area
       ];
-      if(capturedMapLink)lines.push('Google Maps: '+capturedMapLink);
+      if(mapLink)lines.push('Google Maps: '+mapLink);
       lines.push('','Please call me back.');
 
       var url='https://wa.me/'+WHATSAPP_NUMBER+'?text='+encodeURIComponent(lines.join('\n'));
