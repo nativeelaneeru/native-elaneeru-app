@@ -1,0 +1,31 @@
+/* Native Elaneeru Business V2 — launch layout correction.
+   Keeps the approved mobile shell while preventing the header's inner .shell
+   from inheriting a full viewport height. */
+#appShell{
+  width:min(100%,430px);
+  margin:0 auto;
+  min-height:100vh;
+  min-height:100dvh;
+  background:var(--bg,#f5f7f4);
+  position:relative;
+  overflow-x:hidden;
+}
+#appShell .shell{
+  width:100%;
+  max-width:430px;
+  margin:0 auto;
+  min-height:0 !important;
+}
+#appShell .top .shell{
+  min-height:0 !important;
+  background:transparent !important;
+}
+#appShell main.shell{
+  min-height:calc(100vh - 54px) !important;
+  min-height:calc(100dvh - 54px) !important;
+  background:var(--bg,#f5f7f4) !important;
+  padding-bottom:92px;
+}
+@media (min-width:431px){
+  #appShell{box-shadow:0 0 0 1px rgba(0,0,0,.03)}
+}
