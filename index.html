@@ -34,16 +34,16 @@
     </div>
   </main>
 </div>
+<script src="./b2c/config.js?v=20261002"></script>
 <script>
 (async function(){
   try{
-    let html=await fetch('./website-demo/index.html?v=20261001',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Public design unavailable');return r.text()});
+    let html=await fetch('./website-demo/index.html?v=20261002',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Public design unavailable');return r.text()});
     html=html
       .replaceAll('../icons/','./icons/')
       .replaceAll('../assets/','./assets/')
       .replaceAll('../b2b/','./b2b/')
-      .replaceAll('https://commons.wikimedia.org/wiki/Special:Redirect/file/Coconut_farm.jpg?width=1600','./assets/vendor-supply-delivery-v3.webp')
-      .replace('Thank you. Your details are ready for the callback flow.','Thanks. Online callback submission is being enabled; please use the Business app for now.');
+      .replaceAll('https://commons.wikimedia.org/wiki/Special:Redirect/file/Coconut_farm.jpg?width=1600','./assets/vendor-supply-delivery-v3.webp');
     const parsed=new DOMParser().parseFromString(html,'text/html');
     parsed.querySelectorAll('style').forEach((style,i)=>{const clone=document.createElement('style');clone.dataset.approvedSite=String(i);clone.textContent=style.textContent;document.head.appendChild(clone)});
     parsed.querySelectorAll('link[rel="stylesheet"]').forEach(link=>{const href=link.getAttribute('href');if(href&&!document.querySelector('link[href="'+href+'"]')){const clone=document.createElement('link');clone.rel='stylesheet';clone.href=href;document.head.appendChild(clone)}});
@@ -53,6 +53,7 @@
     root.innerHTML=parsed.body.innerHTML;
     const fallbackStyle=document.getElementById('fallbackStyle');if(fallbackStyle)fallbackStyle.remove();
     scripts.forEach(code=>{const s=document.createElement('script');s.textContent=code;document.body.appendChild(s)});
+    const callback=document.createElement('script');callback.src='./website-callback.js?v=20261002';document.body.appendChild(callback);
   }catch(err){console.error(err)}
 })();
 </script>
