@@ -26,6 +26,9 @@ jobs:
       - name: Validate B2C and B2B PWAs
         run: node scripts/smoke-check.mjs
 
+      - name: Verify clean B2B v2 launch app
+        run: node scripts/b2b-v2-regression.mjs
+
       - name: Verify feature regressions
         run: node scripts/feature-regression.mjs
 
