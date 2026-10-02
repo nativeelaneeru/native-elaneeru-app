@@ -10,3 +10,13 @@
   if(logo){logo.src='../icons/native-elaneeru.svg';logo.alt='Native Elaneeru logo'}
   if(slogan)slogan.textContent='Grow Farmers • Empower Vendors • Serve Everyone';
 })();
+
+(function(){
+  var btn=document.getElementById('loginBtn');
+  if(!btn||typeof btn.onclick!=='function')return;
+  var baseLogin=btn.onclick;
+  btn.onclick=function(){
+    try{sessionStorage.removeItem('nel_b2b_data_cache')}catch(e){}
+    return baseLogin.apply(this,arguments);
+  };
+})();
