@@ -8,11 +8,15 @@
       var script=document.createElement('script');
       var timer;
       function cleanup(){clearTimeout(timer);delete window[callback];if(script.parentNode)script.parentNode.removeChild(script);}
-      window[callback]=function(payload){cleanup();if(payload&&payload.ok===true)resolve(payload.result);else reject(new Error(payload&&payload.error||'Backend rejected request'));};
-      script.onerror=function(){cleanup();reject(new Error('Unable to reach callback service'));};
+      window[callback]=function(payload){
+        cleanup();
+        if(payload&&payload.ok===true) resolve(payload.result);
+        else reject(new Error(payload&&payload.error ? payload.error : 'Backend rejected request'));
+      };
+      script.onerror=function(){cleanup();reject(new Error('Unable to reach Apps Script callback service'))};
       var request={method:method,args:Array.isArray(args)?args:[],requestId:'web-callback-'+Date.now()};
       script.src=API+'?jsonp=1&callback='+encodeURIComponent(callback)+'&payload='+encodeURIComponent(JSON.stringify(request))+'&_='+Date.now();
-      timer=setTimeout(function(){cleanup();reject(new Error('Callback request timed out'));},15000);
+      timer=setTimeout(function(){cleanup();reject(new Error('Apps Script callback timed out after 15 seconds'))},15000);
       document.head.appendChild(script);
     });
   }
@@ -33,8 +37,15 @@
       if(btn)btn.disabled=true;
       status.textContent='Submitting your callback request…';
       callBackend('saveCallbackRequest',[{name:'Website Vendor',mobile:phone,area:area,requestType:'VENDOR_CALLBACK',source:'NATIVE ELANEERU WEBSITE'}])
-        .then(function(result){if(!result||result.success!==true)throw new Error('Callback was not saved');status.textContent='Thank you. Your callback request has been submitted successfully.';phoneEl.value='';areaEl.value='';})
-        .catch(function(err){console.error(err);status.textContent='We could not submit your request right now. Please try again.';})
+        .then(function(result){
+          if(!result||result.success!==true) throw new Error(result&&result.message ? result.message : 'Callback was not saved');
+          status.textContent='Thank you. Your callback request has been submitted successfully.';
+          phoneEl.value='';areaEl.value='';
+        })
+        .catch(function(err){
+          console.error('Native Elaneeru callback error:',err);
+          status.textContent='Callback error: '+String(err&&err.message||err||'Unknown error');
+        })
         .finally(function(){if(btn)btn.disabled=false;});
     };
     return true;
