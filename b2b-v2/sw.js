@@ -1,0 +1,7 @@
+const CACHE='native-elaneeru-b2b-v2-1';
+const SHELL=['./','./index.html','./manifest.webmanifest'];
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(SHELL)).then(()=>self.skipWaiting()))});
+self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+async function staleWhileRevalidate(request,fallback){const cached=await caches.match(request),network=fetch(request,{cache:'no-store'}).then(response=>{if(response&&response.ok)caches.open(CACHE).then(cache=>cache.put(request,response.clone())).catch(()=>{});return response}).catch(()=>null);if(cached){network.catch(()=>{});return cached}const fresh=await network;if(fresh)return fresh;if(fallback){const page=await caches.match(fallback);if(page)return page}throw new Error('offline')}
+self.addEventListener('fetch',event=>{const req=event.request;if(req.method!=='GET')return;const url=new URL(req.url);if(url.origin!==self.location.origin)return;if(req.mode==='navigate'){event.respondWith(staleWhileRevalidate(req,'./index.html'));return}if(url.pathname.endsWith('/manifest.webmanifest')){event.respondWith(staleWhileRevalidate(req));return}event.respondWith(caches.match(req).then(hit=>hit||fetch(req).then(response=>{if(response&&response.ok)caches.open(CACHE).then(cache=>cache.put(req,response.clone())).catch(()=>{});return response})))});
+self.addEventListener('message',event=>{if(event.data==='SKIP_WAITING')self.skipWaiting()});
