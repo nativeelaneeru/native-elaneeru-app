@@ -1,21 +1,6 @@
-const CACHE='native-elaneeru-business-install-v11.0.5';
-const BUILD='1400';
-const SHELL=[
-  './',
-  './index.html',
-  './ui-v1201.css?v=1400',
-  './reference-v1300.css?v=1400',
-  './reference-v1300.js?v=1400',
-  './manifest.webmanifest?v=1400',
-  './icons/icon-192.png?v=1400',
-  './icons/icon-512.png?v=1400',
-  './base-price-v952.js?v=952',
-  '../b2c/images/tender-coconut-v2.webp',
-  '../b2b-approved/login-bg.webp',
-  '../b2b-approved/app.js?v=1400',
-  '../b2b-approved/market-price-fix.js?v=1400',
-  '../b2b-approved/ask-ne-fix.js?v=1400'
-];
+const CACHE='native-elaneeru-business-green-v15.0.0';
+const BUILD='1500';
+const SHELL=['./','./index.html','./manifest.webmanifest?v=1500','./icons/icon-192.png?v=1500','./icons/icon-512.png?v=1500','../icons/native-elaneeru.svg','./payment-upi-v916.js?v=916'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(
