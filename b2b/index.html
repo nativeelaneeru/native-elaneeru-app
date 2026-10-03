@@ -4,21 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#087f40">
-<meta name="description" content="Native Elaneeru Business Partner ordering, credit, delivery and Ask NE app.">
+<meta name="description" content="Native Elaneeru Business Partner ordering, delivery and Ask NE app.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Native Elaneeru Business</title>
-<link rel="manifest" href="./manifest.webmanifest?v=1100">
-<link rel="icon" href="./icons/icon-192.png?v=1100">
-<link rel="apple-touch-icon" href="./icons/icon-192.png?v=1100">
+<link rel="manifest" href="./manifest.webmanifest?v=1101">
+<link rel="icon" href="./icons/icon-192.png?v=1101">
+<link rel="apple-touch-icon" href="./icons/icon-192.png?v=1101">
 <link rel="stylesheet" href="../b2b-approved/style.css?v=1100">
-<link rel="stylesheet" href="../b2b-approved/live.css?v=1100">
+<link rel="stylesheet" href="../b2b-approved/live.css?v=1101">
 </head>
 <body>
 <div class="phone">
   <section id="login" class="login">
     <div class="loginInner">
-      <img class="brandLogo" src="../icons/native-elaneeru.svg" alt="Native Elaneeru">
+      <div class="loginBrand" aria-label="Native Elaneeru">
+        <svg class="loginBrandMark" viewBox="0 0 120 72" aria-hidden="true">
+          <g fill="none" stroke="#0b6b39" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M58 58c2-17 3-31 2-44"/>
+            <path d="M61 22C48 8 34 11 24 20c14-1 24 3 36 13"/>
+            <path d="M61 22C70 7 86 9 98 17c-15 1-25 7-36 17"/>
+            <path d="M60 24C48 19 39 22 31 30c11-1 19 2 28 8"/>
+            <path d="M63 24c12-5 22-2 30 7-12-1-20 2-29 8"/>
+          </g>
+          <circle cx="55" cy="24" r="5" fill="#8ea93b"/><circle cx="64" cy="23" r="5" fill="#9bb445"/><circle cx="60" cy="31" r="5" fill="#819d34"/>
+          <path d="M36 58c16-6 33-6 49 0" fill="none" stroke="#0b6b39" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <div class="loginBrandName">Native <span>Elaneeru</span></div>
+        <div class="loginBrandTag">PURE · NATURAL · HEALTHY</div>
+      </div>
       <h1 class="loginTitle">Business Partner Login</h1>
       <div class="loginSub">Access your pricing, orders and schemes</div>
       <div class="phoneInput"><span>☎</span><span>+91</span><input id="mobile" inputmode="numeric" maxlength="10" autocomplete="tel" placeholder="98765 43210" aria-label="Mobile number"></div>
@@ -26,8 +40,8 @@
       <div id="loginMsg" class="secure">Secure login for registered vendors only</div>
       <div class="benefits">
         <div class="benefit"><div class="benefitIcon">◷</div>Fast<br>Ordering</div>
-        <div class="benefit"><div class="benefitIcon">♢</div>Exclusive<br>Pricing</div>
-        <div class="benefit"><div class="benefitIcon">♙</div>Special<br>Schemes</div>
+        <div class="benefit"><div class="benefitIcon">◇</div>Exclusive<br>Pricing</div>
+        <div class="benefit"><div class="benefitIcon">♧</div>Special<br>Schemes</div>
       </div>
     </div>
   </section>
@@ -50,8 +64,8 @@
         <div class="market">
           <div class="marketHead"><div><b>Today’s Market Price</b><small id="marketDate">Verified source only</small></div><span class="live">● LIVE</span></div>
           <div class="prices">
-            <div class="pbox"><label>Market Price</label><strong id="marketPrice">—</strong><small id="marketUnit">verified reference</small></div>
-            <div class="pbox yours"><label>👑 Your Price</label><strong id="vendorPrice">—</strong><small id="vendorUnit">per piece</small></div>
+            <div class="pbox"><label>Market Price</label><strong id="marketPrice">Updating</strong><small id="marketUnit">verified reference</small></div>
+            <div class="pbox yours"><label>★ Your Price</label><strong id="vendorPrice">—</strong><small id="vendorUnit">per piece</small></div>
           </div>
           <div id="marketBenchmarks" class="marketBenchmarks"></div>
         </div>
@@ -93,16 +107,12 @@
 
       <section id="creditView" class="hidden">
         <div class="simplebar"><span>My Credit</span><span class="barMeta">Live account</span></div>
-        <div class="content">
-          <div id="creditSummary" class="creditSummary"></div>
-          <div class="infoCard"><b>How credit works</b><p>Credit checkout is available only when your account is approved and the order is within your available limit. The server validates your available credit again before placing the order.</p></div>
-          <button class="proceed" data-go="products">Order Using Available Credit</button>
-        </div>
+        <div class="content"><div id="creditSummary" class="creditSummary"></div></div>
       </section>
 
       <section id="deliveryView" class="hidden">
         <div class="simplebar"><span>Delivery</span><button id="refreshDeliveryBtn">⟳</button></div>
-        <div class="content"><div class="deliveryHero"><b>Order Delivery Status</b><small>Only real order lifecycle data is shown. Live driver ETA will appear only when a verified tracking feed is available.</small></div><div id="deliveryList"></div></div>
+        <div class="content"><div class="deliveryHero"><b>Order Delivery Status</b><small>Only verified order lifecycle data is shown.</small></div><div id="deliveryList"></div></div>
       </section>
 
       <section id="schemesView" class="hidden">
@@ -117,8 +127,7 @@
           <div class="menu">
             <button id="profileBtn"><span>♙&nbsp; My Profile</span><span>›</span></button>
             <button id="addressBtn"><span>⌖&nbsp; Delivery Address</span><span>›</span></button>
-            <button data-go="credit"><span>₹&nbsp; Credit Account</span><span>›</span></button>
-            <button data-go="delivery"><span>🚚&nbsp; Delivery Status</span><span>›</span></button>
+            <button data-go="delivery"><span>↗&nbsp; Delivery Status</span><span>›</span></button>
             <button id="paymentBtn"><span>▣&nbsp; Payment Methods</span><span>›</span></button>
             <button id="supportBtn"><span>☎&nbsp; Support</span><span>›</span></button>
             <button id="aboutBtn"><span>◉&nbsp; About Native Elaneeru</span><span>›</span></button>
@@ -131,23 +140,23 @@
     <nav class="nav">
       <button class="on" data-v="home"><span>⌂</span>Home</button>
       <button data-v="products"><span>▦</span>Products</button>
-      <button data-v="cart"><span>🛒</span>Cart<i id="cartBadge" class="badge hidden">0</i></button>
+      <button data-v="cart"><span>▱</span>Cart<i id="cartBadge" class="badge hidden">0</i></button>
       <button data-v="orders"><span>▣</span>Orders</button>
       <button data-v="schemes"><span>✪</span>Schemes</button>
     </nav>
-    <button id="askFab" class="askFab"><span><span class="bot">🤖</span><b>Ask NE</b></span></button>
+    <button id="askFab" class="askFab"><span><span class="bot">NE</span><b>Ask NE</b></span></button>
   </section>
 </div>
 
 <section id="ask" class="askScreen hidden">
-  <div class="askHead"><div class="botIcon">🤖</div><div><h3>Ask NE</h3><small>Your Smart Business Assistant</small></div><button id="closeAsk" class="close">×</button></div>
+  <div class="askHead"><div class="botIcon">NE</div><div><h3>Ask NE</h3><small>Your Smart Business Assistant</small></div><button id="closeAsk" class="close">×</button></div>
   <div id="chat" class="chat">
-    <div class="bubble botBubble"><b>Hello! 👋</b><br>I’m <b>Ask NE</b>, your business assistant.<br>I can help you with prices, orders, products, schemes, payments and more.</div>
+    <div class="bubble botBubble"><b>Hello!</b><br>I’m <b>Ask NE</b>, your business assistant.<br>I can help you with prices, orders, products, schemes, payments and more.</div>
     <div id="quickBlock"><div class="quickTitle">Quick Questions</div><div class="quickQs">
       <button class="quickQ" data-q="price">◉ &nbsp; What is today’s price?</button>
       <button class="quickQ" data-q="orders">▣ &nbsp; Show my recent orders</button>
       <button class="quickQ" data-q="stock">▦ &nbsp; Check stock availability</button>
-      <button class="quickQ" data-q="schemes">🎁 &nbsp; What schemes are available?</button>
+      <button class="quickQ" data-q="schemes">✪ &nbsp; What schemes are available?</button>
       <button class="quickQ" data-q="payment">▣ &nbsp; How do I make payment?</button>
       <button class="quickQ" data-q="support">☎ &nbsp; Talk to customer support</button>
     </div></div>
@@ -158,10 +167,10 @@
 
 <section id="pinSheet" class="sheet hidden"><div class="sheetCard"><h3>Enter your 4-digit PIN</h3><p>Secure sign-in for registered Native Elaneeru vendors.</p><input id="pin" class="pinInput" inputmode="numeric" maxlength="8" type="password" placeholder="PIN"><div class="sheetActions"><button id="cancelPin" class="secondary">Cancel</button><button id="loginBtn" class="primary">Login</button></div></div></section>
 
-<section id="checkoutSheet" class="sheet hidden"><div class="sheetCard"><h3>Choose payment</h3><p>Your price, MOQ, stock and credit are recalculated securely before the order is placed.</p><div id="checkoutMethods" class="paymentMethods">
+<section id="checkoutSheet" class="sheet hidden"><div class="sheetCard"><h3>Choose payment</h3><p>Your price, MOQ and stock are revalidated securely before the order is placed.</p><div id="checkoutMethods" class="paymentMethods">
   <button id="codBtn" class="payOption"><b>Cash on Delivery</b><small>Pay when your order is delivered.</small></button>
   <button id="upiBtn" class="payOption"><b>UPI</b><small>Pay using any UPI app, then submit the UTR.</small></button>
-  <button id="creditBtn" class="payOption"><b>Credit</b><small id="creditPayText">Use approved available credit.</small></button>
+  <button id="creditBtn" class="payOption"><b>Credit</b><small id="creditPayText">Not available at launch.</small></button>
 </div><div class="sheetActions"><button id="closeCheckout" class="secondary fullAction">Close</button></div></div></section>
 
 <section id="upiSheet" class="sheet hidden"><div class="sheetCard"><h3>Pay via UPI</h3><p id="upiInfo">Preparing secure payment…</p><a id="openUpi" class="primary upiOpen" href="#">Open UPI App</a><input id="utr" class="utrInput" placeholder="Enter UTR / transaction number"><div class="sheetActions"><button id="cancelUpi" class="secondary">Cancel</button><button id="submitUpi" class="primary">Submit Payment</button></div></div></section>
@@ -173,7 +182,7 @@
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js?v=1100').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=1101').then(reg=>reg.update()).catch(()=>{});
   });
 }
 </script>
