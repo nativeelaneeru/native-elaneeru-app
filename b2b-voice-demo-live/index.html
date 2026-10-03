@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Native Elaneeru B2B Demo</title>
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#e9f3eb}iframe{display:block;width:100%;height:100%;border:0;background:#fff}</style>
+</head>
+<body>
+<iframe id="app" src="../b2b-voice-demo/index.html?build=free-delivery-live-1" title="Native Elaneeru B2B Demo"></iframe>
+<script>
+const frame=document.getElementById('app');
+function patchApp(){
+  try{
+    const w=frame.contentWindow,d=frame.contentDocument;
+    if(!w||!d)return;
+
+    // Force delivery to remain free even if an older cached inner renderer appears.
+    const patchTotals=()=>{
+      d.querySelectorAll('.totals').forEach(box=>{
+        const rows=[...box.children];
+        let productAmount='';
+        rows.forEach(row=>{
+          const text=(row.textContent||'').trim();
+          if(/^Products/i.test(text)) productAmount=(row.querySelector('strong')?.textContent||'').trim();
+          if(/Delivery/i.test(text)){
+            const label=row.querySelector('span'); if(label)label.textContent='Delivery';
+            const value=row.querySelector('strong'); if(value)value.textContent='FREE';
+          }
+        });
+        const grand=box.querySelector('.grand strong');
+        if(grand&&productAmount)grand.textContent=productAmount;
+      });
+
+      const checkout=d.getElementById('checkoutSummary');
+      if(checkout){
+        [...checkout.children].forEach(row=>{
+          if(/Delivery/i.test(row.textContent||'')){
+            const spans=row.querySelectorAll('span,strong');
+            if(spans[0])spans[0].textContent='Delivery';
+            if(spans[1])spans[1].textContent='FREE';
+          }
+        });
+      }
+
+      const badge=d.getElementById('cartBadge');
+      if(badge&&w.state&&w.state.cart){
+        const count=Object.keys(w.state.cart).length;
+        badge.textContent=count;
+        badge.style.display=count?'grid':'none';
+      }
+    };
+
+    patchTotals();
+    const observer=new MutationObserver(()=>patchTotals());
+    observer.observe(d.documentElement,{subtree:true,childList:true,characterData:true});
+
+    if(typeof w.renderCart==='function'&&!w.__neFreeDeliveryPatched){
+      const old=w.renderCart;
+      w.renderCart=function(){const r=old.apply(this,arguments);setTimeout(patchTotals,0);return r};
+      w.__neFreeDeliveryPatched=true;
+    }
+  }catch(e){console.error(e)}
+}
+frame.addEventListener('load',()=>setTimeout(patchApp,350));
+</script>
+</body>
+</html>
