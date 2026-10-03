@@ -8,8 +8,8 @@
 <title>Native Elaneeru Business</title>
 <link rel="icon" href="../icons/icon-192.png">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
-<link rel="stylesheet" href="./style.css?v=6">
-<link rel="stylesheet" href="./live.css?v=3">
+<link rel="stylesheet" href="./style.css?v=7">
+<link rel="stylesheet" href="./live.css?v=4">
 </head>
 <body>
 <div class="phone">
@@ -17,14 +17,14 @@
     <div class="loginInner">
       <img class="brandLogo" src="../assets/native-elaneeru-logo.webp" alt="Native Elaneeru">
       <h1 class="loginTitle">Business Partner Login</h1>
-      <div class="loginSub">Better sourcing. Reliable supply. Better margins.</div>
-      <div class="phoneInput"><span>+91</span><input id="mobile" inputmode="numeric" maxlength="10" autocomplete="tel" placeholder="Mobile number" aria-label="Mobile number"></div>
+      <div class="loginSub">Access your pricing, orders and schemes</div>
+      <div class="phoneInput"><span>☎</span><span>+91</span><input id="mobile" inputmode="numeric" maxlength="10" autocomplete="tel" placeholder="98765 43210" aria-label="Mobile number"></div>
       <button id="continueBtn" class="continue">Continue</button>
       <div id="loginMsg" class="secure">Secure login for registered vendors only</div>
       <div class="benefits">
         <div class="benefit"><div class="benefitIcon">◷</div>Fast<br>Ordering</div>
-        <div class="benefit"><div class="benefitIcon">₹</div>Vendor<br>Pricing</div>
-        <div class="benefit"><div class="benefitIcon">✓</div>Reliable<br>Delivery</div>
+        <div class="benefit"><div class="benefitIcon">♢</div>Exclusive<br>Pricing</div>
+        <div class="benefit"><div class="benefitIcon">♙</div>Special<br>Schemes</div>
       </div>
     </div>
   </section>
@@ -39,15 +39,15 @@
     <main class="body">
       <section id="homeView">
         <div class="hero" id="heroBanner">
-          <div class="heroCopy"><h2>Fresh Elaneeru<br>Reliable Supply</h2><p>Built for local coconut vendors</p><button data-go="products">Order Now</button></div>
+          <div class="heroCopy"><h2>Fresh Elaneeru<br>Healthier Communities</h2><p>Built for local coconut vendors</p><button data-go="products">Order Now</button></div>
           <img src="../b2c/images/tender-coconut-v2.webp" alt="Tender coconut">
         </div>
         <div class="dots"><i></i><i></i><i></i></div>
 
         <div class="market">
-          <div class="marketHead"><div><b>Today’s Market Benchmark</b><small id="marketDate">Verified source only</small></div><span class="live">◔ VERIFIED</span></div>
+          <div class="marketHead"><div><b>Today’s Market Price</b><small id="marketDate">Verified source only</small></div><span class="live">● LIVE</span></div>
           <div class="prices">
-            <div class="pbox"><label>Comparable Market</label><strong id="marketPrice">—</strong><small id="marketUnit">per piece</small></div>
+            <div class="pbox"><label>Market Price</label><strong id="marketPrice">—</strong><small id="marketUnit">per piece</small></div>
             <div class="pbox yours"><label>👑 Your Price</label><strong id="vendorPrice">—</strong><small id="vendorUnit">per piece</small></div>
           </div>
           <div id="marketBenchmarks" class="marketBenchmarks"></div>
@@ -139,16 +139,14 @@
 <section id="ask" class="askScreen hidden">
   <div class="askHead"><div class="botIcon">🤖</div><div><h3>Ask NE</h3><small>Your Smart Business Assistant</small></div><button id="closeAsk" class="close">×</button></div>
   <div id="chat" class="chat">
-    <div class="bubble botBubble"><b>Hello! 👋</b><br>I’m <b>Ask NE</b>. I can help with verified market rates, products, orders, credit, delivery, schemes, payments and support.</div>
+    <div class="bubble botBubble"><b>Hello! 👋</b><br>I’m <b>Ask NE</b>, your business assistant.<br>I can help you with prices, orders, products, schemes, payments and more.</div>
     <div id="quickBlock"><div class="quickTitle">Quick Questions</div><div class="quickQs">
-      <button class="quickQ" data-q="price">◉ &nbsp; What are today’s market rates?</button>
+      <button class="quickQ" data-q="price">◉ &nbsp; What is today’s price?</button>
       <button class="quickQ" data-q="orders">▣ &nbsp; Show my recent orders</button>
       <button class="quickQ" data-q="stock">▦ &nbsp; Check stock availability</button>
-      <button class="quickQ" data-q="credit">₹ &nbsp; Show my credit</button>
-      <button class="quickQ" data-q="delivery">🚚 &nbsp; Track my delivery</button>
       <button class="quickQ" data-q="schemes">🎁 &nbsp; What schemes are available?</button>
       <button class="quickQ" data-q="payment">▣ &nbsp; How do I make payment?</button>
-      <button class="quickQ" data-q="support">☎ &nbsp; Talk to support</button>
+      <button class="quickQ" data-q="support">☎ &nbsp; Talk to customer support</button>
     </div></div>
     <div id="chatDynamic"></div>
   </div>
@@ -166,6 +164,8 @@
 <section id="upiSheet" class="sheet hidden"><div class="sheetCard"><h3>Pay via UPI</h3><p id="upiInfo">Preparing secure payment…</p><a id="openUpi" class="primary upiOpen" href="#">Open UPI App</a><input id="utr" class="utrInput" placeholder="Enter UTR / transaction number"><div class="sheetActions"><button id="cancelUpi" class="secondary">Cancel</button><button id="submitUpi" class="primary">Submit Payment</button></div></div></section>
 
 <div id="toast" class="toast hidden"></div>
-<script src="./app.js?v=7"></script>
+<script src="./app.js?v=8"></script>
+<script src="./market-price-fix.js?v=2"></script>
+<script src="./ask-ne-fix.js?v=2"></script>
 </body>
 </html>
