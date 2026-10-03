@@ -74,6 +74,8 @@ self.addEventListener('fetch',event=>{
   if(req.method!=='GET')return;
   const u=new URL(req.url);
   if(u.origin!==self.location.origin)return;
+  // Do not intercept the unified production iframe or any sibling app route.
+  if(!u.pathname.includes('/b2b-v2/'))return;
   if(req.mode==='navigate'||u.pathname.endsWith('/index.html')){
     event.respondWith(navigation(req));
     return;
