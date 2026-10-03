@@ -22,12 +22,62 @@
 .product-note{font-size:8px;color:var(--green);font-weight:800;margin-top:4px}
 .track-note{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--green-soft);color:var(--green-dark);font-size:9px;line-height:1.45}
 .account-note{margin:14px 0;padding:11px;border-radius:10px;background:#eef5f0;color:var(--muted);font-size:9px;line-height:1.45}
+/* v3 login refinement */
+.screen.login .scroll{height:100%;padding:0}
+.login-wrap{display:flex;flex-direction:column;min-height:100%;background:#fff}
+.login-art{height:34%;min-height:235px;max-height:300px}
+.login-art:after{background:linear-gradient(180deg,rgba(7,55,34,.10),rgba(7,55,34,.88))}
+.login-copy{left:20px;right:20px;bottom:18px}
+.login-copy .brand img{width:44px;height:44px}
+.login-copy .brand-text strong{font-size:15px}
+.login-copy .brand-text span{font-size:7px;color:rgba(255,255,255,.82);letter-spacing:.04em;text-transform:none}
+.login-copy h1{font-size:23px;line-height:1.14;margin:16px 0 0}
+.login-form{padding:20px 22px 24px;flex:1}
+.login-form h2{font-size:22px;margin:4px 0 5px}
+.login-form .muted{font-size:11px;margin:0 0 14px}
+.login-phone-wrap{display:flex;align-items:center;border:1px solid #dbe5de;border-radius:10px;background:#fff;overflow:hidden}
+.login-phone-prefix{padding:11px 10px 11px 12px;font-size:13px;font-weight:800;border-right:1px solid var(--line);background:#f6f9f7}
+.login-phone-wrap input{border:0!important;box-shadow:none!important;border-radius:0!important;padding:11px 12px!important;min-width:0}
+.login-helper{font-size:8px;color:var(--muted);margin-top:5px}
+.login-secure{display:flex;align-items:center;gap:6px;font-size:8px;color:var(--muted);margin:8px 0 12px}
+.login-secure b{color:var(--green-dark)}
+.demo-hint{font-size:9px;margin:8px 0 10px;padding:8px 10px}
+.login-support{margin-top:11px;text-align:center;font-size:9px;color:var(--muted)}
+.login-support button{border:0;background:none;color:var(--green-dark);font-weight:800;padding:2px 4px}
+@media(max-width:500px){.login-art{height:31%;min-height:215px}.login-form{padding-top:18px}.login-copy h1{font-size:22px}}
 `;
   const patch=String.raw`
 (()=>{
   const DEMO_STAGE_MS=8000;
   state.orderPlacedAt=Date.now()-16000;
   state.orderQty=200;
+
+  // Production-shaped demo login: phone + 4-digit PIN. Phone is locked after sign-in.
+  const loginBrandSub=document.querySelector('[data-screen="login"] .brand-text span');if(loginBrandSub)loginBrandSub.textContent='Grow Farmers • Empower Vendors • Serve Everyone.';
+  const loginHero=document.querySelector('[data-screen="login"] .login-copy h1');if(loginHero)loginHero.innerHTML='Freshness from the farm.<br>Built for your business.';
+  const loginEyebrow=document.querySelector('[data-screen="login"] .eyebrow');if(loginEyebrow)loginEyebrow.textContent='NATIVE ELANEERU BUSINESS';
+  const loginHeading=document.querySelector('[data-screen="login"] .login-form h2');if(loginHeading)loginHeading.textContent='Partner login';
+  const loginIntro=document.querySelector('[data-screen="login"] .login-form .muted');if(loginIntro)loginIntro.textContent='Use your registered mobile number and 4-digit PIN.';
+  const lockedPhone=document.querySelector('[data-screen="login"] .locked');
+  if(lockedPhone){lockedPhone.outerHTML='<div class="login-phone-wrap"><span class="login-phone-prefix">+91</span><input class="input" id="mobileInput" inputmode="numeric" autocomplete="tel" maxlength="10" placeholder="Registered mobile number"></div><div class="login-helper">Enter the 10-digit mobile number registered with Native Elaneeru.</div>';}
+  const pin=document.getElementById('pinInput');if(pin){pin.setAttribute('autocomplete','current-password');pin.placeholder='Enter 4-digit PIN';}
+  const hint=document.querySelector('[data-screen="login"] .demo-hint');if(hint)hint.innerHTML='Demo access: enter any 10-digit mobile number • PIN <strong>1234</strong>';
+  const loginBtn=document.querySelector('[data-screen="login"] .login-form .btn.block');if(loginBtn)loginBtn.textContent='Continue securely →';
+  const loginLegal=document.querySelector('[data-screen="login"] .legal');if(loginLegal)loginLegal.insertAdjacentHTML('beforebegin','<div class="login-secure">🔒 <span>Your phone is used only to identify your vendor account. <b>It becomes locked after login.</b></span></div><div class="login-support">Need help signing in? <button type="button" onclick="toast(\'Contact Native Elaneeru support for login help\')">Contact Support</button></div>');
+  const savedPhone=localStorage.getItem('ne_demo_phone')||'';const mobileInput=document.getElementById('mobileInput');if(mobileInput&&savedPhone)mobileInput.value=savedPhone;
+  const maskPhone=(phone)=>{const d=String(phone||'').replace(/\D/g,'').slice(-10);return d.length===10?'+91 ••••• '+d.slice(-5):'+91 ••••• •••••'};
+  const baseLogin=login;
+  login=function(){
+    const mobile=(document.getElementById('mobileInput')?.value||'').replace(/\D/g,'').slice(-10);
+    const pinValue=(document.getElementById('pinInput')?.value||'').replace(/\D/g,'');
+    const err=document.getElementById('loginError');
+    if(mobile.length!==10){if(err)err.textContent='Enter a valid 10-digit registered mobile number.';document.getElementById('mobileInput')?.focus();return;}
+    if(pinValue.length!==4){if(err)err.textContent='Enter your 4-digit PIN.';document.getElementById('pinInput')?.focus();return;}
+    if(pinValue!=='1234'){if(err)err.textContent='Incorrect demo PIN. Use 1234.';return;}
+    if(err)err.textContent='';state.demoPhone=mobile;localStorage.setItem('ne_demo_phone',mobile);baseLogin();
+    const ap=document.getElementById('accountPhone');if(ap)ap.textContent=maskPhone(mobile);
+  };
+  [document.getElementById('mobileInput'),document.getElementById('pinInput')].forEach(el=>el&&el.addEventListener('keydown',e=>{if(e.key==='Enter')login()}));
 
   const oldGo=go;
   go=function(name,reset=false){ oldGo(name,reset); if(name==='tracking') renderTracking(); if(name==='orders') renderOrders(); if(name==='home') syncDeliveryUI(); };
@@ -56,6 +106,7 @@
   };
   setDeliveryStep=function(){/* manual tracking disabled */};
 
+  const originalPlaceOrder=placeOrder;
   placeOrder=function(){
     if(!Object.keys(state.cart).length)return toast('Add products first');
     state.orderId='NE-DEMO-'+String(Date.now()).slice(-6);
@@ -120,11 +171,12 @@
   ];return defs.find(d=>d.words.some(w=>t.includes(w)))||null};
   detectIntentUI=function(){const text=document.getElementById('voiceText').value;const found=detectIntent(text);state.voiceIntent=found;document.getElementById('intentLabel').textContent=found?found.label:(text.trim()?'I’m not sure yet — edit the request or send it to Support':'Waiting for you');document.getElementById('voiceActionBtn').textContent=state.voiceContext==='support'?'Add to ticket':found?('Go to '+found.label):'Send to Support'};
 
-  const account=document.querySelector('[data-screen="account"] .scroll');if(account)account.innerHTML='<div class="profile"><div class="avatar">NE</div><div><span>REGISTERED VENDOR</span><h2>Native Elaneeru Vendor</h2><p>Vendor profile</p></div><div>✓</div></div><div class="menu-label">PROFILE</div><div class="menu-row"><div>👤</div><span><strong>Vendor profile</strong><small>Profile details from approved vendor record</small></span><div></div></div><div class="menu-row"><div>🏪</div><span><strong>Shop details</strong><small>Your approved shop information</small></span><div></div></div><div class="menu-row"><div>📍</div><span><strong>Delivery addresses</strong><small>Saved delivery location</small></span><div></div></div><div class="menu-row"><div>🔒</div><span><strong>+91 ••••• •••••</strong><small>Registered phone • locked</small></span><div></div></div><div class="menu-label">BUSINESS</div><button class="menu-row" onclick="go(\'payments\')"><div>💳</div><span><strong>Payments & Credit</strong><small>₹0 current balance</small></span><div>›</div></button><button class="menu-row" onclick="go(\'schemes\')"><div>🎯</div><span><strong>Schemes & Benefits</strong><small>View active schemes</small></span><div>›</div></button><button class="menu-row" onclick="go(\'notifications\')"><div>🔔</div><span><strong>Notifications</strong><small>Order and scheme updates</small></span><div>›</div></button><div class="menu-label">ASSISTANT & SUPPORT</div><button class="menu-row" onclick="openVoice(\'global\')"><div>🎙️</div><span><strong>Ask NE</strong><small>Speak or type a request</small></span><div>›</div></button><button class="menu-row" onclick="go(\'support\')"><div>🛟</div><span><strong>Help & Support</strong><small>Create a demo NE AI ticket</small></span><div>›</div></button><div class="account-note">Demo profile fields are placeholders only. Production values will come from the approved vendor record and cannot be edited here unless allowed by admin.</div><button class="btn block outline" style="margin-top:8px;color:#b43838" onclick="logout()">↪ Logout</button><div class="legal">Native Elaneeru B2B Demo + Voice</div>';
+  const account=document.querySelector('[data-screen="account"] .scroll');if(account)account.innerHTML='<div class="profile"><div class="avatar">NE</div><div><span>REGISTERED VENDOR</span><h2>Native Elaneeru Vendor</h2><p>Vendor profile</p></div><div>✓</div></div><div class="menu-label">PROFILE</div><div class="menu-row"><div>👤</div><span><strong>Vendor profile</strong><small>Profile details from approved vendor record</small></span><div></div></div><div class="menu-row"><div>🏪</div><span><strong>Shop details</strong><small>Your approved shop information</small></span><div></div></div><div class="menu-row"><div>📍</div><span><strong>Delivery addresses</strong><small>Saved delivery location</small></span><div></div></div><div class="menu-row"><div>🔒</div><span><strong id="accountPhone">+91 ••••• •••••</strong><small>Registered phone • locked</small></span><div></div></div><div class="menu-label">BUSINESS</div><button class="menu-row" onclick="go(\'payments\')"><div>💳</div><span><strong>Payments & Credit</strong><small>₹0 current balance</small></span><div>›</div></button><button class="menu-row" onclick="go(\'schemes\')"><div>🎯</div><span><strong>Schemes & Benefits</strong><small>View active schemes</small></span><div>›</div></button><button class="menu-row" onclick="go(\'notifications\')"><div>🔔</div><span><strong>Notifications</strong><small>Order and scheme updates</small></span><div>›</div></button><div class="menu-label">ASSISTANT & SUPPORT</div><button class="menu-row" onclick="openVoice(\'global\')"><div>🎙️</div><span><strong>Ask NE</strong><small>Speak or type a request</small></span><div>›</div></button><button class="menu-row" onclick="go(\'support\')"><div>🛟</div><span><strong>Help & Support</strong><small>Create a demo NE AI ticket</small></span><div>›</div></button><div class="account-note">Demo profile fields are placeholders only. Production values will come from the approved vendor record and cannot be edited here unless allowed by admin.</div><button class="btn block outline" style="margin-top:8px;color:#b43838" onclick="logout()">↪ Logout</button><div class="legal">Native Elaneeru B2B Demo + Voice</div>';
 
   const qActions=[...document.querySelectorAll('[data-screen="home"] .quick')];const voiceQuick=qActions.find(b=>b.textContent.includes('Voice help'));if(voiceQuick){voiceQuick.querySelector('strong').textContent='Ask NE';voiceQuick.setAttribute('onclick',"openVoice('global')")}
   const h2=document.querySelector('[data-screen="home"] .section-heading h2');if(h2)h2.textContent='Latest order';
 
+  const accountPhone=document.getElementById('accountPhone');if(accountPhone)accountPhone.textContent=maskPhone(state.demoPhone||savedPhone);
   renderProducts();renderSchemes();renderOrders();updateCartBadge();syncDeliveryUI();
   setInterval(()=>{if(state.loggedIn)syncDeliveryUI()},1000);
 })();`;
