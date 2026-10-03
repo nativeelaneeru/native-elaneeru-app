@@ -10,6 +10,8 @@
 <iframe id="demo" src="./app.html?v=5001" title="Native Elaneeru Business Demo"></iframe>
 <script>
 const frame=document.getElementById('demo');
+// Public demo preview for UI checks; no backend authentication or live data.
+if(new URLSearchParams(location.search).get('preview')==='1')frame.src='./app.html?v=5001&preview=1';
 frame.addEventListener('load',()=>{
   const w=frame.contentWindow,d=frame.contentDocument;
   if(!w||!d)return;

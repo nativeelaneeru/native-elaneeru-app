@@ -59,3 +59,6 @@ $('loginPin').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});$('l
 load('9876543210');refreshDemo();renderBanners();
 
 function refreshDelivery(){const o=state.orders.find(x=>x.status!=='Delivered');const card=$('home').querySelector('.delivery');if(!o){card.classList.add('hidden');return}card.classList.remove('hidden');activeOrderId=o.id;card.querySelector('.sub').textContent='Order #'+o.id;card.querySelector('.pill').textContent=o.status.toUpperCase();const b=card.querySelectorAll('.meta b');b[0].textContent=o.status==='Out for Delivery'?'45 mins (demo)':'Pending';b[1].textContent=totals(o.items).qty+' pcs';b[2].textContent=o.status==='Out for Delivery'?'Ramesh':'Unassigned';}
+
+// Public sample-data preview. This app has no production authentication.
+if(new URLSearchParams(location.search).get('preview')==='1')show('home');
