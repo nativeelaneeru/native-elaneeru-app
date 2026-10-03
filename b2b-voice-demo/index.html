@@ -102,7 +102,7 @@
     document.getElementById('trackOrderId').textContent='Order '+state.orderId;
     const stages=deliveryStates();
     document.getElementById('stepper').innerHTML=stages.map((st,i)=>'<div class="step '+(i<=state.deliveryStep?'done':'')+'"><i>'+(i<state.deliveryStep?'✓':i+1)+'</i><div><strong>'+st[0]+'</strong><small>'+st[1]+'</small></div></div>').join('');
-    document.getElementById('trackEta').textContent=state.deliveryStep===3?'Delivered':'Today, 4:30 PM';
+    document.getElementById('trackEta').textContent=state.deliveryStep===3?'Delivered':'Delivery update';
     document.getElementById('trackSub').textContent=state.deliveryStep===3?'Delivery completed':stages[state.deliveryStep][1];
     const note=document.querySelector('[data-screen="tracking"] .legal');if(note){note.className='track-note';note.textContent='Demo status updates automatically. Production will use actual operations / dispatch status.'}
   };
@@ -118,6 +118,11 @@
     document.getElementById('confirmOrderId').textContent=state.orderId;
     document.getElementById('confirmTotal').textContent=money(total);
     document.getElementById('confirmDate').textContent=document.getElementById('deliveryDate').value||'Selected date';
+    // Demo order is treated as accepted. Clear cart only after success.
+    state.cart={};
+    updateCartBadge();
+    renderProducts();
+    renderCart();
     go('confirmation');
   };
 
@@ -127,10 +132,10 @@
     if(!items.length){list.innerHTML='<div class="empty"><div class="big">🛒</div><h3>Your cart is empty</h3><p>Add coconuts to start an order.</p></div>';actions.innerHTML='<button class="btn block" onclick="go(\'products\')">Browse products</button>';updateCartBadge();return}
     list.innerHTML=items.map(([id,qty])=>{const p=products.find(x=>x.id===id);return '<article class="cart-item"><img src="'+p.img+'" alt=""><div><h3>'+p.name+'</h3><p>'+money(p.price)+' / piece</p><div class="qty"><button onclick="cartQty(\''+p.id+'\',-10)">−</button><strong>'+qty+'</strong><button onclick="cartQty(\''+p.id+'\',10)">+</button></div></div><div><strong style="font-size:11px">'+money(p.price*qty)+'</strong><button class="icon-btn danger" onclick="removeCart(\''+p.id+'\')">×</button></div></article>'}).join('');
     const sub=cartTotals();
-    actions.innerHTML='<button class="btn block outline" onclick="go(\'products\')">+ Continue shopping</button><div class="totals"><div><span>Products</span><strong>'+money(sub)+'</strong></div><div><span>Delivery</span><strong>Included</strong></div><div class="grand"><span>Order total</span><strong>'+money(sub)+'</strong></div></div><button class="btn block" onclick="go(\'checkout\')">Proceed to checkout →</button>';
+    actions.innerHTML='<button class="btn block outline" onclick="go(\'products\')">+ Continue shopping</button><div class="totals"><div><span>Products</span><strong>'+money(sub)+'</strong></div><div><span>Delivery</span><strong>FREE</strong></div><div class="grand"><span>Order total</span><strong>'+money(sub)+'</strong></div></div><button class="btn block" onclick="go(\'checkout\')">Proceed to checkout →</button>';
     updateCartBadge();
   };
-  renderCheckout=function(){const box=document.getElementById('checkoutSummary');box.innerHTML=Object.entries(state.cart).map(([id,qty])=>{const p=products.find(x=>x.id===id);return '<div class="row-between" style="font-size:10px;padding:5px 0"><span>'+p.name+' × '+qty+'</span><strong>'+money(p.price*qty)+'</strong></div>'}).join('')+'<div class="row-between" style="border-top:1px solid var(--line);padding-top:10px;margin-top:6px;font-size:13px"><span>Total</span><strong>'+money(cartTotals())+'</strong></div>'};
+  renderCheckout=function(){const box=document.getElementById('checkoutSummary');box.innerHTML=Object.entries(state.cart).map(([id,qty])=>{const p=products.find(x=>x.id===id);return '<div class="row-between" style="font-size:10px;padding:5px 0"><span>'+p.name+' × '+qty+'</span><strong>'+money(p.price*qty)+'</strong></div>'}).join('')+'<div class="row-between" style="font-size:10px;padding:8px 0;border-top:1px solid var(--line);margin-top:6px"><span>Delivery</span><strong>FREE</strong></div><div class="row-between" style="border-top:1px solid var(--line);padding-top:10px;margin-top:6px;font-size:13px"><span>Order total</span><strong>'+money(cartTotals())+'</strong></div>'};
 
   products.forEach(p=>p.img='../assets/direct-delivery-v2.webp');
   renderProducts=function(){
