@@ -1,19 +1,19 @@
-const CACHE='native-elaneeru-business-install-v11.0.4';
-const BUILD='1300';
+const CACHE='native-elaneeru-business-install-v11.0.5';
+const BUILD='1400';
 const SHELL=[
   './',
   './index.html',
-  './ui-v1201.css?v=1201',
-  './reference-v1300.css',
-  './reference-v1300.js',
-  './manifest.webmanifest?v=1201',
-  './icons/icon-192.png?v=1201',
-  './icons/icon-512.png?v=1201',
+  './ui-v1201.css?v=1400',
+  './reference-v1300.css?v=1400',
+  './reference-v1300.js?v=1400',
+  './manifest.webmanifest?v=1400',
+  './icons/icon-192.png?v=1400',
+  './icons/icon-512.png?v=1400',
   '../b2c/images/tender-coconut-v2.webp',
   '../b2b-approved/login-bg.webp',
-  '../b2b-approved/app.js?v=1100',
-  '../b2b-approved/market-price-fix.js?v=1100',
-  '../b2b-approved/ask-ne-fix.js?v=1100'
+  '../b2b-approved/app.js?v=1400',
+  '../b2b-approved/market-price-fix.js?v=1400',
+  '../b2b-approved/ask-ne-fix.js?v=1400'
 ];
 
 self.addEventListener('install',event=>{
@@ -73,38 +73,6 @@ async function cacheFirst(request){
   return response;
 }
 
-async function staleWhileRevalidate(request,fallback){
-  return networkFirst(request,fallback);
-}
-
-async function composedCss(request){
-  try{
-    const [base,polish]=await Promise.all([
-      fetch(request,{cache:'no-store'}),
-      fetch('./reference-v1300.css',{cache:'no-store'})
-    ]);
-    if(!base.ok||!polish.ok) throw new Error('style fetch failed');
-    const text=(await base.text())+'\n\n'+(await polish.text());
-    return new Response(text,{status:200,headers:{'Content-Type':'text/css; charset=utf-8','Cache-Control':'no-store'}});
-  }catch(_){
-    return networkFirst(request);
-  }
-}
-
-async function composedAppJs(request){
-  try{
-    const [base,polish]=await Promise.all([
-      fetch(request,{cache:'no-store'}),
-      fetch('./reference-v1300.js',{cache:'no-store'})
-    ]);
-    if(!base.ok||!polish.ok) throw new Error('script fetch failed');
-    const text=(await base.text())+'\n\n;'+(await polish.text());
-    return new Response(text,{status:200,headers:{'Content-Type':'application/javascript; charset=utf-8','Cache-Control':'no-store'}});
-  }catch(_){
-    return networkFirst(request);
-  }
-}
-
 self.addEventListener('fetch',event=>{
   const request=event.request;
   if(request.method!=='GET')return;
@@ -112,21 +80,13 @@ self.addEventListener('fetch',event=>{
   if(url.origin!==self.location.origin)return;
 
   if(request.mode==='navigate'){
-    event.respondWith(staleWhileRevalidate(request,'./index.html'));
+    event.respondWith(networkFirst(request,'./index.html'));
     return;
   }
 
-  if(url.pathname.endsWith('/b2b/ui-v1201.css')){
-    event.respondWith(composedCss(request));
-    return;
-  }
-
-  if(url.pathname.endsWith('/b2b-approved/app.js')){
-    event.respondWith(composedAppJs(request));
-    return;
-  }
-
-  const freshUi=url.pathname.endsWith('/b2b/reference-v1300.css') ||
+  const freshUi=
+    url.pathname.endsWith('/b2b/ui-v1201.css') ||
+    url.pathname.endsWith('/b2b/reference-v1300.css') ||
     url.pathname.endsWith('/b2b/reference-v1300.js') ||
     url.pathname.includes('/b2b-approved/') ||
     url.pathname.endsWith('/b2c/images/tender-coconut-v2.webp') ||
