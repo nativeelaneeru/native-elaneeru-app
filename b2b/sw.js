@@ -9,6 +9,7 @@ const SHELL=[
   './manifest.webmanifest?v=1400',
   './icons/icon-192.png?v=1400',
   './icons/icon-512.png?v=1400',
+  './base-price-v952.js?v=952',
   '../b2c/images/tender-coconut-v2.webp',
   '../b2b-approved/login-bg.webp',
   '../b2b-approved/app.js?v=1400',
@@ -112,6 +113,7 @@ self.addEventListener('fetch',event=>{
     url.pathname.endsWith('/b2b/ui-v1201.css') ||
     url.pathname.endsWith('/b2b/reference-v1300.css') ||
     url.pathname.endsWith('/b2b/reference-v1300.js') ||
+    url.pathname.endsWith('/b2b/base-price-v952.js') ||
     url.pathname.includes('/b2b-approved/') ||
     url.pathname.endsWith('/b2c/images/tender-coconut-v2.webp') ||
     url.pathname.endsWith('/b2b/manifest.webmanifest');
