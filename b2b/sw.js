@@ -1,6 +1,6 @@
-const CACHE='native-elaneeru-business-green-v15.0.0';
-const BUILD='1500';
-const SHELL=['./','./index.html','./manifest.webmanifest?v=1500','./icons/icon-192.png?v=1500','./icons/icon-512.png?v=1500','../icons/native-elaneeru.svg','./payment-upi-v916.js?v=916'];
+const CACHE='native-elaneeru-business-green-v15.0.1';
+const BUILD='1501';
+const SHELL=['./','./index.html','./manifest.webmanifest?v=1500','./icons/icon-192.png?v=1500','./icons/icon-512.png?v=1500','../icons/native-elaneeru.svg','./payment-upi-v916.js?v=916','./live-pricing-v950.js?v=952','./base-price-v952.js?v=952'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(

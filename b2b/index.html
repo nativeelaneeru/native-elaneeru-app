@@ -235,7 +235,7 @@ function refresh(showToast=false){
       }
       if(TOKEN!==token)return;
       if(FULL_LOADED&&DATA)fresh={...fresh,orders:DATA.orders,target:DATA.target};
-      DATA=fresh;render();persist();if(showToast)toast('Updated');
+      DATA=fresh;FULL_LOADED=false;render();persist();if(showToast)toast('Updated');
     }catch(e){if(TOKEN!==token)return;if(/expired|invalid token|login|session/i.test(e.message))logout();else toast(e.message)}
     finally{HOME_LOADING=null}
   })();return HOME_LOADING;
@@ -437,8 +437,10 @@ syncInstallButton();
   }catch(_){}
 })();
 
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1500').then(r=>r.update()).catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1501').then(r=>r.update()).catch(()=>{}));
 </script>
 <script src="./payment-upi-v916.js?v=916"></script>
+<script src="./live-pricing-v950.js?v=952"></script>
+<script src="./base-price-v952.js?v=952"></script>
 </body>
 </html>
