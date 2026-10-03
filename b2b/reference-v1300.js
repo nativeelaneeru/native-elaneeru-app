@@ -1,5 +1,4 @@
 (() => {
-  const NS='http://www.w3.org/2000/svg';
   const path=(d,extra='')=>`<path d="${d}" ${extra}/>`;
   const icon=(name)=>{
     const base='viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
@@ -15,64 +14,74 @@
       tag:`${path('M20 13 13 20 4 11V4h7z')}${path('M8.5 8.5h.01')}`,
       sparkle:`${path('M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z')}${path('M18.5 15.5 19 17l1.5.5L19 18l-.5 1.5L18 18l-1.5-.5L18 17z')}`,
       robot:`<rect x="5" y="7" width="14" height="11" rx="4"/><path d="M12 4v3M9 12h.01M15 12h.01M8 16h8"/><circle cx="12" cy="3" r="1"/>`,
-      back:`${path('M15 18 9 12l6-6')}`,
-      arrow:`${path('M5 12h14')}${path('m13 6 6 6-6 6')}`
+      back:`${path('M15 18 9 12l6-6')}`
     };
     return `<svg ${base}>${p[name]||p.grid}</svg>`;
   };
 
+  function setIcon(el,name){
+    if(!el || el.dataset.neIcon===name) return;
+    el.innerHTML=icon(name);
+    el.dataset.neIcon=name;
+  }
+
   function lockHero(){
     const h=document.getElementById('heroBanner'); if(!h) return;
-    const title=h.querySelector('h2'); if(title) title.innerHTML='Fresh Elaneeru<br>Healthier Communities';
-    const copy=h.querySelector('p'); if(copy) copy.textContent='Built for local coconut vendors';
-    const img=h.querySelector('img'); if(img){img.src='../b2c/images/tender-coconut-v2.webp';img.alt='Fresh tender coconut';}
+    const title=h.querySelector('h2');
+    if(title && title.innerHTML!=='Fresh Elaneeru<br>Healthier Communities') title.innerHTML='Fresh Elaneeru<br>Healthier Communities';
+    const copy=h.querySelector('p'); if(copy && copy.textContent!=='Built for local coconut vendors') copy.textContent='Built for local coconut vendors';
+    const img=h.querySelector('img'); if(img && !/tender-coconut-v2\.webp(?:$|\?)/.test(img.src)){img.src='../b2c/images/tender-coconut-v2.webp';img.alt='Fresh tender coconut';}
   }
 
   function replaceIcons(){
-    const bell=document.querySelector('.bell'); if(bell) bell.innerHTML=icon('bell');
-    const back=document.querySelector('.back'); if(back) back.innerHTML=icon('back');
+    setIcon(document.querySelector('.bell'),'bell');
+    setIcon(document.querySelector('.back'),'back');
     const q={products:'grid',schemes:'gift',orders:'orders',account:'user'};
-    document.querySelectorAll('.quick button[data-go] .qicon').forEach(el=>{const b=el.closest('button');el.innerHTML=icon(q[b?.dataset.go]||'grid')});
+    document.querySelectorAll('.quick button[data-go] .qicon').forEach(el=>{const b=el.closest('button');setIcon(el,q[b?.dataset.go]||'grid')});
     const n={home:'home',products:'grid',cart:'cart',orders:'orders',schemes:'gift'};
-    document.querySelectorAll('.nav button[data-v]').forEach(b=>{const s=b.querySelector('span');if(s)s.innerHTML=icon(n[b.dataset.v]||'grid')});
-    const benefits=['clock','tag','sparkle'];document.querySelectorAll('.benefitIcon').forEach((el,i)=>el.innerHTML=icon(benefits[i]||'sparkle'));
-    const bot=document.querySelector('#askFab .bot'); if(bot) bot.innerHTML=icon('robot');
-    const botIcon=document.querySelector('.botIcon'); if(botIcon) botIcon.innerHTML=icon('robot');
+    document.querySelectorAll('.nav button[data-v]').forEach(b=>{const s=b.querySelector('span');setIcon(s,n[b.dataset.v]||'grid')});
+    const benefits=['clock','tag','sparkle'];document.querySelectorAll('.benefitIcon').forEach((el,i)=>setIcon(el,benefits[i]||'sparkle'));
+    setIcon(document.querySelector('#askFab .bot'),'robot');
+    setIcon(document.querySelector('.botIcon'),'robot');
     const sh=document.querySelector('.schemeHero');
-    if(sh&&!sh.querySelector('.schemeGift')){const x=document.createElement('span');x.className='schemeGift';x.innerHTML=icon('gift');sh.appendChild(x)}
-    const heroTitle=document.querySelector('.schemeHero b');if(heroTitle)heroTitle.textContent='Grow Together';
+    if(sh&&!sh.querySelector('.schemeGift')){const x=document.createElement('span');x.className='schemeGift';x.innerHTML=icon('gift');x.dataset.neIcon='gift';sh.appendChild(x)}
+    const heroTitle=document.querySelector('.schemeHero b');if(heroTitle&&heroTitle.textContent!=='Grow Together')heroTitle.textContent='Grow Together';
   }
 
   function fixFallbackProducts(root=document){
     root.querySelectorAll('.pimg').forEach(el=>{
-      const hasImg=el.querySelector('img');
-      if(hasImg) return;
-      if((el.textContent||'').trim()){
-        el.textContent='';
-        const wrap=document.createElement('span');wrap.className='fallbackCoconut';
-        wrap.innerHTML='<img src="../b2c/images/tender-coconut-v2.webp" alt="Tender coconut">';
-        el.appendChild(wrap);
-      }
+      if(el.querySelector('img')) return;
+      if(!(el.textContent||'').trim()) return;
+      el.textContent='';
+      const wrap=document.createElement('span');wrap.className='fallbackCoconut';
+      wrap.innerHTML='<img src="../b2c/images/tender-coconut-v2.webp" alt="Tender coconut">';
+      el.appendChild(wrap);
     });
   }
 
   function cleanSchemeEmoji(){
-    document.querySelectorAll('.schemeBox h4').forEach(h=>{h.textContent=(h.textContent||'').replace(/[🎁🎯]/gu,'').trim()});
+    document.querySelectorAll('.schemeBox h4').forEach(h=>{
+      const cleaned=(h.textContent||'').replace(/[🎁🎯]/gu,'').trim();
+      if(h.textContent!==cleaned) h.textContent=cleaned;
+    });
   }
 
-  const oldRenderHome=window.renderHome;
-  if(typeof oldRenderHome==='function') window.renderHome=function(){const r=oldRenderHome.apply(this,arguments);lockHero();replaceIcons();fixFallbackProducts();return r};
-  const oldRenderProducts=window.renderProducts;
-  if(typeof oldRenderProducts==='function') window.renderProducts=function(){const r=oldRenderProducts.apply(this,arguments);replaceIcons();fixFallbackProducts();return r};
-  const oldRenderCart=window.renderCart;
-  if(typeof oldRenderCart==='function') window.renderCart=function(){const r=oldRenderCart.apply(this,arguments);replaceIcons();fixFallbackProducts();return r};
-  const oldRenderSchemes=window.renderSchemes;
-  if(typeof oldRenderSchemes==='function') window.renderSchemes=function(){const r=oldRenderSchemes.apply(this,arguments);cleanSchemeEmoji();replaceIcons();return r};
-  const oldOpenAsk=window.openAsk;
-  if(typeof oldOpenAsk==='function') window.openAsk=function(){const r=oldOpenAsk.apply(this,arguments);replaceIcons();return r};
+  function apply(){lockHero();replaceIcons();fixFallbackProducts();cleanSchemeEmoji()}
 
-  const apply=()=>{lockHero();replaceIcons();fixFallbackProducts();cleanSchemeEmoji()};
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',apply); else apply();
-  const observer=new MutationObserver(()=>{lockHero();replaceIcons();fixFallbackProducts();cleanSchemeEmoji()});
+  const patch=(name)=>{
+    const original=window[name];
+    if(typeof original!=='function'||original.__ne1300) return;
+    const wrapped=function(){const r=original.apply(this,arguments);apply();return r};
+    wrapped.__ne1300=true;window[name]=wrapped;
+  };
+  ['renderHome','renderProducts','renderCart','renderSchemes','openAsk'].forEach(patch);
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',apply,{once:true}); else apply();
+  let scheduled=false;
+  const observer=new MutationObserver(()=>{
+    if(scheduled) return;
+    scheduled=true;
+    requestAnimationFrame(()=>{scheduled=false;apply()});
+  });
   observer.observe(document.body,{subtree:true,childList:true});
 })();
