@@ -1,0 +1,2 @@
+Native Elaneeru B2B demo build 2026-10-04
+Purpose: trigger a fresh GitHub Pages deployment after the prior run artifact conflict.
