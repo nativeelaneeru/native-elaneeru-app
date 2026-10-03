@@ -1,3 +1,55 @@
-/* Native Elaneeru B2B — supplied-reference visual lock */
-.login{align-items:flex-start;padding:132px 26px 28px;background-image:url('./login-bg.webp');background-size:cover;background-position:center top;background-repeat:no-repeat}.login:before{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.04) 50%,rgba(239,249,241,.08))}.loginInner{max-width:338px}.brandLogo{display:block;width:190px;height:auto;max-height:150px;object-fit:contain;margin:0 auto;filter:drop-shadow(0 5px 12px rgba(9,96,47,.10));content:url('../icons/native-elaneeru.svg')}.loginTitle{margin:30px 0 5px;font-size:21px;line-height:1.05}.loginSub{font-size:10px;margin-bottom:18px}.phoneInput{height:50px;border-radius:11px}.continue{height:49px;margin-top:13px}.secure{margin-top:14px}.benefits{margin-top:42px}.benefitIcon{width:40px;height:40px}.body{padding:8px 10px 16px}.simplebar{margin:-8px -10px 8px;height:54px}.content{padding:0 1px 80px}.hero{height:112px}.hero p{font-size:8px;color:#58705f;margin:5px 0 0}.market{margin-top:0}.marketBenchmarks{display:none!important}.businessHub{display:none!important}.quick{margin-top:8px}.sectionTitle{margin-top:12px}.homeProducts{gap:7px}.pcard{min-height:116px}.add:disabled{opacity:.45}.badge.hidden{display:none!important}.empty{padding:28px 12px;text-align:center;color:#718078;font-size:10px}.remove{border:0;background:none;color:#d83939;font-size:13px}.received{background:#fff0c8;color:#9b6b00}.progress{height:7px;background:#e8eee9;border-radius:99px;overflow:hidden;margin:8px 0}.progress i{display:block;height:100%;background:#0a9a4b}.askFab{width:78px;height:78px;bottom:53px;transform:translateX(88px);box-shadow:0 8px 20px rgba(6,100,46,.30)}.askFab .bot{font-size:28px}.askFab b{font-size:13px}.askScreen{background:#fff}.askHead{height:66px}.chat{height:calc(100dvh - 66px);min-height:0;padding:11px 16px 76px}.quickQ{padding:8px 12px;border-color:#96d4ae;color:#244f39}.chatOrder{background:#fff;border:1px solid #e1e8e3;border-radius:9px;padding:8px;margin:6px 0;display:flex;justify-content:space-between;gap:8px}.chatOrder b{font-size:9px}.chatOrder small{display:block;font-size:8px;color:#68766d}.composer{background:#fff}.sheet{position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.42);display:flex;align-items:flex-end;justify-content:center}.sheetCard{width:min(100%,var(--app));background:#fff;border-radius:22px 22px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -12px 30px rgba(0,0,0,.12)}.sheetCard h3{font-size:16px;margin:0 0 5px}.sheetCard p{font-size:9px;color:#718078;margin:0 0 12px}.pinInput,.utrInput{width:100%;height:46px;border:1px solid #dfe7e2;border-radius:11px;padding:0 13px;outline:0;font-size:14px}.sheetActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.primary,.secondary{height:43px;border:0;border-radius:10px;font-weight:900}.primary{background:#0a9448;color:#fff}.secondary{background:#edf6ef;color:#0a9448}.paymentMethods{display:grid;gap:8px}.payOption{border:1px solid #dfe7e2;border-radius:12px;padding:11px;text-align:left;background:#fff}.payOption b{font-size:11px}.payOption small{display:block;font-size:8px;color:#718078;margin-top:2px}.toast{position:fixed;z-index:200;left:50%;transform:translateX(-50%);bottom:82px;background:#173a26;color:#fff;border-radius:999px;padding:9px 13px;font-size:9px;box-shadow:0 7px 18px rgba(0,0,0,.18)}
-@media(max-height:720px){.login{padding-top:84px}.brandLogo{width:165px}.loginTitle{margin-top:20px}.benefits{margin-top:26px}}
+/* Native Elaneeru B2B — approved mobile-reference polish */
+:root{--app:420px;--nav:62px;--green:#07843f;--green2:#08a24e;--ink:#10261a;--muted:#6f7f75;--line:#e2ebe5;--soft:#f7faf8;--mint:#edf8f1}
+html,body{background:#e7eee9}
+.phone{width:min(100%,var(--app));background:#f8fbf9;box-shadow:0 18px 50px rgba(8,64,35,.14)}
+
+/* LOGIN */
+.login{align-items:flex-start;justify-content:center;padding:84px 24px 26px;background-image:linear-gradient(180deg,rgba(248,255,250,.08),rgba(248,255,250,.34) 58%,rgba(244,252,246,.86)),url('./login-bg.webp');background-size:cover;background-position:center top;background-repeat:no-repeat}
+.login:before{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.10) 46%,rgba(247,252,248,.20));backdrop-filter:saturate(1.03)}
+.loginInner{max-width:346px}
+.brandLogo{display:block;width:176px;height:auto;max-height:130px;object-fit:contain;margin:0 auto;content:url('../icons/native-elaneeru.svg');filter:drop-shadow(0 6px 16px rgba(5,84,41,.10))}
+.loginTitle{margin:28px 0 6px;font-size:22px;line-height:1.08;letter-spacing:-.025em;font-weight:950}
+.loginSub{font-size:11px;line-height:1.3;color:#40574a;margin-bottom:20px}
+.phoneInput{height:54px;border:1.7px solid #48b975;border-radius:13px;padding:0 15px;background:rgba(255,255,255,.97);box-shadow:0 7px 20px rgba(7,110,55,.07)}
+.phoneInput span{font-size:17px}.phoneInput input{font-size:16px;font-weight:650;color:#21372a}
+.continue{height:52px;margin-top:14px;border-radius:16px;background:linear-gradient(90deg,#079547,#09a851);font-size:15px;box-shadow:0 10px 22px rgba(5,139,65,.22);transition:transform .12s ease,filter .12s ease}.continue:active{transform:scale(.99);filter:brightness(.96)}
+.secure{margin-top:14px;font-size:9px;color:#738078}
+.benefits{margin-top:46px;gap:14px}.benefit{font-size:10px;line-height:1.25;color:#284737}.benefitIcon{width:46px;height:46px;border:0;background:rgba(233,249,238,.95);box-shadow:0 4px 12px rgba(6,112,52,.08);font-size:18px}
+
+/* APP SHELL */
+.screen{background:#f8fbf9}
+.topbar{height:58px;background:linear-gradient(135deg,#07783b,#079447);box-shadow:0 3px 10px rgba(4,83,39,.12)}
+.topbrand b{font-size:15px;letter-spacing:-.01em}.topbrand small{font-size:8.5px}.topbar .back,.topbar .bell{opacity:.96}
+.body{padding:9px 10px 16px;background:#f8fbf9}.content{padding:0 1px 82px}
+.hero{height:122px;border-radius:15px;padding:15px 15px;background:linear-gradient(110deg,#eef6b9 0%,#f7f0c5 55%,#eef8d4 100%);border:1px solid #dde6aa;box-shadow:0 8px 18px rgba(77,98,33,.08)}
+.heroCopy{width:55%}.hero h2{font-size:17px;line-height:1.1}.hero p{font-size:8.5px;color:#526b5b;margin:6px 0 0}.hero button{border-radius:8px;padding:8px 14px;margin-top:12px;box-shadow:0 4px 10px rgba(6,132,60,.17)}.hero img{width:152px;height:132px;right:-4px;bottom:-9px}
+.dots{padding:6px 0 8px}.dots i{width:5px;height:5px}
+
+/* MARKET */
+.market{border:0;border-radius:15px;padding:12px;background:#fff;box-shadow:0 6px 18px rgba(13,80,42,.06)}
+.marketHead b{font-size:12.5px}.marketHead small{font-size:8.5px;color:#78847c;margin-top:3px}.live{border-radius:7px;padding:5px 8px;font-size:7.5px;letter-spacing:.02em}.live.verifying{background:#fff3ce;color:#9c6d03;border:1px solid #f0d57d}
+.prices{gap:9px;margin-top:9px}.pbox{border-radius:12px;padding:10px 11px;background:#eff8f2}.pbox.yours{background:linear-gradient(135deg,#fff8d9,#fff2be)}.pbox label{font-size:9.5px}.pbox strong{font-size:21px;margin-top:3px}.pbox small{font-size:8.5px}.marketBenchmarks{display:none!important}
+
+/* QUICK ACTIONS */
+.businessHub{display:none!important}.quick{gap:7px;margin-top:9px}.quick button{height:68px;border:0;border-radius:13px;background:#fff;box-shadow:0 4px 14px rgba(11,76,39,.05);font-size:8.5px;font-weight:750;color:#334a3b}.qicon{width:31px;height:31px;margin-bottom:5px;font-size:14px}.quick button:active{transform:scale(.985)}
+.sectionTitle{margin:14px 2px 8px}.sectionTitle h3{font-size:14.5px}.sectionTitle button{font-size:9px}
+.homeProducts{gap:8px}.pcard{min-height:120px;border:0;border-radius:13px;padding:8px;background:#fff;box-shadow:0 5px 16px rgba(8,78,39,.055)}.pimg{border-radius:10px;background:#f1f8eb}.pname{font-size:9.5px;line-height:1.2}.price{font-size:11.5px}.rule{font-size:8px}.add{border-radius:8px;padding:7px 16px;margin-top:7px}.add:disabled{opacity:.45}
+
+/* FLOATING ASK NE */
+.askFab{width:70px;height:70px;bottom:55px;transform:translateX(93px);border:4px solid #fff;background:linear-gradient(180deg,#0aa84f,#07823f);box-shadow:0 12px 28px rgba(5,111,52,.34)}.askFab .bot{font-size:25px}.askFab b{font-size:11.5px}.askFab:active{transform:translateX(93px) scale(.97)}
+
+/* BOTTOM NAV */
+.nav{height:62px;background:rgba(255,255,255,.98);backdrop-filter:blur(16px);border-top:1px solid #e5ece7;box-shadow:0 -5px 18px rgba(12,72,39,.04)}.nav button{font-size:8px;font-weight:750}.nav span{font-size:18px;margin-bottom:2px}.nav button.on{color:#078d45}.badge{top:5px}
+
+/* INNER SCREENS */
+.simplebar{margin:-9px -10px 9px;height:54px;padding:0 14px;background:linear-gradient(135deg,#077c3d,#078f45);font-size:14px;box-shadow:0 3px 10px rgba(4,80,38,.10)}
+.search{height:38px;border-radius:11px;background:#eef3f0}.search input{font-size:10.5px}.chips{gap:7px;margin:9px 0}.chip{padding:7px 12px;font-size:8.5px}.listProduct{padding:11px 5px;background:#fff;border-radius:11px;margin-bottom:7px;border:1px solid #edf1ee;box-shadow:0 3px 10px rgba(12,74,39,.035)}.cartRow{padding:11px 4px;background:#fff;border-radius:11px;margin-bottom:7px;border:1px solid #edf1ee}.cartTotal{background:#fff;border-radius:12px;padding:11px;margin-top:10px;border:1px solid #edf1ee}.proceed{bottom:72px;border-radius:11px;padding:13px;box-shadow:0 8px 18px rgba(5,128,59,.18)}.orderCard{border:0;border-radius:12px;padding:11px;box-shadow:0 4px 12px rgba(10,69,37,.05)}.schemeHero{border-radius:12px;padding:12px}.schemeBox{border:0;border-radius:12px;box-shadow:0 4px 12px rgba(10,69,37,.05)}.acctHead{background:#fff;border-radius:13px;padding:12px;margin-bottom:8px;box-shadow:0 4px 12px rgba(10,69,37,.05)}.menu{border:0;background:#fff;border-radius:13px;overflow:hidden;box-shadow:0 4px 12px rgba(10,69,37,.05)}.menu button{padding:13px 11px;font-size:9.5px}
+
+/* ASK NE — one topic at a time */
+.askScreen{background:#f8fbf9}.askHead{height:68px;padding:0 14px;background:#fff;box-shadow:0 2px 10px rgba(11,73,39,.05)}.botIcon{width:40px;height:40px;font-size:23px;background:#e8f8ed;border:1px solid #d3eedc}.askHead h3{font-size:15px}.askHead small{font-size:8.5px}.chat{height:calc(100dvh - 68px);min-height:0;padding:14px 15px 82px}.bubble{font-size:10.5px;border-radius:14px;padding:11px 12px;line-height:1.5}.botBubble{background:#eef3f5;color:#1b2e22}.userBubble{background:linear-gradient(135deg,#0a9b4b,#078c44);box-shadow:0 5px 13px rgba(6,126,58,.16)}.quickTitle{font-size:11px;margin:8px 0 7px}.quickQs{gap:7px}.quickQ{padding:9px 13px;border-color:#a1dab6;font-size:9.5px;background:#fff;box-shadow:0 2px 8px rgba(10,73,39,.025)}.composer{bottom:10px;width:min(calc(100% - 24px),392px);grid-template-columns:1fr 42px;gap:8px;padding:7px;background:#fff;border-radius:17px;box-shadow:0 6px 24px rgba(10,69,37,.10)}.composer input{height:42px;border-radius:999px;font-size:11px}.send{width:42px;height:42px;font-size:17px}.chatOrder{border:0;border-radius:11px;padding:10px;box-shadow:0 3px 12px rgba(10,69,37,.05)}
+
+/* MODALS */
+.sheet{background:rgba(17,34,23,.46);backdrop-filter:blur(2px)}.sheetCard{border-radius:24px 24px 0 0;padding:18px 17px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -18px 42px rgba(0,0,0,.16)}.sheetCard h3{font-size:17px}.sheetCard p{font-size:9.5px}.pinInput,.utrInput{height:50px;border-radius:13px;font-size:15px}.sheetActions{gap:10px;margin-top:12px}.primary,.secondary{height:47px;border-radius:12px;font-size:13px}.paymentMethods{gap:9px}.payOption{border-radius:13px;padding:12px}.toast{bottom:86px;font-size:9.5px;padding:10px 14px}
+
+@media(max-width:420px){html,body{background:#fff}.phone{box-shadow:none}}
+@media(max-height:720px){.login{padding-top:54px}.brandLogo{width:154px}.loginTitle{margin-top:20px}.benefits{margin-top:28px}}
