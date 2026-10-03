@@ -21,6 +21,8 @@
 .product-body h3{cursor:pointer}
 .product-note{font-size:8px;color:var(--green);font-weight:800;margin-top:4px}
 .track-note{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--green-soft);color:var(--green-dark);font-size:9px;line-height:1.45}
+/* Delivery milestones are display-only, never vendor-clickable */
+#stepper button,.stepper button{pointer-events:none!important;cursor:default!important;user-select:none}
 .account-note{margin:14px 0;padding:11px;border-radius:10px;background:#eef5f0;color:var(--muted);font-size:9px;line-height:1.45}
 /* v3 login refinement */
 .screen.login .scroll{height:100%;padding:0}
@@ -105,8 +107,8 @@
     const note=document.querySelector('[data-screen="tracking"] .legal');if(note){note.className='track-note';note.textContent='Demo status updates automatically. Production will use actual operations / dispatch status.'}
   };
   setDeliveryStep=function(){/* manual tracking disabled */};
+  const stepperGuard=document.getElementById('stepper');if(stepperGuard){stepperGuard.addEventListener('click',e=>{const b=e.target.closest('button');if(b){e.preventDefault();e.stopImmediatePropagation();}},true);stepperGuard.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.closest('button')){e.preventDefault();e.stopImmediatePropagation();}},true);}
 
-  const originalPlaceOrder=placeOrder;
   placeOrder=function(){
     if(!Object.keys(state.cart).length)return toast('Add products first');
     state.orderId='NE-DEMO-'+String(Date.now()).slice(-6);
@@ -176,7 +178,6 @@
   const qActions=[...document.querySelectorAll('[data-screen="home"] .quick')];const voiceQuick=qActions.find(b=>b.textContent.includes('Voice help'));if(voiceQuick){voiceQuick.querySelector('strong').textContent='Ask NE';voiceQuick.setAttribute('onclick',"openVoice('global')")}
   const h2=document.querySelector('[data-screen="home"] .section-heading h2');if(h2)h2.textContent='Latest order';
 
-  const accountPhone=document.getElementById('accountPhone');if(accountPhone)accountPhone.textContent=maskPhone(state.demoPhone||savedPhone);
   renderProducts();renderSchemes();renderOrders();updateCartBadge();syncDeliveryUI();
   setInterval(()=>{if(state.loggedIn)syncDeliveryUI()},1000);
 })();`;
