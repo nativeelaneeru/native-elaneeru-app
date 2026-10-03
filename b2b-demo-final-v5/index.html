@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Native Elaneeru Business Demo v5</title>
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eef5f0}iframe{display:block;width:100%;height:100%;border:0;background:#fff}</style>
+</head>
+<body>
+<iframe id="demo" src="../b2b-demo-final-v3/" title="Native Elaneeru Business Demo"></iframe>
+<script>
+const frame=document.getElementById('demo');
+frame.addEventListener('load',()=>{
+  const w=frame.contentWindow,d=frame.contentDocument;
+  if(!w||!d)return;
+
+  const style=d.createElement('style');
+  style.textContent=`
+    .screen{background:linear-gradient(180deg,#fff 0,#fbfefc 100%)}
+    .tagline{margin-top:12px!important;padding:11px 13px!important;border-radius:13px!important;min-height:auto!important}
+    .tagline b{font-size:11px!important;line-height:1.25!important;display:block;max-width:78%}
+    .tagline small{font-size:8px!important;margin-top:3px!important;max-width:75%}
+    .tagline:after{font-size:32px!important;top:5px!important;right:10px!important}
+    .mainSummary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 12px}
+    .mainSummary>div{background:#eef8f1;border:1px solid #d8eadf;border-radius:12px;padding:10px 8px}
+    .mainSummary small{display:block;color:#66746b;font-size:7px;margin-bottom:4px}
+    .mainSummary b{font-size:10px;color:#075f34}
+    .infoPanel{margin-top:12px;padding:13px;border-radius:14px;background:linear-gradient(135deg,#eef8f1,#f8fcf9);border:1px solid #d8eadf}
+    .infoPanel b{font-size:11px;color:#075f34}.infoPanel p{margin:5px 0 0;color:#68746d;font-size:9px;line-height:1.45}
+    .emptyState{text-align:center;padding:26px 18px;background:#f4faf6;border:1px dashed #cfe5d7;border-radius:16px}
+    .emptyState .ico{font-size:34px;margin-bottom:8px}.emptyState b{display:block;color:#075f34;font-size:12px}.emptyState p{font-size:9px;color:#68746d}
+    #profilePhone{background:#f1f4f2!important;color:#59635d!important}
+    .lockedNote{font-size:8px;color:#68746d;background:#f2f7f4;border-radius:9px;padding:9px;margin-top:-2px}
+    .nav{box-shadow:0 -6px 18px rgba(14,89,50,.04)}
+  `;
+  d.head.appendChild(style);
+
+  const nav=(active)=>`<nav class="nav">
+    <button class="${active==='home'?'on':''}" onclick="show('home')"><span>⌂</span>Home</button>
+    <button class="${active==='products'?'on':''}" onclick="show('products')"><span>▦</span>Products</button>
+    <button class="${active==='cart'?'on':''}" onclick="show('cart')"><span>🛒</span>Cart</button>
+    <button class="${active==='orders'?'on':''}" onclick="show('orders')"><span>▣</span>Orders</button>
+    <button class="${active==='account'?'on':''}" onclick="show('account')"><span>♙</span>Account</button>
+  </nav>`;
+
+  ['home','products','cart','orders','account'].forEach(id=>{
+    const s=d.getElementById(id); if(!s)return;
+    s.querySelectorAll(':scope > nav.nav').forEach(n=>n.remove());
+    s.insertAdjacentHTML('beforeend',nav(id));
+  });
+
+  const phone=d.getElementById('profilePhone');
+  if(phone){
+    phone.readOnly=true;
+    phone.setAttribute('aria-readonly','true');
+    const save=phone.closest('.pad')?.querySelector('.wide');
+    if(save)save.remove();
+    if(!phone.parentElement.nextElementSibling?.classList.contains('lockedNote')){
+      phone.parentElement.insertAdjacentHTML('afterend','<div class="lockedNote">Verified mobile number. Contact Support if the registered number needs to be changed.</div>');
+    }
+  }
+
+  const tagline=d.querySelector('.tagline');
+  if(tagline){
+    tagline.innerHTML='<b>Grow Farmers • Empower Vendors • Serve Everyone.</b><small>Native Elaneeru</small>';
+  }
+
+  const products=d.getElementById('products');
+  if(products){
+    const pad=products.querySelector('.pad');
+    if(pad && !pad.querySelector('.mainSummary')){
+      pad.insertAdjacentHTML('afterbegin','<div class="mainSummary"><div><small>Available</small><b>3 Products</b></div><div><small>MOQ From</small><b>50 pcs</b></div><div><small>Supply</small><b>Daily</b></div></div>');
+      pad.insertAdjacentHTML('beforeend','<div class="infoPanel"><b>Today\'s Supply</b><p>Fresh stock available. Add the MOQ first and increase quantity as required.</p></div>');
+    }
+  }
+
+  const orders=d.getElementById('orders');
+  if(orders){
+    const pad=orders.querySelector('.pad');
+    if(pad && !pad.querySelector('.mainSummary')){
+      pad.insertAdjacentHTML('afterbegin','<div class="mainSummary"><div><small>Active</small><b>1 Order</b></div><div><small>Delivered</small><b>1 Order</b></div><div><small>This Month</small><b>350 pcs</b></div></div>');
+      pad.insertAdjacentHTML('beforeend','<div class="infoPanel"><b>Need the same stock again?</b><p>Open a delivered order to reorder, or use Products to create a fresh order.</p></div>');
+    }
+  }
+
+  const account=d.getElementById('account');
+  if(account){
+    const pad=account.querySelector('.pad');
+    if(pad && !pad.querySelector('.infoPanel')) pad.insertAdjacentHTML('beforeend','<div class="infoPanel"><b>Need Help?</b><p>Create a support ticket by typing or speaking your issue. NE AI will prepare the draft before submission.</p></div>');
+  }
+
+  const originalRenderCart=w.renderCart;
+  if(typeof originalRenderCart==='function'){
+    w.renderCart=function(){
+      originalRenderCart();
+      const list=d.getElementById('cartList');
+      if(list && /Your cart is empty/i.test(list.textContent)){
+        list.innerHTML='<div class="emptyState"><div class="ico">🛒</div><b>Your cart is empty</b><p>Add at least the minimum order quantity from Products.</p><button class="wide" onclick="show(\'products\')">Browse Products</button></div><div class="infoPanel"><b>MOQ Reminder</b><p>MOQ is the minimum starting quantity. After that you can increase the order normally.</p></div>';
+      }
+    };
+    w.renderCart();
+  }
+});
+</script>
+</body>
+</html>
