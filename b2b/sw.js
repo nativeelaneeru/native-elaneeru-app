@@ -1,8 +1,11 @@
-const CACHE='native-elaneeru-business-install-v11.0.3';
+const CACHE='native-elaneeru-business-install-v11.0.4';
+const BUILD='1300';
 const SHELL=[
   './',
   './index.html',
   './ui-v1201.css?v=1201',
+  './reference-v1300.css',
+  './reference-v1300.js',
   './manifest.webmanifest?v=1201',
   './icons/icon-192.png?v=1201',
   './icons/icon-512.png?v=1201',
@@ -31,8 +34,8 @@ self.addEventListener('activate',event=>{
       try{
         const u=new URL(client.url);
         if(!u.pathname.includes('/b2b/') || u.pathname.includes('/b2b-approved/')) continue;
-        if(u.searchParams.get('build')==='1201') continue;
-        u.searchParams.set('build','1201');
+        if(u.searchParams.get('build')===BUILD) continue;
+        u.searchParams.set('build',BUILD);
         u.searchParams.set('_r',Date.now().toString());
         await client.navigate(u.href);
       }catch(_){ }
@@ -74,6 +77,34 @@ async function staleWhileRevalidate(request,fallback){
   return networkFirst(request,fallback);
 }
 
+async function composedCss(request){
+  try{
+    const [base,polish]=await Promise.all([
+      fetch(request,{cache:'no-store'}),
+      fetch('./reference-v1300.css',{cache:'no-store'})
+    ]);
+    if(!base.ok||!polish.ok) throw new Error('style fetch failed');
+    const text=(await base.text())+'\n\n'+(await polish.text());
+    return new Response(text,{status:200,headers:{'Content-Type':'text/css; charset=utf-8','Cache-Control':'no-store'}});
+  }catch(_){
+    return networkFirst(request);
+  }
+}
+
+async function composedAppJs(request){
+  try{
+    const [base,polish]=await Promise.all([
+      fetch(request,{cache:'no-store'}),
+      fetch('./reference-v1300.js',{cache:'no-store'})
+    ]);
+    if(!base.ok||!polish.ok) throw new Error('script fetch failed');
+    const text=(await base.text())+'\n\n;'+(await polish.text());
+    return new Response(text,{status:200,headers:{'Content-Type':'application/javascript; charset=utf-8','Cache-Control':'no-store'}});
+  }catch(_){
+    return networkFirst(request);
+  }
+}
+
 self.addEventListener('fetch',event=>{
   const request=event.request;
   if(request.method!=='GET')return;
@@ -85,7 +116,18 @@ self.addEventListener('fetch',event=>{
     return;
   }
 
-  const freshUi=url.pathname.endsWith('/b2b/ui-v1201.css') ||
+  if(url.pathname.endsWith('/b2b/ui-v1201.css')){
+    event.respondWith(composedCss(request));
+    return;
+  }
+
+  if(url.pathname.endsWith('/b2b-approved/app.js')){
+    event.respondWith(composedAppJs(request));
+    return;
+  }
+
+  const freshUi=url.pathname.endsWith('/b2b/reference-v1300.css') ||
+    url.pathname.endsWith('/b2b/reference-v1300.js') ||
     url.pathname.includes('/b2b-approved/') ||
     url.pathname.endsWith('/b2c/images/tender-coconut-v2.webp') ||
     url.pathname.endsWith('/b2b/manifest.webmanifest');
@@ -107,7 +149,7 @@ self.addEventListener('notificationclick',event=>{
   event.waitUntil(
     clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{
       for(const c of list){if('focus' in c)return c.focus();}
-      return clients.openWindow('./');
+      return clients.openWindow('./?build='+BUILD);
     })
   );
 });
