@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#15834f">
+<title>Native Elaneeru B2B Demo + Voice</title>
+<meta name="description" content="Interactive Native Elaneeru vendor demo with browser voice assistant.">
+<link rel="icon" href="../icons/native-elaneeru.svg">
+<style>
+:root{
+  --green:#15834f;--green-dark:#0c5f3a;--green-deep:#0a4d30;--green-soft:#e9f7ef;
+  --ink:#17251d;--muted:#66736b;--line:#e4ebe6;--bg:#f5f8f5;--card:#fff;--danger:#c93d3d;
+  --shadow:0 18px 55px rgba(19,62,39,.18)
+}
+*{box-sizing:border-box} html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:#e9f3eb}
+button,input,textarea,select{font:inherit} button{cursor:pointer}
+.stage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(circle at 20% 18%,#f7fff9 0,transparent 34%),linear-gradient(135deg,#e7f3e9,#f7f7f1)}
+.phone{position:relative;width:min(100%,430px);height:min(900px,calc(100vh - 48px));min-height:720px;border-radius:28px;overflow:hidden;background:var(--bg);box-shadow:var(--shadow);border:1px solid rgba(10,77,48,.12)}
+.screen{display:none;height:100%;overflow:hidden}.screen.active{display:block}
+.scroll{height:calc(100% - 64px);overflow:auto;padding-bottom:90px;scrollbar-width:none}.scroll::-webkit-scrollbar{display:none}
+.scroll.deep{padding-bottom:28px}.screen.login .scroll{height:100%;padding:0}
+.header{height:64px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 14px;position:relative;z-index:5}
+.header-left{display:flex;align-items:center;gap:8px;min-width:0}.header-title{font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon-btn{border:0;background:transparent;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:var(--ink)}
+.icon-btn:hover{background:#f0f5f1}
+.brand{display:flex;align-items:center;gap:10px}.brand img{width:40px;height:40px;object-fit:contain}.brand-text{display:flex;flex-direction:column}.brand-text strong{font-size:14px}.brand-text span{font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.home-head{background:#fff;padding:18px 20px 22px;border-bottom:1px solid var(--line)}
+.home-head-top{display:flex;align-items:center;justify-content:space-between}.location{display:flex;align-items:center;gap:8px;margin-top:16px;font-size:11px;color:var(--muted)}.location strong{color:var(--ink);display:block;font-size:12px}
+.greeting{margin-top:20px}.greeting span{font-size:12px;color:var(--muted)}.greeting h1{margin:3px 0 0;font-size:24px;line-height:1.15}
+.page{padding:16px}.hero{position:relative;height:205px;border-radius:14px;overflow:hidden;background:#174e35;color:white}.hero img{width:100%;height:100%;object-fit:cover;display:block}.hero:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,57,35,.9),rgba(8,57,35,.25) 75%,transparent)}
+.hero-copy{position:absolute;z-index:2;left:18px;top:18px;right:18px;max-width:235px}.hero-copy small{font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.hero-copy h2{font-size:21px;line-height:1.12;margin:10px 0 6px}.hero-copy p{font-size:11px;opacity:.9;margin:0 0 14px}
+.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:800;background:var(--green);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px}
+.btn.secondary{background:var(--green-soft);color:var(--green-dark)}.btn.outline{background:#fff;color:var(--ink);border:1px solid var(--line)}.btn.block{width:100%}.btn.small{padding:8px 11px;min-height:34px;font-size:11px}.btn:disabled{opacity:.45;cursor:not-allowed}
+.banner-dots{position:absolute;z-index:3;right:14px;bottom:12px;display:flex;gap:5px}.banner-dots button{border:0;width:7px;height:7px;border-radius:99px;background:rgba(255,255,255,.45);padding:0}.banner-dots button.active{width:19px;background:#fff}
+.eyebrow{font-size:9px;font-weight:900;letter-spacing:.12em;color:var(--green);text-transform:uppercase}.section-heading{display:flex;align-items:end;justify-content:space-between;margin:24px 0 10px}.section-heading h2,.section-title{font-size:15px;margin:3px 0 0}.pill{font-size:8px;padding:5px 8px;border-radius:20px;background:var(--green-soft);color:var(--green-dark);font-weight:900}
+.delivery{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:14px;display:grid;grid-template-columns:auto 1fr auto;gap:11px;align-items:center;text-align:left;color:inherit}.delivery .round{width:42px;height:42px;border-radius:12px;background:var(--green-soft);display:grid;place-items:center;font-size:21px}.delivery strong{font-size:13px}.delivery span,.delivery small{display:block;font-size:9px;color:var(--muted);margin-top:2px}.mini-progress{height:5px;background:#eaf2ed;border-radius:99px;overflow:hidden;margin:7px 0}.mini-progress i{display:block;height:100%;width:72%;background:var(--green)}
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.quick{min-height:92px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:13px;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:10px;text-align:left;color:inherit}.quick .round{grid-row:1/3;width:36px;height:36px;border-radius:10px;background:var(--green-soft);display:grid;place-items:center}.quick strong{font-size:12px;align-self:end}.quick small{font-size:9px;color:var(--muted);align-self:start}
+.tagline{text-align:center;color:var(--muted);font-size:9px;margin:20px 0 6px}.tagline b{color:var(--green);margin:0 3px}
+.search-wrap{position:relative}.search-wrap input{padding-left:38px}.search-wrap .search-ico{position:absolute;left:12px;top:11px;color:var(--muted)}
+.input,textarea,select{width:100%;border:1px solid #dbe5de;border-radius:10px;background:#fff;padding:11px 12px;color:var(--ink);outline:none}.input:focus,textarea:focus,select:focus{border-color:#79b896;box-shadow:0 0 0 3px rgba(21,131,79,.08)}
+.muted{font-size:12px;color:var(--muted);line-height:1.5}.info-strip{display:flex;justify-content:space-between;color:var(--muted);font-size:9px;margin:10px 0}
+.product-list{display:flex;flex-direction:column;gap:12px}.product-card{border:1px solid var(--line);background:#fff;border-radius:12px;overflow:hidden;display:grid;grid-template-columns:112px 1fr;min-height:145px}.product-card img{width:100%;height:100%;object-fit:cover}.product-body{padding:12px;display:flex;flex-direction:column;justify-content:space-between}.product-body h3{font-size:13px;margin:0}.product-body p{font-size:9px;color:var(--muted);margin:5px 0}.buy-row{display:flex;align-items:end;justify-content:space-between;gap:8px}.price strong{font-size:17px}.price span{font-size:9px;color:var(--muted);display:block}.qty{display:flex;align-items:center;gap:4px}.qty button{width:30px;height:30px;border:1px solid var(--line);background:#fff;border-radius:8px}.qty strong{min-width:36px;text-align:center;font-size:12px}
+.product-detail img{width:100%;height:320px;object-fit:cover}.detail-body{padding:20px}.detail-body h1{font-size:23px;margin:0 0 8px}.detail-price{font-size:26px;font-weight:900;margin:12px 0}.detail-price span{font-size:11px;font-weight:500;color:var(--muted)}.facts{display:grid;grid-template-columns:1fr 1fr;gap:8px}.fact{background:#eef5f0;border-radius:10px;padding:11px}.fact small{display:block;color:var(--muted);font-size:9px}.fact strong{font-size:12px}.row-between{display:flex;align-items:center;justify-content:space-between}
+.cart-list{display:flex;flex-direction:column;gap:10px}.cart-item{display:grid;grid-template-columns:68px 1fr auto;gap:10px;padding:10px;background:#fff;border:1px solid var(--line);border-radius:12px}.cart-item img{width:68px;height:68px;border-radius:9px;object-fit:cover}.cart-item h3{font-size:11px;margin:1px 0}.cart-item p{font-size:9px;color:var(--muted);margin:3px 0}.danger{color:var(--danger)}
+.totals{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px}.totals>div{display:flex;justify-content:space-between;font-size:11px;margin:0 0 9px}.totals .grand{border-top:1px solid var(--line);padding-top:11px;font-size:14px;font-weight:900;margin-bottom:0}
+.block-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}.block-card h3{font-size:13px;margin:0 0 11px}.selected-box{padding:11px;border-radius:10px;background:var(--green-soft);font-size:11px}.selected-box strong{display:block}.selected-box span{display:block;color:var(--muted);font-size:9px;margin-top:3px}
+.payment-option{width:100%;border:1px solid var(--line);background:#fff;border-radius:9px;padding:10px;display:flex;gap:9px;align-items:center;text-align:left;color:inherit;margin-top:7px}.payment-option.selected{border-color:var(--green);background:var(--green-soft)}.payment-option.disabled{opacity:.55}.radio{width:17px;height:17px;border:1px solid #bbc7bf;border-radius:50%;display:grid;place-items:center}.payment-option.selected .radio:after{content:"";width:9px;height:9px;background:var(--green);border-radius:50%}
+.success{text-align:center;padding:42px 22px}.success-ring{width:68px;height:68px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#fff;font-size:30px;margin:0 auto 20px;box-shadow:0 0 0 10px var(--green-soft)}.success h1{font-size:24px;margin:8px 0}.confirm-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:5px 14px;margin:22px 0}.confirm-card div{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:11px}.confirm-card div:last-child{border-bottom:0}
+.track-hero{background:var(--green-deep);color:#fff;border-radius:14px;padding:20px;text-align:center}.track-hero .truck{font-size:36px}.track-hero small{display:block;font-size:8px;opacity:.7;margin-top:8px;letter-spacing:.1em}.track-hero strong{display:block;font-size:19px;margin-top:3px}.track-hero span{font-size:10px;opacity:.8}.stepper{margin-top:18px}.step{display:grid;grid-template-columns:34px 1fr;gap:10px;position:relative;padding-bottom:24px}.step:not(:last-child):after{content:"";position:absolute;left:16px;top:33px;width:2px;height:calc(100% - 33px);background:#dfe9e2}.step.done:not(:last-child):after{background:var(--green)}.step i{width:34px;height:34px;border-radius:50%;border:2px solid #d5e0d8;display:grid;place-items:center;font-style:normal;font-size:10px}.step.done i{background:var(--green);border-color:var(--green);color:#fff}.step strong{font-size:12px}.step small{display:block;color:var(--muted);font-size:9px;margin-top:3px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:#eef3ef;border-radius:10px;padding:4px;margin-bottom:14px}.tabs button{border:0;background:transparent;border-radius:8px;padding:9px;font-size:10px;font-weight:900;color:var(--muted)}.tabs button.active{background:#fff;color:var(--green);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.scheme{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px}.scheme-top{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center}.scheme-icon{width:38px;height:38px;background:var(--green-soft);color:var(--green-dark);display:grid;place-items:center;border-radius:10px}.scheme h3{font-size:13px;margin:0}.scheme p{font-size:10px;color:var(--muted)}.progress{height:7px;background:#e8f0ea;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;background:var(--green)}.progress-label{display:flex;justify-content:space-between;font-size:8px;color:var(--muted);margin-top:5px}.reward{display:flex;gap:8px;align-items:center;padding:9px;background:#fbf7e9;border-radius:9px;margin-top:10px}.reward small{display:block;font-size:7px;color:var(--muted)}.reward strong{font-size:10px}
+.balance{background:var(--green-deep);color:#fff;padding:20px;border-radius:14px}.balance span{font-size:9px;opacity:.75}.balance strong{display:block;font-size:34px}.balance p{font-size:10px;opacity:.75;margin:2px 0 0}.empty{border:1px dashed var(--line);background:#fff;border-radius:12px;padding:22px;text-align:center}.empty .big{font-size:28px}.empty h3{font-size:13px;margin:7px 0}.empty p{font-size:9px;color:var(--muted);margin:0}
+.notice{width:100%;display:grid;grid-template-columns:auto 1fr auto;gap:10px;text-align:left;border:1px solid var(--line);background:#fff;border-radius:12px;padding:13px;color:inherit;margin-bottom:9px}.notice .round{width:38px;height:38px;background:var(--green-soft);border-radius:10px;display:grid;place-items:center}.notice h3{font-size:12px;margin:0}.notice p{font-size:9px;color:var(--muted);line-height:1.4;margin:4px 0}.notice small{font-size:8px;color:var(--green)}
+.profile{display:grid;grid-template-columns:auto 1fr auto;gap:11px;align-items:center;background:var(--green-deep);color:#fff;border-radius:14px;padding:17px}.avatar{width:44px;height:44px;border-radius:50%;background:#fff;color:var(--green);display:grid;place-items:center;font-weight:900}.profile span{font-size:7px;opacity:.7}.profile h2{font-size:17px;margin:3px 0}.profile p{font-size:9px;margin:0;opacity:.72}.menu-label{font-size:8px;color:var(--muted);letter-spacing:.12em;margin:20px 7px 6px}.menu-row{width:100%;border:0;border-bottom:1px solid var(--line);background:#fff;padding:13px 8px;display:grid;grid-template-columns:auto 1fr auto;gap:11px;align-items:center;text-align:left;color:inherit}.menu-row span{display:flex;flex-direction:column}.menu-row strong{font-size:11px}.menu-row small{font-size:8px;color:var(--muted);margin-top:2px}
+.ai-box{background:var(--green-deep);color:#fff;border-radius:14px;padding:16px;display:flex;gap:11px}.ai-box h3{font-size:17px;margin:3px 0}.ai-box p{font-size:9px;opacity:.75;line-height:1.5;margin:0}.ai-box small{font-size:8px;letter-spacing:.1em;opacity:.75}.suggestions{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 16px}.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 10px;font-size:9px}
+.order-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}.order-card h3{font-size:14px;margin:13px 0 4px}.order-card p{font-size:9px;color:var(--muted)}
+.bottom-nav{position:absolute;left:0;right:0;bottom:0;height:76px;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);z-index:20;padding:8px 5px max(9px,env(safe-area-inset-bottom))}
+.bottom-nav button{border:0;background:transparent;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;color:var(--muted)}.bottom-nav button.active{color:var(--green)}.bottom-nav .ico{font-size:19px;position:relative}.bottom-nav small{font-size:9px;font-weight:800}.badge{position:absolute;top:-8px;right:-15px;background:var(--danger);color:#fff;border-radius:99px;padding:2px 5px;font-size:8px;min-width:17px}
+.voice-fab{position:absolute;right:18px;bottom:92px;z-index:25;width:58px;height:58px;border:0;border-radius:50%;background:linear-gradient(145deg,#1b9a61,#0d6c42);color:#fff;display:grid;place-items:center;font-size:26px;box-shadow:0 12px 24px rgba(17,115,69,.34);transition:.2s}.voice-fab:hover{transform:translateY(-2px)}.voice-fab.listening{animation:pulse 1.15s infinite}.voice-fab .voice-label{position:absolute;right:68px;white-space:nowrap;background:var(--green-deep);color:#fff;border-radius:999px;padding:7px 10px;font-size:9px;font-weight:800;box-shadow:0 7px 18px rgba(0,0,0,.16)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(21,131,79,.45)}70%{box-shadow:0 0 0 18px rgba(21,131,79,0)}100%{box-shadow:0 0 0 0 rgba(21,131,79,0)}}
+.sheet-backdrop{position:absolute;inset:0;background:rgba(8,34,23,.4);z-index:40;display:none;align-items:flex-end}.sheet-backdrop.show{display:flex}.sheet{width:100%;background:#fff;border-radius:22px 22px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -12px 30px rgba(0,0,0,.14);max-height:78%;overflow:auto}.handle{width:44px;height:4px;border-radius:99px;background:#dbe5de;margin:0 auto 14px}.sheet-head{display:flex;justify-content:space-between;align-items:start}.sheet-head h3{font-size:18px;margin:0}.sheet-head p{font-size:9px;color:var(--muted);margin:4px 0 0}.voice-orb{width:78px;height:78px;border-radius:50%;margin:18px auto;background:var(--green-soft);display:grid;place-items:center;color:var(--green);font-size:32px;position:relative}.voice-orb.listening:after{content:"";position:absolute;inset:-9px;border:2px solid #7dc19c;border-radius:50%;animation:pulse 1.15s infinite}.voice-status{text-align:center;font-size:11px;font-weight:800}.voice-help{text-align:center;font-size:9px;color:var(--muted);margin-top:4px}.field-label{font-size:10px;font-weight:800;display:block;margin:12px 0 6px}.intent-box{background:#f2f7f3;border:1px solid var(--line);border-radius:10px;padding:11px;margin-top:10px}.intent-box small{display:block;font-size:8px;color:var(--muted)}.intent-box strong{font-size:12px}.voice-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.voice-note{font-size:8px;color:var(--muted);line-height:1.45;margin-top:9px}.toast{position:absolute;z-index:60;top:14px;left:50%;transform:translateX(-50%);background:var(--green-deep);color:#fff;padding:10px 14px;border-radius:999px;font-size:10px;font-weight:800;box-shadow:0 8px 24px rgba(0,0,0,.2);display:none;max-width:calc(100% - 30px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.toast.show{display:block}
+.login-wrap{height:100%;overflow:auto;background:#fff}.login-art{height:41%;min-height:300px;position:relative;color:#fff}.login-art img{width:100%;height:100%;object-fit:cover}.login-art:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,49,31,.08),rgba(8,49,31,.86))}.login-copy{position:absolute;z-index:2;left:22px;right:22px;bottom:23px}.login-copy h1{font-size:27px;line-height:1.14;margin:22px 0 0}.login-form{padding:22px}.login-form h2{font-size:24px;margin:4px 0}.locked{background:#f0f5f1;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:13px;font-weight:800;display:flex;justify-content:space-between;align-items:center}.locked small{font-size:8px;color:var(--muted)}
+.demo-hint{padding:9px 11px;background:var(--green-soft);border-radius:9px;color:var(--green-deep);font-size:11px;margin:10px 0}.error{color:var(--danger);font-size:10px;margin:7px 0}.legal{text-align:center;font-size:8px;color:var(--muted);line-height:1.45;margin-top:9px}
+.desktop-note{position:absolute;right:calc(50% + 265px);top:50%;transform:translateY(-50%);max-width:220px}.desktop-note small{color:var(--green);letter-spacing:.15em;font-weight:900}.desktop-note h2{margin:6px 0 0;font-size:24px}.desktop-note p{color:var(--muted);font-size:12px;line-height:1.5}
+@media(max-width:900px){.desktop-note{display:none}}
+@media(max-width:500px){.stage{padding:0;background:var(--bg)}.phone{width:100%;height:100dvh;min-height:0;border-radius:0;border:0;box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="phone" id="app">
+    <div class="toast" id="toast"></div>
+
+    <section class="screen login active" data-screen="login">
+      <div class="scroll">
+        <div class="login-wrap">
+          <div class="login-art">
+            <img src="../assets/vendor-supply-delivery-v3.webp" alt="Tender coconut vendor supply">
+            <div class="login-copy">
+              <div class="brand"><img src="../icons/native-elaneeru.svg" alt="Native Elaneeru"><div class="brand-text"><strong>Native Elaneeru</strong><span>Nature to your doorstep</span></div></div>
+              <h1>Fresh from farms.<br>Built for your business.</h1>
+            </div>
+          </div>
+          <div class="login-form">
+            <div class="eyebrow">Vendor Login • Demo</div>
+            <h2>Welcome back</h2>
+            <p class="muted">Sign in to manage your orders and deliveries.</p>
+            <label class="field-label">Registered mobile number</label>
+            <div class="locked">+91 ••••• ••210 <small>LOCKED</small></div>
+            <label class="field-label">4-digit PIN</label>
+            <input class="input" id="pinInput" inputmode="numeric" maxlength="4" placeholder="Enter PIN">
+            <div class="demo-hint">✨ Demo PIN: <strong>1234</strong></div>
+            <div class="error" id="loginError"></div>
+            <button class="btn block" onclick="login()">Login securely →</button>
+            <div class="legal">Approval demo only • No production data is stored</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="home">
+      <div class="scroll">
+        <div class="home-head">
+          <div class="home-head-top">
+            <div class="brand"><img src="../icons/native-elaneeru.svg" alt="Native Elaneeru"><div class="brand-text"><strong>Native Elaneeru</strong><span>Vendor app</span></div></div>
+            <button class="icon-btn" onclick="go('notifications')">🔔</button>
+          </div>
+          <div class="location">📍 <div><small>DELIVERING TO</small><strong>Your Shop • Bengaluru</strong></div></div>
+          <div class="greeting"><span>Welcome back</span><h1>Native Elaneeru Vendor</h1></div>
+        </div>
+        <div class="page">
+          <div class="hero" id="hero">
+            <img id="heroImg" src="../assets/vendor-supply-delivery-v3.webp" alt="Fresh coconuts">
+            <div class="hero-copy"><small id="bannerKicker">Fresh coconuts</small><h2 id="bannerTitle">Fresh Coconuts for a Healthier Bengaluru</h2><p id="bannerText">Better Price. Daily Supply.</p><button class="btn small" id="bannerBtn" onclick="bannerAction()">Order now →</button></div>
+            <div class="banner-dots"><button class="active" onclick="setBanner(0)"></button><button onclick="setBanner(1)"></button></div>
+          </div>
+          <div class="section-heading"><div><div class="eyebrow">Active Delivery</div><h2>Arriving today</h2></div><div class="pill">OUT FOR DELIVERY</div></div>
+          <button class="delivery" onclick="go('tracking')"><div class="round">🚚</div><div><strong>200 Tender Coconuts</strong><span>Demo order in progress</span><div class="mini-progress"><i></i></div><small>View ETA and delivery status</small></div><div>›</div></button>
+          <h2 class="section-title" style="margin-top:22px">Quick actions</h2>
+          <div class="quick-grid" style="margin-top:10px">
+            <button class="quick" onclick="go('products')"><div class="round">🛒</div><strong>Place order</strong><small>View prices</small></button>
+            <button class="quick" onclick="go('orders')"><div class="round">🚚</div><strong>My orders</strong><small>Track delivery</small></button>
+            <button class="quick" onclick="go('schemes')"><div class="round">🎯</div><strong>Schemes</strong><small>3 active</small></button>
+            <button class="quick" onclick="go('payments')"><div class="round">💳</div><strong>Payments</strong><small>₹0 balance</small></button>
+            <button class="quick" onclick="openVoice('support')"><div class="round">🎙️</div><strong>Voice help</strong><small>Speak or type</small></button>
+            <button class="quick" onclick="go('support')"><div class="round">✨</div><strong>NE AI Support</strong><small>Demo ticket</small></button>
+          </div>
+          <div class="tagline">Grow Farmers <b>•</b> Empower Vendors <b>•</b> Serve Everyone.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="products">
+      <div class="header"><div class="header-left"><div class="brand"><img src="../icons/native-elaneeru.svg" alt=""><div class="brand-text"><strong>Native Elaneeru</strong><span>Products & Prices</span></div></div></div><button class="icon-btn" onclick="go('notifications')">🔔</button></div>
+      <div class="scroll page">
+        <div class="search-wrap"><span class="search-ico">⌕</span><input class="input" id="productSearch" placeholder="Search coconuts" oninput="renderProducts()"></div>
+        <div class="info-strip"><span>Tender coconut products</span><strong>MOQ applies</strong></div>
+        <div class="product-list" id="productList"></div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="product">
+      <div class="header"><div class="header-left"><button class="icon-btn" onclick="back()">←</button><div class="header-title" id="productTitleHeader">Product Details</div></div><button class="icon-btn" onclick="go('notifications')">🔔</button></div>
+      <div class="scroll deep product-detail">
+        <img id="detailImg" src="../assets/direct-delivery-v2.webp" alt="Tender coconut">
+        <div class="detail-body">
+          <h1 id="detailName"></h1><div class="detail-price"><span id="detailPrice"></span> <span>/ piece</span></div>
+          <p class="muted" id="detailText"></p>
+          <div class="facts"><div class="fact"><small>MOQ</small><strong id="detailMoq"></strong></div><div class="fact"><small>Product</small><strong>Tender coconut</strong></div></div>
+          <div class="row-between" style="margin:20px 0 8px"><strong style="font-size:12px">Quantity</strong><small class="muted">Cannot go below MOQ</small></div>
+          <div class="qty"><button onclick="detailQtyChange(-10)">−</button><strong id="detailQty"></strong><button onclick="detailQtyChange(10)">+</button></div>
+          <div class="row-between" style="padding:18px 0;font-size:13px"><span>Item total</span><strong id="detailTotal"></strong></div>
+          <button class="btn block" onclick="addDetailToCart()">🛒 Add to cart</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="cart">
+      <div class="header"><div class="header-left"><div class="brand"><img src="../icons/native-elaneeru.svg" alt=""><div class="brand-text"><strong>Native Elaneeru</strong><span>Your Cart</span></div></div></div><button class="icon-btn" onclick="go('notifications')">🔔</button></div>
+      <div class="scroll page">
+        <p class="muted">Review quantities before checkout. Minimum order quantities apply.</p>
+        <div class="cart-list" id="cartList"></div>
+        <div id="cartActions"></div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="checkout">
+      <div class="header"><div class="header-left"><button class="icon-btn" onclick="back()">←</button><div class="header-title">Place Order</div></div></div>
+      <div class="scroll deep page">
+        <div class="block-card"><h3>📍 Delivery address</h3><div class="selected-box"><strong>Your Shop</strong><span>Bengaluru, Karnataka</span></div></div>
+        <div class="block-card"><h3>📅 Preferred delivery</h3><input class="input" type="date" id="deliveryDate"><textarea id="deliveryInstructions" rows="3" placeholder="Delivery instructions (optional)" style="margin-top:8px"></textarea></div>
+        <div class="block-card"><h3>💳 Payment method</h3>
+          <button class="payment-option selected" data-pay="COD" onclick="selectPayment('COD')"><div class="radio"></div><div><strong>Cash on delivery</strong><small class="muted" style="display:block">Pay on delivery</small></div></button>
+          <button class="payment-option" data-pay="Online" onclick="selectPayment('Online')"><div class="radio"></div><div><strong>Online payment</strong><small class="muted" style="display:block">Demo selection only</small></div></button>
+          <button class="payment-option disabled" disabled><div class="radio"></div><div><strong>Business credit</strong><small class="muted" style="display:block">Credit not allocated yet</small></div></button>
+        </div>
+        <div class="block-card"><h3>🧾 Order summary</h3><div id="checkoutSummary"></div></div>
+        <button class="btn block" onclick="placeOrder()">Place demo order →</button>
+        <div class="legal">Demo only — no payment will be collected</div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="confirmation">
+      <div class="header"><div class="header-left"><button class="icon-btn" onclick="go('home',true)">←</button><div class="header-title">Order Confirmed</div></div></div>
+      <div class="scroll deep success">
+        <div class="success-ring">✓</div><div class="eyebrow">ORDER PLACED</div><h1>Order placed successfully!</h1><p class="muted">Your demo order has been confirmed.</p>
+        <div class="confirm-card"><div><span>Demo order ID</span><strong id="confirmOrderId"></strong></div><div><span>Order total</span><strong id="confirmTotal"></strong></div><div><span>Delivery date</span><strong id="confirmDate"></strong></div></div>
+        <button class="btn block" onclick="go('tracking')">🚚 Track order</button><button class="btn block outline" style="margin-top:8px" onclick="go('home',true)">⌂ Go home</button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="tracking">
+      <div class="header"><div class="header-left"><button class="icon-btn" onclick="back()">←</button><div class="header-title">Track Delivery</div></div></div>
+      <div class="scroll deep page">
+        <div class="track-hero"><div class="truck">🚚</div><small>ESTIMATED ARRIVAL</small><strong id="trackEta">Today, 4:30 PM</strong><span id="trackSub">Delivery is in progress</span></div>
+        <div class="row-between" style="margin:15px 0;font-size:10px"><span id="trackOrderId">Order NE-DEMO-2603</span><span class="pill">LIVE DEMO</span></div>
+        <div class="stepper" id="stepper"></div><div class="legal">Tap a step to preview each delivery status.</div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="schemes">
+      <div class="header"><div class="header-left"><button class="icon-btn" onclick="back()">←</button><div class="header-title">Schemes & Targets</div></div><button class="icon-btn" onclick="go('notifications')">🔔</button></div>
+      <div class="scroll deep page">
+        <div class="tabs"><button class="active" id="activeSchemesTab" onclick="setSchemeTab('active')">Active Schemes</button><button id="benefitsTab" onclick="setSchemeTab('benefits')">My Benefits</button></div>
+        <div id="schemeContent"></div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="payments">
+      <div class="header"><div class="header-left"><button class="icon-btn" onclick="back()">←</button><div class="header-title">Payments & Credit</div></div></div>
+      <div class="scroll deep page">
+        <div class="balance"><span>CURRENT BALANCE</span><strong>₹0</strong><p>No outstanding payment</p></div>
+        <h2 class="section-title" style="margin-top:22px">Payment History</h2><div class="empty" style="margin-top:9px"><div class="big">🧾</div><h3>No payment history yet</h3><p>Completed payments will appear here.</p></div>
+        <h2 class="section-title" style="margin-top:22px">Credit Limit</h2><div class="block-card" style="margin-top:9px;display:flex;gap:10px"><div style="font-size:24px">💳</div><div><strong style="font-size:12px">Credit not allocated yet</strong><div class="muted" style="font-size:9px;margin-top:3px">Eligibility will be available under scheme/target rules.</div></div></div>
+        <h2 class="section-title">Invoices & Bills</h2><div class="empty" style="margin-top:9px"><div class="big">📄</div><h3>No invoices available</h3><p>Order invoices will appear here.</p></div>
+        <h2 class="section-title" style="margin-top:22px">Transaction History</h2><div class="empty" style="margin-top:9px"><div class="big">↔️</div><h3>No transactions yet</h3><p>Your transaction history will appear here.</p></div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="notifications">
+      <div class="header"><div class="header-left"><button class="icon-btn" onclick="back()">←</button><div class="header-title">Notifications</div></div></div>
+      <div class="scroll deep page">
+        <button class="notice" onclick="go('schemes')"><div class="round">🎁</div><div><h3>Scheme update</h3><p>Your active target progress has been updated.</p><small>Today</small></div><div>›</div></button>
+        <button class="notice" onclick="go('tracking')"><div class="round">📦</div><div><h3>Order update</h3><p>Your order is out for delivery.</p><small>Today</small></div><div>›</div></button>
+        <button class="notice" onclick="go('orders')"><div class="round">✅</div><div><h3>Delivery completed</h3><p>A previous order was delivered successfully.</p><small>Earlier</small></div><div>›</div></button>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="account">
+      <div class="header"><div class="header-left"><div class="brand"><img src="../icons/native-elaneeru.svg" alt=""><div class="brand-text"><strong>Native Elaneeru</strong><span>My Account</span></div></div></div><button class="icon-btn" onclick="go('notifications')">🔔</button></div>
+      <div class="scroll page">
+        <div class="profile"><div class="avatar">NE</div><div><span>REGISTERED VENDOR</span><h2>Native Elaneeru Vendor</h2><p>Vendor profile</p></div><div>✓</div></div>
+        <div class="menu-label">PROFILE</div>
+        <button class="menu-row" onclick="toast('Vendor profile • Demo only')"><div>👤</div><span><strong>Vendor profile</strong><small>Demo profile details</small></span><div>›</div></button>
+        <button class="menu-row" onclick="toast('Your Shop • Bengaluru')"><div>🏪</div><span><strong>Shop details</strong><small>Your Shop</small></span><div>›</div></button>
+        <button class="menu-row" onclick="toast('Delivery address • Bengaluru')"><div>📍</div><span><strong>Delivery addresses</strong><small>1 saved address</small></span><div>›</div></button>
+        <div class="menu-row"><div>🔒</div><span><strong>+91 ••••• ••210</strong><small>Registered phone • locked</small></span><div></div></div>
+        <div class="menu-label">BUSINESS</div>
+        <button class="menu-row" onclick="go('payments')"><div>💳</div><span><strong>Payments & Credit</strong><small>₹0 current balance</small></span><div>›</div></button>
+        <div class="menu-label">SUPPORT</div>
+        <button class="menu-row" onclick="go('support')"><div>🛟</div><span><strong>Help & Support</strong><small>Create a demo NE AI ticket</small></span><div>›</div></button>
+        <button class="btn block outline" style="margin-top:22px;color:#b43838" onclick="logout()">↪ Logout</button>
+        <div class="legal">Native Elaneeru B2B Demo + Voice</div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="support">
+      <div class="header"><div class="header-left"><button class="icon-btn" onclick="back()">←</button><div class="header-title">Help & Support</div></div><button class="icon-btn" onclick="openVoice('support')">🎙️</button></div>
+      <div class="scroll deep page">
+        <div class="ai-box"><div style="font-size:26px">✨</div><div><small>DEMO NE AI</small><h3>Ticket assistant</h3><p>Demo logic only. Nothing is sent or saved to a backend.</p></div></div>
+        <div id="supportWrite" style="margin-top:18px">
+          <label class="field-label">What can we help with?</label><textarea id="issueInput" rows="7" placeholder="Example: My delivery is delayed and I need an updated ETA."></textarea>
+          <div class="suggestions"><button class="chip" onclick="setIssue('My delivery is delayed. Please share an updated ETA.')">Delivery delay</button><button class="chip" onclick="setIssue('I need a copy of my latest payment invoice.')">Payment invoice</button><button class="chip" onclick="openVoice('support')">🎙️ Speak issue</button></div>
+          <button class="btn block" onclick="prepareTicket()">✨ Prepare Ticket</button>
+        </div>
+        <div id="supportReview" style="display:none;margin-top:18px">
+          <div class="block-card"><div class="eyebrow">READY FOR REVIEW</div><h3 style="margin-top:6px">Check ticket details</h3><label class="field-label">Category</label><strong id="ticketCategory" style="font-size:12px"></strong><label class="field-label">Title</label><strong id="ticketTitle" style="font-size:12px"></strong><label class="field-label">Details</label><p id="ticketDetails" class="muted"></p></div>
+          <button class="btn block" onclick="submitTicket()">✓ Submit demo ticket</button><button class="btn block outline" style="margin-top:8px" onclick="editTicket()">Edit details</button>
+        </div>
+        <div id="supportCreated" style="display:none;margin-top:18px;text-align:center"><div class="success-ring">✓</div><div class="eyebrow">DEMO TICKET CREATED</div><h2>NE-TKT-1042</h2><p class="muted">This demo ticket was not saved or sent anywhere.</p><button class="btn block" onclick="resetTicket()">Create another ticket</button></div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="orders">
+      <div class="header"><div class="header-left"><div class="brand"><img src="../icons/native-elaneeru.svg" alt=""><div class="brand-text"><strong>Native Elaneeru</strong><span>My Orders</span></div></div></div><button class="icon-btn" onclick="go('notifications')">🔔</button></div>
+      <div class="scroll page">
+        <div class="tabs"><button class="active" id="orderActiveTab" onclick="setOrdersTab('active')">Active</button><button id="orderPastTab" onclick="setOrdersTab('past')">Past orders</button></div>
+        <div id="ordersContent"></div>
+      </div>
+    </section>
+
+    <nav class="bottom-nav" id="bottomNav" style="display:none">
+      <button data-nav="home" onclick="go('home',true)"><div class="ico">⌂</div><small>Home</small></button>
+      <button data-nav="products" onclick="go('products',true)"><div class="ico">📦</div><small>Products</small></button>
+      <button data-nav="cart" onclick="go('cart',true)"><div class="ico">🛒<span class="badge" id="cartBadge" style="display:none">0</span></div><small>Cart</small></button>
+      <button data-nav="orders" onclick="go('orders',true)"><div class="ico">🚚</div><small>Orders</small></button>
+      <button data-nav="account" onclick="go('account',true)"><div class="ico">👤</div><small>Account</small></button>
+    </nav>
+
+    <button class="voice-fab" id="voiceFab" onclick="openVoice('global')" style="display:none"><span class="voice-label">NE Voice</span>🎙️</button>
+
+    <div class="sheet-backdrop" id="voiceBackdrop" onclick="sheetBackdropClick(event)">
+      <div class="sheet">
+        <div class="handle"></div>
+        <div class="sheet-head"><div><h3>NE Voice Assistant</h3><p>Demo voice input • browser/device support varies</p></div><button class="icon-btn" onclick="closeVoice()">✕</button></div>
+        <label class="field-label">Language</label>
+        <select id="voiceLang" onchange="saveVoiceLang()">
+          <option value="auto">Auto / browser default</option>
+          <option value="en-IN">English</option>
+          <option value="kn-IN">Kannada</option>
+          <option value="te-IN">Telugu</option>
+          <option value="hi-IN">Hindi</option>
+          <option value="ta-IN">Tamil</option>
+          <option value="ml-IN">Malayalam</option>
+          <option value="mr-IN">Marathi</option>
+          <option value="bn-IN">Bengali</option>
+        </select>
+        <div class="voice-orb" id="voiceOrb">🎙️</div>
+        <div class="voice-status" id="voiceStatus">Tap Listen and speak</div>
+        <div class="voice-help">Examples: “place order”, “track delivery”, “show schemes”, “payment and credit”, “I need help”</div>
+        <div class="voice-actions" style="margin-top:14px"><button class="btn" id="listenBtn" onclick="startListening()">🎙️ Listen</button><button class="btn outline" onclick="stopListening()">Stop</button></div>
+        <label class="field-label">Transcript / typed fallback</label>
+        <textarea id="voiceText" rows="4" placeholder="Speak or type your request…" oninput="detectIntentUI()"></textarea>
+        <div class="intent-box"><small>DETECTED INTENT</small><strong id="intentLabel">Waiting for your request</strong></div>
+        <div class="voice-actions"><button class="btn secondary" onclick="clearVoice()">Clear</button><button class="btn" id="voiceActionBtn" onclick="runVoiceAction()">Continue</button></div>
+        <div class="voice-note">Microphone input uses the browser Web Speech API when available. Typed input always works. Voice recognition quality and language availability depend on the browser and device.</div>
+      </div>
+    </div>
+  </div>
+  <div class="desktop-note"><small>LIVE DEMO</small><h2>Native Elaneeru</h2><p>Vendor ordering experience with an interactive browser voice assistant.</p></div>
+</div>
+<script>
+const products=[
+  {id:'normal',name:'Normal Coconut (Grade A)',detail:'Tender coconut',price:44,moq:50,img:'../assets/direct-delivery-v2.webp'},
+  {id:'mixed',name:'Mixed Coconuts',detail:'Tender coconut selection',price:42,moq:50,img:'../assets/vendor-market-v2.webp'},
+  {id:'pollachi',name:'Pollachi Coconut',detail:'Tender coconut',price:55,moq:50,img:'../assets/vendor-supply-delivery-v3.webp'}
+];
+const schemes=[
+  {name:'Weekly Target',target:'Order 3,000 coconuts',reward:'Get 1 Umbrella',progress:2100,total:3000,icon:'☂️'},
+  {name:'Growth Target',target:'Order 10,000 coconuts within 10 days',reward:'Refrigerator / Washing Machine',progress:6400,total:10000,icon:'❄️'},
+  {name:'Monthly Target',target:'Order 20,000 coconuts',reward:'Extra Credit Limit + Special Discounts',progress:12600,total:20000,icon:'₹'}
+];
+const mainScreens=['home','products','cart','orders','account'];
+const state={
+  loggedIn:false,screen:'login',history:[],cart:{},selected:'normal',detailQty:50,banner:0,payment:'COD',
+  orderId:'NE-DEMO-2603',deliveryStep:2,schemeTab:'active',ordersTab:'active',showEmptySchemes:false,
+  voiceContext:'global',voiceIntent:null,recognition:null
+};
+function money(n){return '₹'+Number(n||0).toLocaleString('en-IN')}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),1800)}
+function login(){const pin=document.getElementById('pinInput').value.trim();if(pin==='1234'){state.loggedIn=true;go('home',true)}else document.getElementById('loginError').textContent='Incorrect PIN. Use 1234 for this demo.'}
+function logout(){state.loggedIn=false;state.history=[];document.getElementById('pinInput').value='';go('login',true)}
+function go(screen,reset=false){
+  if(screen!=='login'&&!state.loggedIn)return;
+  if(!reset&&state.screen!==screen)state.history.push(state.screen);
+  state.screen=screen;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.dataset.screen===screen));
+  const showNav=mainScreens.includes(screen);
+  document.getElementById('bottomNav').style.display=showNav?'grid':'none';
+  document.getElementById('voiceFab').style.display=(screen!=='login')?'grid':'none';
+  document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===screen));
+  if(screen==='products')renderProducts();
+  if(screen==='cart')renderCart();
+  if(screen==='checkout')renderCheckout();
+  if(screen==='tracking')renderTracking();
+  if(screen==='schemes')renderSchemes();
+  if(screen==='orders')renderOrders();
+  updateCartBadge();
+}
+function back(){const prev=state.history.pop()||'home';go(prev,true)}
+function setBanner(i){state.banner=i;const b=[
+  {k:'Fresh coconuts',t:'Fresh Coconuts for a Healthier Bengaluru',p:'Better Price. Daily Supply.',action:'Order now →'},
+  {k:'Schemes & targets',t:'Grow Your Business with Every Order',p:'Track your active scheme progress',action:'View schemes →'}
+][i];document.getElementById('bannerKicker').textContent=b.k;document.getElementById('bannerTitle').textContent=b.t;document.getElementById('bannerText').textContent=b.p;document.getElementById('bannerBtn').textContent=b.action;document.querySelectorAll('.banner-dots button').forEach((x,idx)=>x.classList.toggle('active',idx===i))}
+function bannerAction(){go(state.banner===0?'products':'schemes')}
+setInterval(()=>{if(state.screen==='home')setBanner((state.banner+1)%2)},5500);
+function renderProducts(){
+  const q=(document.getElementById('productSearch')?.value||'').toLowerCase();
+  document.getElementById('productList').innerHTML=products.filter(p=>p.name.toLowerCase().includes(q)).map(p=>{
+    const qv=state.cart[p.id]||p.moq;
+    return `<article class="product-card"><button style="border:0;padding:0;background:#eef3ef" onclick="openProduct('${p.id}')"><img src="${p.img}" alt="${p.name}"></button><div class="product-body"><div><h3>${p.name}</h3><p>${money(p.price)} / piece • MOQ ${p.moq} pieces</p></div><div class="buy-row"><div class="qty"><button onclick="listQty('${p.id}',-10)">−</button><strong id="listQty-${p.id}">${qv}</strong><button onclick="listQty('${p.id}',10)">+</button></div><button class="btn small" onclick="addListToCart('${p.id}')">${state.cart[p.id]?'✓ Added':'+ Add'}</button></div></div></article>`
+  }).join('')||`<div class="empty"><div class="big">🔎</div><h3>No products found</h3><p>Try another search.</p></div>`
+}
+function listQty(id,d){const p=products.find(x=>x.id===id);const el=document.getElementById('listQty-'+id);const next=Math.max(p.moq,Number(el.textContent)+d);el.textContent=next}
+function addListToCart(id){const p=products.find(x=>x.id===id);const el=document.getElementById('listQty-'+id);state.cart[id]=Math.max(p.moq,Number(el?.textContent||p.moq));toast(p.name+' added');renderProducts();updateCartBadge()}
+function openProduct(id){const p=products.find(x=>x.id===id);state.selected=id;state.detailQty=state.cart[id]||p.moq;document.getElementById('productTitleHeader').textContent=p.name;document.getElementById('detailImg').src=p.img;document.getElementById('detailName').textContent=p.name;document.getElementById('detailPrice').textContent=money(p.price);document.getElementById('detailText').textContent=p.detail;document.getElementById('detailMoq').textContent=p.moq+' pieces';renderDetail();go('product')}
+function renderDetail(){const p=products.find(x=>x.id===state.selected);document.getElementById('detailQty').textContent=state.detailQty;document.getElementById('detailTotal').textContent=money(state.detailQty*p.price)}
+function detailQtyChange(d){const p=products.find(x=>x.id===state.selected);state.detailQty=Math.max(p.moq,state.detailQty+d);renderDetail()}
+function addDetailToCart(){const p=products.find(x=>x.id===state.selected);state.cart[p.id]=state.detailQty;toast(p.name+' added');updateCartBadge();go('cart')}
+function updateCartBadge(){const total=Object.values(state.cart).reduce((a,b)=>a+Number(b||0),0);const b=document.getElementById('cartBadge');b.textContent=total;b.style.display=total?'inline-block':'none'}
+function cartQty(id,d){const p=products.find(x=>x.id===id);state.cart[id]=Math.max(p.moq,(state.cart[id]||p.moq)+d);renderCart();updateCartBadge()}
+function removeCart(id){delete state.cart[id];renderCart();updateCartBadge()}
+function cartTotals(){return products.filter(p=>state.cart[p.id]).reduce((s,p)=>s+p.price*state.cart[p.id],0)}
+function renderCart(){
+  const items=products.filter(p=>state.cart[p.id]);const list=document.getElementById('cartList'),actions=document.getElementById('cartActions');
+  if(!items.length){list.innerHTML=`<div class="empty"><div class="big">🛒</div><h3>Your cart is empty</h3><p>Add tender coconuts to start an order.</p><button class="btn small" style="margin-top:12px" onclick="go('products')">Browse products</button></div>`;actions.innerHTML='';return}
+  list.innerHTML=items.map(p=>`<article class="cart-item"><img src="${p.img}" alt=""><div><h3>${p.name}</h3><p>${money(p.price)} / piece</p><div class="qty"><button onclick="cartQty('${p.id}',-10)">−</button><strong>${state.cart[p.id]}</strong><button onclick="cartQty('${p.id}',10)">+</button></div></div><div><strong style="font-size:11px">${money(p.price*state.cart[p.id])}</strong><button class="icon-btn danger" onclick="removeCart('${p.id}')">🗑</button></div></article>`).join('');
+  const sub=cartTotals(),fee=150,total=sub+fee;
+  actions.innerHTML=`<button class="btn block outline" style="margin-top:12px" onclick="go('products')">＋ Continue shopping</button><div class="totals"><div><span>Products</span><strong>${money(sub)}</strong></div><div><span>Delivery fee</span><strong>${money(fee)}</strong></div><div class="grand"><span>Order total</span><strong>${money(total)}</strong></div></div><button class="btn block" style="margin-top:12px" onclick="go('checkout')">Proceed to checkout →</button>`
+}
+function selectPayment(p){state.payment=p;document.querySelectorAll('.payment-option[data-pay]').forEach(x=>x.classList.toggle('selected',x.dataset.pay===p))}
+function renderCheckout(){
+  const items=products.filter(p=>state.cart[p.id]);const sub=cartTotals(),total=sub+(sub?150:0);
+  document.getElementById('checkoutSummary').innerHTML=items.map(p=>`<div class="row-between" style="font-size:10px;padding:5px 0"><span>${p.name} × ${state.cart[p.id]}</span><strong>${money(p.price*state.cart[p.id])}</strong></div>`).join('')+`<div class="row-between" style="border-top:1px solid var(--line);padding-top:10px;margin-top:6px"><strong>Total</strong><strong>${money(total)}</strong></div>`;
+  const d=document.getElementById('deliveryDate');if(!d.value){const t=new Date();t.setDate(t.getDate()+2);d.value=t.toISOString().slice(0,10)}
+}
+function placeOrder(){if(!Object.keys(state.cart).length)return toast('Add products first');state.orderId='NE-DEMO-'+String(Date.now()).slice(-6);const total=cartTotals()+150;document.getElementById('confirmOrderId').textContent=state.orderId;document.getElementById('confirmTotal').textContent=money(total);document.getElementById('confirmDate').textContent=document.getElementById('deliveryDate').value||'Selected date';go('confirmation')}
+function renderTracking(){document.getElementById('trackOrderId').textContent='Order '+state.orderId;const states=[['Confirmed','Order has been confirmed'],['Packed','Coconuts are packed'],['Out for Delivery','Order is on the way'],['Delivered','Order has been delivered']];document.getElementById('stepper').innerHTML=states.map((s,i)=>`<button class="step ${i<=state.deliveryStep?'done':''}" style="width:100%;border:0;background:transparent;text-align:left;color:inherit" onclick="setDeliveryStep(${i})"><i>${i<state.deliveryStep?'✓':i+1}</i><div><strong>${s[0]}</strong><small>${s[1]}</small></div></button>`).join('');document.getElementById('trackEta').textContent=state.deliveryStep===3?'Delivered':'Today, 4:30 PM';document.getElementById('trackSub').textContent=state.deliveryStep===3?'Delivery completed':'Delivery is in progress'}
+function setDeliveryStep(i){state.deliveryStep=i;renderTracking()}
+function setSchemeTab(tab){state.schemeTab=tab;renderSchemes()}
+function renderSchemes(){document.getElementById('activeSchemesTab').classList.toggle('active',state.schemeTab==='active');document.getElementById('benefitsTab').classList.toggle('active',state.schemeTab==='benefits');const box=document.getElementById('schemeContent');if(state.schemeTab==='benefits'){box.innerHTML=`<div class="empty"><div class="big">🎁</div><h3>No benefits earned yet</h3><p>Completed scheme benefits will appear here.</p><button class="btn small" style="margin-top:12px" onclick="setSchemeTab('active')">View active schemes</button></div>`;return}if(state.showEmptySchemes){box.innerHTML=`<div class="empty"><div class="big">🎯</div><h3>No active schemes</h3><p>Active schemes will appear here when available.</p><button class="btn small" style="margin-top:12px" onclick="state.showEmptySchemes=false;renderSchemes()">Show demo schemes</button></div>`;return}box.innerHTML=`<div class="row-between" style="font-size:9px;color:var(--muted);margin-bottom:8px"><span>3 active schemes</span><button style="border:0;background:none;color:var(--green);font-size:9px" onclick="state.showEmptySchemes=true;renderSchemes()">View empty state</button></div>`+schemes.map(s=>{const pct=Math.round(s.progress/s.total*100);return `<article class="scheme"><div class="scheme-top"><div class="scheme-icon">${s.icon}</div><div><h3>${s.name}</h3></div><b style="font-size:12px;color:var(--green)">${pct}%</b></div><p>${s.target}</p><div class="progress"><i style="width:${pct}%"></i></div><div class="progress-label"><span>${s.progress.toLocaleString('en-IN')} completed</span><strong>${s.total.toLocaleString('en-IN')}</strong></div><div class="reward"><div>🎁</div><div><small>REWARD</small><strong>${s.reward}</strong></div></div></article>`}).join('')}
+function setOrdersTab(tab){state.ordersTab=tab;renderOrders()}
+function renderOrders(){document.getElementById('orderActiveTab').classList.toggle('active',state.ordersTab==='active');document.getElementById('orderPastTab').classList.toggle('active',state.ordersTab==='past');const box=document.getElementById('ordersContent');if(state.ordersTab==='past'){box.innerHTML=`<div class="empty"><div class="big">📦</div><h3>No past orders</h3><p>Delivered orders will appear here.</p><button class="btn small" style="margin-top:12px" onclick="go('products')">Browse products</button></div>`;return}box.innerHTML=`<article class="order-card"><div class="row-between"><span class="pill">OUT FOR DELIVERY</span><small class="muted">Today</small></div><h3>${state.orderId}</h3><p>200 Tender Coconuts</p><div class="mini-progress"><i></i></div><button class="btn block" onclick="go('tracking')">🚚 Track delivery</button></article>`}
+function setIssue(t){document.getElementById('issueInput').value=t}
+function prepareTicket(){const text=document.getElementById('issueInput').value.trim();if(text.length<5)return toast('Tell us what you need help with');const lower=text.toLowerCase();const cat=/(deliver|track|late|ಡೆಲಿವರಿ|డెలివరీ|डिलीवरी)/i.test(text)?'Delivery':/(pay|invoice|credit|ಪಾವತಿ|చెల్లింపు|भुगतान)/i.test(text)?'Payments':'Order Support';document.getElementById('ticketCategory').textContent=cat;document.getElementById('ticketTitle').textContent=(text.split(/[.!?]/)[0]||text).slice(0,55);document.getElementById('ticketDetails').textContent=text;document.getElementById('supportWrite').style.display='none';document.getElementById('supportReview').style.display='block'}
+function submitTicket(){document.getElementById('supportReview').style.display='none';document.getElementById('supportCreated').style.display='block'}
+function editTicket(){document.getElementById('supportReview').style.display='none';document.getElementById('supportWrite').style.display='block'}
+function resetTicket(){document.getElementById('issueInput').value='';document.getElementById('supportCreated').style.display='none';document.getElementById('supportWrite').style.display='block'}
+function sheetBackdropClick(e){if(e.target.id==='voiceBackdrop')closeVoice()}
+function openVoice(context='global'){state.voiceContext=context;document.getElementById('voiceBackdrop').classList.add('show');document.getElementById('voiceText').value=context==='support'?document.getElementById('issueInput').value:'';detectIntentUI();setTimeout(()=>document.getElementById('voiceText').focus(),150)}
+function closeVoice(){stopListening();document.getElementById('voiceBackdrop').classList.remove('show')}
+function saveVoiceLang(){try{localStorage.setItem('neVoiceLang',document.getElementById('voiceLang').value)}catch(e){}}
+function loadVoiceLang(){try{const v=localStorage.getItem('neVoiceLang');if(v)document.getElementById('voiceLang').value=v}catch(e){}}
+function normalize(s){return (s||'').toLowerCase().trim()}
+function detectIntent(text){
+  const t=normalize(text);
+  const defs=[
+    {id:'tracking',label:'Track delivery',words:['track delivery','track order','delivery status','eta','where is my order','ಡೆಲಿವರಿ','ಟ್ರ್ಯಾಕ್','ಎಲ್ಲಿ','డెలివరీ','ట్రాక్','ఎక్కడ','डिलीवरी','ट्रैक','कहाँ है']},
+    {id:'orders',label:'My orders',words:['my orders','order status','orders','ನನ್ನ ಆರ್ಡರ್','ಆರ್ಡರ್ ಸ್ಟೇಟಸ್','నా ఆర్డర్','ఆర్డర్ స్థితి','मेरे ऑर्डर','ऑर्डर स्टेटस']},
+    {id:'products',label:'Place order',words:['place order','buy','order coconut','products','price','ಖರೀದಿ','ಆರ್ಡರ್','ಬೆಲೆ','కొనాలి','ఆర్డర్','ధర','खरीद','ऑर्डर','कीमत']},
+    {id:'cart',label:'Open cart',words:['cart','basket','ಕಾರ್ಟ್','బండి','కార్ట్','कार्ट']},
+    {id:'schemes',label:'Schemes & benefits',words:['scheme','schemes','offer','offers','benefit','benefits','target','ಸ್ಕೀಮ್','ಆಫರ್','ಲಾಭ','ಟಾರ್ಗೆಟ್','స్కీమ్','ఆఫర్','లాభం','టార్గెట్','स्कीम','ऑफर','लाभ','टारगेट']},
+    {id:'payments',label:'Payments & credit',words:['payment','payments','credit','balance','invoice','ಪಾವತಿ','ಕ್ರೆಡಿಟ್','ಬ್ಯಾಲೆನ್ಸ್','చెల్లింపు','క్రెడిట్','బ్యాలెన్స్','भुगतान','क्रेडिट','बैलेंस']},
+    {id:'support',label:'Help & support',words:['help','support','problem','complaint','issue','ಸಹಾಯ','ಸಮಸ್ಯೆ','ದೂರು','సహాయం','సమస్య','ఫిర్యాదు','मदद','समस्या','शिकायत']}
+  ];
+  return defs.find(d=>d.words.some(w=>t.includes(w)))||null
+}
+function detectIntentUI(){const text=document.getElementById('voiceText').value;const intent=detectIntent(text);state.voiceIntent=intent;document.getElementById('intentLabel').textContent=intent?intent.label:(text.trim()?'No route detected — use Support or edit your request':'Waiting for your request');document.getElementById('voiceActionBtn').textContent=state.voiceContext==='support'?'Use in ticket':intent?('Open '+intent.label):'Use Support'}
+function startListening(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){document.getElementById('voiceStatus').textContent='Microphone recognition is not available here — type below';document.getElementById('voiceText').focus();return}
+  stopListening();
+  const r=new SR();state.recognition=r;r.continuous=false;r.interimResults=true;
+  const lang=document.getElementById('voiceLang').value;if(lang!=='auto')r.lang=lang;
+  r.onstart=()=>{document.getElementById('voiceStatus').textContent='Listening…';document.getElementById('voiceOrb').classList.add('listening');document.getElementById('voiceFab').classList.add('listening')}
+  r.onresult=e=>{let final='',interim='';for(let i=e.resultIndex;i<e.results.length;i++){const txt=e.results[i][0].transcript;if(e.results[i].isFinal)final+=txt;else interim+=txt}document.getElementById('voiceText').value=(final||interim).trim();detectIntentUI()}
+  r.onerror=e=>{document.getElementById('voiceStatus').textContent=e.error==='not-allowed'?'Microphone permission denied — type below':'Could not hear clearly — type or retry';document.getElementById('voiceOrb').classList.remove('listening');document.getElementById('voiceFab').classList.remove('listening')}
+  r.onend=()=>{document.getElementById('voiceStatus').textContent=document.getElementById('voiceText').value?'Transcript ready':'Tap Listen and speak';document.getElementById('voiceOrb').classList.remove('listening');document.getElementById('voiceFab').classList.remove('listening');state.recognition=null}
+  try{r.start()}catch(e){document.getElementById('voiceStatus').textContent='Unable to start microphone — type below'}
+}
+function stopListening(){if(state.recognition){try{state.recognition.stop()}catch(e){}state.recognition=null}document.getElementById('voiceOrb').classList.remove('listening');document.getElementById('voiceFab').classList.remove('listening')}
+function clearVoice(){stopListening();document.getElementById('voiceText').value='';detectIntentUI();document.getElementById('voiceStatus').textContent='Tap Listen and speak'}
+function speakBack(text){if(!('speechSynthesis'in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);const lang=document.getElementById('voiceLang').value;if(lang!=='auto')u.lang=lang;speechSynthesis.speak(u)}catch(e){}}
+function runVoiceAction(){
+  const text=document.getElementById('voiceText').value.trim();
+  if(!text)return toast('Speak or type a request first');
+  if(state.voiceContext==='support'){setIssue(text);closeVoice();go('support');toast('Voice transcript added to ticket');return}
+  const intent=state.voiceIntent||detectIntent(text);
+  closeVoice();
+  if(!intent){go('support');setIssue(text);toast('Request moved to Support');return}
+  const replies={products:'Opening products',cart:'Opening your cart',orders:'Opening your orders',tracking:'Opening delivery tracking',schemes:'Opening schemes',payments:'Opening payments and credit',support:'Opening help and support'};
+  speakBack(replies[intent.id]||'Opening');
+  if(intent.id==='support'){go('support');setIssue(text)}else go(intent.id);
+}
+document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')login()});
+document.getElementById('pinInput').addEventListener('input',e=>e.target.value=e.target.value.replace(/\D/g,'').slice(0,4));
+loadVoiceLang();renderSchemes();renderOrders();setBanner(0);
+</script>
+</body>
+</html>
