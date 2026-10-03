@@ -8,11 +8,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Native Elaneeru Business</title>
-<link rel="manifest" href="./manifest.webmanifest?v=1101">
-<link rel="icon" href="./icons/icon-192.png?v=1101">
-<link rel="apple-touch-icon" href="./icons/icon-192.png?v=1101">
-<link rel="stylesheet" href="../b2b-approved/style.css?v=1100">
-<link rel="stylesheet" href="../b2b-approved/live.css?v=1101">
+<link rel="manifest" href="./manifest.webmanifest?v=1201">
+<link rel="icon" href="./icons/icon-192.png?v=1201">
+<link rel="apple-touch-icon" href="./icons/icon-192.png?v=1201">
+<style id="critical-ui">*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#edf3ef;color:#132019}.hidden{display:none!important}.phone{width:100%;max-width:430px;min-height:100dvh;margin:0 auto;background:#fff;position:relative;overflow:hidden}.hero img{max-width:160px;height:auto}.sheet.hidden,.askScreen.hidden{display:none!important}</style>
+<link rel="stylesheet" href="./ui-v1201.css?v=1201">
 </head>
 <body>
 <div class="phone">
@@ -182,7 +182,7 @@
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{
-    navigator.serviceWorker.register('./sw.js?v=1101').then(reg=>reg.update()).catch(()=>{});
+    navigator.serviceWorker.register('./sw.js?v=1201').then(reg=>reg.update()).catch(()=>{});
   });
 }
 </script>
