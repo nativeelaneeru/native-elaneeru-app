@@ -1,6 +1,32 @@
 (() => {
   let askBusy = false;
 
+  /*
+   * The Apps Script bridge posts responses as:
+   *   { nelBridge: true, payload: { ok, result/error, requestId } }
+   * The approved app's original listener only looked for requestId at the
+   * top level, so valid login responses were ignored until the 30s timeout.
+   * Keep this compatibility listener after app.js so pending RPCs resolve.
+   */
+  window.addEventListener('message', (event) => {
+    const data = event.data;
+    if (!data || data.nelBridge !== true || !data.payload) return;
+    if (typeof pending === 'undefined' || !pending) return;
+
+    const payload = data.payload;
+    const requestId = String(payload.requestId || '');
+    if (!requestId || !pending.has(requestId)) return;
+
+    const handle = pending.get(requestId);
+    pending.delete(requestId);
+    clearTimeout(handle.timer);
+    try { handle.frame.remove(); } catch (_) {}
+    try { handle.form.remove(); } catch (_) {}
+
+    if (payload.ok) handle.resolve(payload.result);
+    else handle.reject(new Error(payload.error || 'Request failed.'));
+  });
+
   const hideQuickQuestions = () => {
     const block = document.getElementById('quickBlock');
     if (!block) return;
