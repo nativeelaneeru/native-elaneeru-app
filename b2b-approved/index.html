@@ -4,60 +4,73 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#087f40">
-<meta name="description" content="Native Elaneeru Business Partner app with Ask NE smart assistance.">
+<meta name="description" content="Native Elaneeru Business Partner ordering, credit, delivery and Ask NE app.">
 <title>Native Elaneeru Business</title>
 <link rel="icon" href="../icons/icon-192.png">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
-<link rel="stylesheet" href="./style.css?v=4">
-<link rel="stylesheet" href="./live.css?v=1">
+<link rel="stylesheet" href="./style.css?v=6">
+<link rel="stylesheet" href="./live.css?v=3">
 </head>
 <body>
 <div class="phone">
   <section id="login" class="login">
     <div class="loginInner">
-      <img class="brandLogo" src="../icons/native-elaneeru.svg" alt="Native Elaneeru">
+      <img class="brandLogo" src="../assets/native-elaneeru-logo.webp" alt="Native Elaneeru">
       <h1 class="loginTitle">Business Partner Login</h1>
-      <div class="loginSub">Access your pricing, orders and schemes</div>
-      <div class="phoneInput"><span>☎</span><input id="mobile" inputmode="numeric" autocomplete="tel" placeholder="+91 Mobile number" aria-label="Mobile number"></div>
+      <div class="loginSub">Better sourcing. Reliable supply. Better margins.</div>
+      <div class="phoneInput"><span>+91</span><input id="mobile" inputmode="numeric" maxlength="10" autocomplete="tel" placeholder="Mobile number" aria-label="Mobile number"></div>
       <button id="continueBtn" class="continue">Continue</button>
       <div id="loginMsg" class="secure">Secure login for registered vendors only</div>
       <div class="benefits">
         <div class="benefit"><div class="benefitIcon">◷</div>Fast<br>Ordering</div>
-        <div class="benefit"><div class="benefitIcon">♢</div>Exclusive<br>Pricing</div>
-        <div class="benefit"><div class="benefitIcon">♧</div>Special<br>Schemes</div>
+        <div class="benefit"><div class="benefitIcon">₹</div>Vendor<br>Pricing</div>
+        <div class="benefit"><div class="benefitIcon">✓</div>Reliable<br>Delivery</div>
       </div>
     </div>
   </section>
 
   <section id="app" class="screen hidden">
     <header class="topbar">
-      <button class="back" id="backBtn">‹</button>
+      <button class="back" id="backBtn" aria-label="Back">‹</button>
       <div class="topbrand"><b>Native Elaneeru</b><small>Business Partner</small></div>
       <button class="bell" aria-label="Notifications">♧</button>
     </header>
+
     <main class="body">
       <section id="homeView">
         <div class="hero" id="heroBanner">
-          <div class="heroCopy"><h2>Fresh Elaneeru<br>Healthier Communities</h2><p>Fresh stock · Reliable supply</p><button data-go="products">Order Now</button></div>
+          <div class="heroCopy"><h2>Fresh Elaneeru<br>Reliable Supply</h2><p>Built for local coconut vendors</p><button data-go="products">Order Now</button></div>
           <img src="../b2c/images/tender-coconut-v2.webp" alt="Tender coconut">
         </div>
         <div class="dots"><i></i><i></i><i></i></div>
+
         <div class="market">
-          <div class="marketHead"><div><b>Today’s Market Price</b><small id="marketDate">Bengaluru · Estimated per coconut</small></div><span class="live">◔ LIVE</span></div>
-          <div class="prices"><div class="pbox"><label>Market Price</label><strong id="marketPrice">—</strong><small>per piece</small></div><div class="pbox yours"><label>👑 Your Price</label><strong id="vendorPrice">—</strong><small>per piece</small></div></div>
+          <div class="marketHead"><div><b>Today’s Market Benchmark</b><small id="marketDate">Verified source only</small></div><span class="live">◔ VERIFIED</span></div>
+          <div class="prices">
+            <div class="pbox"><label>Comparable Market</label><strong id="marketPrice">—</strong><small id="marketUnit">per piece</small></div>
+            <div class="pbox yours"><label>👑 Your Price</label><strong id="vendorPrice">—</strong><small id="vendorUnit">per piece</small></div>
+          </div>
+          <div id="marketBenchmarks" class="marketBenchmarks"></div>
         </div>
+
         <div class="quick">
           <button data-go="products"><span class="qicon">▦</span>All Products</button>
           <button data-go="schemes"><span class="qicon">✪</span>Schemes</button>
           <button data-go="orders"><span class="qicon">▣</span>My Orders</button>
           <button data-go="account"><span class="qicon">●</span>Account</button>
         </div>
+
+        <div class="businessHub">
+          <button data-go="credit"><span>₹</span><div><b>Credit</b><small id="creditHomeText">View limit & outstanding</small></div><i>›</i></button>
+          <button data-go="delivery"><span>⌖</span><div><b>Delivery</b><small>Track order status</small></div><i>›</i></button>
+        </div>
+
         <div class="sectionTitle"><h3>Our Products</h3><button data-go="products">View All</button></div>
         <div id="homeProducts" class="homeProducts"></div>
       </section>
 
       <section id="productsView" class="hidden">
-        <div class="simplebar"><span>Products</span><span id="productCount" style="font-size:9px">0 items</span></div>
+        <div class="simplebar"><span>Products</span><span id="productCount" class="barMeta">0 items</span></div>
         <div class="content">
           <div class="search">⌕&nbsp;&nbsp;<input id="productSearch" placeholder="Search products..."></div>
           <div id="categoryChips" class="chips"><button class="chip on" data-cat="ALL">All</button></div>
@@ -75,6 +88,20 @@
         <div class="content"><div class="orderTabs"><button class="chip on">All</button><button class="chip">Processing</button><button class="chip">In Transit</button><button class="chip">Delivered</button></div><div id="ordersList"></div></div>
       </section>
 
+      <section id="creditView" class="hidden">
+        <div class="simplebar"><span>My Credit</span><span class="barMeta">Live account</span></div>
+        <div class="content">
+          <div id="creditSummary" class="creditSummary"></div>
+          <div class="infoCard"><b>How credit works</b><p>Credit checkout is available only when your account is approved and the order is within your available limit. The server validates your available credit again before placing the order.</p></div>
+          <button class="proceed" data-go="products">Order Using Available Credit</button>
+        </div>
+      </section>
+
+      <section id="deliveryView" class="hidden">
+        <div class="simplebar"><span>Delivery</span><button id="refreshDeliveryBtn">⟳</button></div>
+        <div class="content"><div class="deliveryHero"><b>Order Delivery Status</b><small>Only real order lifecycle data is shown. Live driver ETA will appear only when a verified tracking feed is available.</small></div><div id="deliveryList"></div></div>
+      </section>
+
       <section id="schemesView" class="hidden">
         <div class="simplebar"><span>Schemes</span><span>↗</span></div>
         <div class="content"><div class="schemeHero"><b>Grow Together 🎁</b><small>Special Schemes for Our Business Partners</small></div><div class="schemeTabs"><button class="on">Active Schemes</button><button>My Targets</button></div><div id="schemeContent"></div></div>
@@ -82,7 +109,19 @@
 
       <section id="accountView" class="hidden">
         <div class="simplebar"><span>Account</span><span></span></div>
-        <div class="content"><div id="accountHead" class="acctHead"></div><div class="menu"><button><span>♙&nbsp; My Profile</span><span>›</span></button><button><span>⌖&nbsp; Delivery Address</span><span>›</span></button><button><span>▣&nbsp; Payment Methods</span><span>›</span></button><button id="supportBtn"><span>☎&nbsp; Support</span><span>›</span></button><button><span>◉&nbsp; About Native Elaneeru</span><span>›</span></button><button id="logoutBtn" style="color:#d93025"><span>↪&nbsp; Logout</span><span></span></button></div></div>
+        <div class="content">
+          <div id="accountHead" class="acctHead"></div>
+          <div class="menu">
+            <button id="profileBtn"><span>♙&nbsp; My Profile</span><span>›</span></button>
+            <button id="addressBtn"><span>⌖&nbsp; Delivery Address</span><span>›</span></button>
+            <button data-go="credit"><span>₹&nbsp; Credit Account</span><span>›</span></button>
+            <button data-go="delivery"><span>🚚&nbsp; Delivery Status</span><span>›</span></button>
+            <button id="paymentBtn"><span>▣&nbsp; Payment Methods</span><span>›</span></button>
+            <button id="supportBtn"><span>☎&nbsp; Support</span><span>›</span></button>
+            <button id="aboutBtn"><span>◉&nbsp; About Native Elaneeru</span><span>›</span></button>
+            <button id="logoutBtn" class="logoutBtn"><span>↪&nbsp; Logout</span><span></span></button>
+          </div>
+        </div>
       </section>
     </main>
 
@@ -91,7 +130,7 @@
       <button data-v="products"><span>▦</span>Products</button>
       <button data-v="cart"><span>🛒</span>Cart<i id="cartBadge" class="badge hidden">0</i></button>
       <button data-v="orders"><span>▣</span>Orders</button>
-      <button data-v="schemes"><span>⚙</span>Schemes</button>
+      <button data-v="schemes"><span>✪</span>Schemes</button>
     </nav>
     <button id="askFab" class="askFab"><span><span class="bot">🤖</span><b>Ask NE</b></span></button>
   </section>
@@ -100,18 +139,33 @@
 <section id="ask" class="askScreen hidden">
   <div class="askHead"><div class="botIcon">🤖</div><div><h3>Ask NE</h3><small>Your Smart Business Assistant</small></div><button id="closeAsk" class="close">×</button></div>
   <div id="chat" class="chat">
-    <div class="bubble botBubble"><b>Hello! 👋</b><br>I’m <b>Ask NE</b>, your business assistant.<br>I can help you with prices, orders, products, schemes, payments and more.</div>
-    <div id="quickBlock"><div class="quickTitle">Quick Questions</div><div class="quickQs"><button class="quickQ" data-q="price">◉ &nbsp; What is today’s price?</button><button class="quickQ" data-q="orders">▣ &nbsp; Show my recent orders</button><button class="quickQ" data-q="stock">▦ &nbsp; Check stock availability</button><button class="quickQ" data-q="schemes">🎁 &nbsp; What schemes are available?</button><button class="quickQ" data-q="payment">₹ &nbsp; How do I make payment?</button><button class="quickQ" data-q="support">♣ &nbsp; Talk to customer support</button></div></div>
+    <div class="bubble botBubble"><b>Hello! 👋</b><br>I’m <b>Ask NE</b>. I can help with verified market rates, products, orders, credit, delivery, schemes, payments and support.</div>
+    <div id="quickBlock"><div class="quickTitle">Quick Questions</div><div class="quickQs">
+      <button class="quickQ" data-q="price">◉ &nbsp; What are today’s market rates?</button>
+      <button class="quickQ" data-q="orders">▣ &nbsp; Show my recent orders</button>
+      <button class="quickQ" data-q="stock">▦ &nbsp; Check stock availability</button>
+      <button class="quickQ" data-q="credit">₹ &nbsp; Show my credit</button>
+      <button class="quickQ" data-q="delivery">🚚 &nbsp; Track my delivery</button>
+      <button class="quickQ" data-q="schemes">🎁 &nbsp; What schemes are available?</button>
+      <button class="quickQ" data-q="payment">▣ &nbsp; How do I make payment?</button>
+      <button class="quickQ" data-q="support">☎ &nbsp; Talk to support</button>
+    </div></div>
     <div id="chatDynamic"></div>
   </div>
   <div class="composer"><input id="askInput" placeholder="Type your question..."><button id="sendAsk" class="send">➤</button></div>
 </section>
 
 <section id="pinSheet" class="sheet hidden"><div class="sheetCard"><h3>Enter your 4-digit PIN</h3><p>Secure sign-in for registered Native Elaneeru vendors.</p><input id="pin" class="pinInput" inputmode="numeric" maxlength="8" type="password" placeholder="PIN"><div class="sheetActions"><button id="cancelPin" class="secondary">Cancel</button><button id="loginBtn" class="primary">Login</button></div></div></section>
-<section id="checkoutSheet" class="sheet hidden"><div class="sheetCard"><h3>Choose payment</h3><p>Your final amount is recalculated securely before the order is placed.</p><div id="checkoutMethods" class="paymentMethods"><button id="codBtn" class="payOption"><b>Cash on Delivery</b><small>Pay when your order is delivered.</small></button><button id="upiBtn" class="payOption"><b>UPI</b><small>Pay using any UPI app, then submit the UTR.</small></button></div><div class="sheetActions"><button id="closeCheckout" class="secondary" style="grid-column:1/-1">Close</button></div></div></section>
-<section id="upiSheet" class="sheet hidden"><div class="sheetCard"><h3>Pay via UPI</h3><p id="upiInfo">Preparing secure payment…</p><a id="openUpi" class="primary" style="display:grid;place-items:center;text-decoration:none" href="#">Open UPI App</a><input id="utr" class="utrInput" placeholder="Enter UTR / transaction number" style="margin-top:10px"><div class="sheetActions"><button id="cancelUpi" class="secondary">Cancel</button><button id="submitUpi" class="primary">Submit Payment</button></div></div></section>
+
+<section id="checkoutSheet" class="sheet hidden"><div class="sheetCard"><h3>Choose payment</h3><p>Your price, MOQ, stock and credit are recalculated securely before the order is placed.</p><div id="checkoutMethods" class="paymentMethods">
+  <button id="codBtn" class="payOption"><b>Cash on Delivery</b><small>Pay when your order is delivered.</small></button>
+  <button id="upiBtn" class="payOption"><b>UPI</b><small>Pay using any UPI app, then submit the UTR.</small></button>
+  <button id="creditBtn" class="payOption"><b>Credit</b><small id="creditPayText">Use approved available credit.</small></button>
+</div><div class="sheetActions"><button id="closeCheckout" class="secondary fullAction">Close</button></div></div></section>
+
+<section id="upiSheet" class="sheet hidden"><div class="sheetCard"><h3>Pay via UPI</h3><p id="upiInfo">Preparing secure payment…</p><a id="openUpi" class="primary upiOpen" href="#">Open UPI App</a><input id="utr" class="utrInput" placeholder="Enter UTR / transaction number"><div class="sheetActions"><button id="cancelUpi" class="secondary">Cancel</button><button id="submitUpi" class="primary">Submit Payment</button></div></div></section>
+
 <div id="toast" class="toast hidden"></div>
-<script src="./app.js?v=5"></script>
-<script src="./ask-ne-fix.js?v=1"></script>
+<script src="./app.js?v=7"></script>
 </body>
 </html>
