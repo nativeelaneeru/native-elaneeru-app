@@ -73,6 +73,30 @@ async function cacheFirst(request){
   return response;
 }
 
+async function staleWhileRevalidate(request,fallback){
+  const cached=await caches.match(request);
+  const refresh=fetch(request,{cache:'no-store'}).then(response=>{
+    if(response&&response.ok){
+      const copy=response.clone();
+      caches.open(CACHE).then(cache=>cache.put(request,copy)).catch(()=>{});
+    }
+    return response;
+  }).catch(()=>null);
+
+  if(cached){
+    refresh.catch(()=>{});
+    return cached;
+  }
+
+  const fresh=await refresh;
+  if(fresh)return fresh;
+  if(fallback){
+    const page=await caches.match(fallback);
+    if(page)return page;
+  }
+  throw new Error('Navigation unavailable');
+}
+
 self.addEventListener('fetch',event=>{
   const request=event.request;
   if(request.method!=='GET')return;
@@ -80,7 +104,7 @@ self.addEventListener('fetch',event=>{
   if(url.origin!==self.location.origin)return;
 
   if(request.mode==='navigate'){
-    event.respondWith(networkFirst(request,'./index.html'));
+    event.respondWith(staleWhileRevalidate(request,'./index.html'));
     return;
   }
 
