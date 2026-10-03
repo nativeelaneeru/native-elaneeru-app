@@ -7,7 +7,7 @@
 <style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eef5f0}iframe{display:block;width:100%;height:100%;border:0;background:#fff}</style>
 </head>
 <body>
-<iframe id="demo" src="../b2b-demo-final-v3/" title="Native Elaneeru Business Demo"></iframe>
+<iframe id="demo" src="./app.html?v=5001" title="Native Elaneeru Business Demo"></iframe>
 <script>
 const frame=document.getElementById('demo');
 frame.addEventListener('load',()=>{
@@ -53,8 +53,7 @@ frame.addEventListener('load',()=>{
   if(phone){
     phone.readOnly=true;
     phone.setAttribute('aria-readonly','true');
-    const save=phone.closest('.pad')?.querySelector('.wide');
-    if(save)save.remove();
+
     if(!phone.parentElement.nextElementSibling?.classList.contains('lockedNote')){
       phone.parentElement.insertAdjacentHTML('afterend','<div class="lockedNote">Verified mobile number. Contact Support if the registered number needs to be changed.</div>');
     }
@@ -78,7 +77,7 @@ frame.addEventListener('load',()=>{
   if(orders){
     const pad=orders.querySelector('.pad');
     if(pad && !pad.querySelector('.mainSummary')){
-      pad.insertAdjacentHTML('afterbegin','<div class="mainSummary"><div><small>Active</small><b>1 Order</b></div><div><small>Delivered</small><b>1 Order</b></div><div><small>This Month</small><b>350 pcs</b></div></div>');
+      pad.insertAdjacentHTML('afterbegin','<div class="mainSummary"><div><small>Active</small><b>0 Orders</b></div><div><small>Delivered</small><b>0 Orders</b></div><div><small>Total Qty</small><b>0 pcs</b></div></div>');
       pad.insertAdjacentHTML('beforeend','<div class="infoPanel"><b>Need the same stock again?</b><p>Open a delivered order to reorder, or use Products to create a fresh order.</p></div>');
     }
   }
@@ -99,6 +98,7 @@ frame.addEventListener('load',()=>{
       }
     };
     w.renderCart();
+    if(typeof w.refreshDemo==='function')w.refreshDemo();
   }
 });
 </script>
