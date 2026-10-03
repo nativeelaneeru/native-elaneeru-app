@@ -82,3 +82,32 @@
     hideQuickQuestions();
   }, true);
 })();
+
+/* Production B2B reference layer loader. Kept here because this file is
+   already loaded by the installed /b2b/ app and is fetched network-first. */
+(() => {
+  if (!/\/b2b\/?$/.test(location.pathname) && !location.pathname.includes('/b2b/')) return;
+
+  if (!document.querySelector('link[data-ne-reference="1300"]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = './reference-v1300.css?v=1300';
+    link.dataset.neReference = '1300';
+    document.head.appendChild(link);
+  }
+
+  const loadReference = () => {
+    if (document.querySelector('script[data-ne-reference="1300"]')) return;
+    const script = document.createElement('script');
+    script.src = './reference-v1300.js?v=1300';
+    script.defer = true;
+    script.dataset.neReference = '1300';
+    document.head.appendChild(script);
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadReference, { once: true });
+  } else {
+    loadReference();
+  }
+})();
