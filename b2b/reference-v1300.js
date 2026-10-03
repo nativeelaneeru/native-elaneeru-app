@@ -66,22 +66,85 @@
     });
   }
 
-  function apply(){lockHero();replaceIcons();fixFallbackProducts();cleanSchemeEmoji()}
+  function applyBusinessLinks(){
+    const credit=document.querySelector('.businessHub [data-go="credit"]');
+    if(credit){
+      let enabled=false;
+      try{enabled=Number(HOME?.vendor?.creditLimit||0)>0}catch(_){enabled=false}
+      credit.style.display=enabled?'':'none';
+    }
+  }
 
-  const patch=(name)=>{
+  function renderCreditSafe(){
+    const root=document.getElementById('creditSummary'); if(!root) return;
+    let v={};try{v=HOME?.vendor||{}}catch(_){}
+    const limit=Number(v.creditLimit||0),outstanding=Number(v.outstanding||0),available=Math.max(0,Number(v.availableCredit ?? (limit-outstanding))||0);
+    if(limit<=0){root.innerHTML='<div class="empty">Credit is not enabled for this account.</div>';return;}
+    root.innerHTML=`<div class="schemeBox"><h4>Credit Summary</h4><div class="tier"><span>Credit Limit</span><span>${money(limit)}</span></div><div class="tier"><span>Outstanding</span><span>${money(outstanding)}</span></div><div class="tier"><span>Available</span><span>${money(available)}</span></div></div>`;
+  }
+
+  function renderDeliverySafe(){
+    const root=document.getElementById('deliveryList'); if(!root) return;
+    let orders=[];try{orders=DETAIL?.orders||[]}catch(_){}
+    if(!orders.length){root.innerHTML='<div class="empty">No active deliveries found.</div>';return;}
+    root.innerHTML=orders.slice(0,20).map(o=>`<div class="orderCard"><div><b>${esc(o.orderId||o['Order ID']||'Order')}</b><small>${esc(o.orderedAt||o.date||o.createdAt||'')}</small><b>${money(o.totalAmount||o.amount||0)}</b></div><span class="status ${orderStatusClass(o.status)}">${esc(o.status||'Order Received')}</span></div>`).join('');
+  }
+
+  function apply(){lockHero();replaceIcons();fixFallbackProducts();cleanSchemeEmoji();applyBusinessLinks();renderCreditSafe()}
+
+  const patch=(name,after=apply)=>{
     const original=window[name];
-    if(typeof original!=='function'||original.__ne1300) return;
-    const wrapped=function(){const r=original.apply(this,arguments);apply();return r};
-    wrapped.__ne1300=true;window[name]=wrapped;
+    if(typeof original!=='function'||original.__ne1401) return;
+    const wrapped=function(){const r=original.apply(this,arguments);after();return r};
+    wrapped.__ne1401=true;window[name]=wrapped;
   };
-  ['renderHome','renderProducts','renderCart','renderSchemes','openAsk'].forEach(patch);
+  ['renderHome','renderProducts','renderCart','renderSchemes','openAsk'].forEach(name=>patch(name));
+  patch('renderDetails',()=>{renderCreditSafe();renderDeliverySafe();apply()});
 
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',apply,{once:true}); else apply();
-  let scheduled=false;
-  const observer=new MutationObserver(()=>{
-    if(scheduled) return;
-    scheduled=true;
-    requestAnimationFrame(()=>{scheduled=false;apply()});
-  });
-  observer.observe(document.body,{subtree:true,childList:true});
+  // Resilient Home boot: if an older backend deployment does not expose the
+  // lightweight Home method, fall back to the proven full B2B payload instead
+  // of leaving Login/restore stuck.
+  const baseRpc=window.rpc;
+  if(typeof baseRpc==='function'&&!baseRpc.__ne1401){
+    const resilientRpc=function(method,args=[]){
+      return Promise.resolve(baseRpc(method,args)).catch(err=>{
+        if(method==='getB2BHomeFastV1000') return baseRpc('getB2BAppDataV9',args);
+        throw err;
+      });
+    };
+    resilientRpc.__ne1401=true;
+    window.rpc=resilientRpc;
+  }
+
+  // The approved build added Credit and Delivery sections after showView was
+  // written. Handle those routes explicitly so their Home/Account buttons do
+  // not open a blank screen.
+  const baseShowView=window.showView;
+  if(typeof baseShowView==='function'&&!baseShowView.__ne1401){
+    const extendedShowView=function(v){
+      if(v!=='credit'&&v!=='delivery') return baseShowView.apply(this,arguments);
+      try{CURRENT=v}catch(_){}
+      ['home','products','cart','orders','credit','delivery','schemes','account'].forEach(x=>{
+        const el=document.getElementById(x+'View'); if(el) el.classList.toggle('hidden',x!==v);
+      });
+      document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+      const askFab=document.getElementById('askFab');if(askFab)askFab.style.display='none';
+      if(v==='credit') renderCreditSafe();
+      if(v==='delivery'){
+        const root=document.getElementById('deliveryList');if(root)root.innerHTML='<div class="empty">Loading delivery status…</div>';
+        Promise.resolve(loadDetails()).then(renderDeliverySafe).catch(()=>renderDeliverySafe());
+      }
+      window.scrollTo({top:0,left:0,behavior:'auto'});
+    };
+    extendedShowView.__ne1401=true;
+    window.showView=extendedShowView;
+  }
+
+  const refreshDelivery=document.getElementById('refreshDeliveryBtn');
+  if(refreshDelivery&&!refreshDelivery.dataset.neBound){
+    refreshDelivery.dataset.neBound='1';
+    refreshDelivery.onclick=()=>Promise.resolve(loadDetails(true)).then(renderDeliverySafe);
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',apply,{once:true}); else requestAnimationFrame(apply);
 })();
