@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0d6b3b" />
+  <title>Native Elaneeru Business — Approval Build</title>
+  <link rel="stylesheet" href="./app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">NATIVE ELANEERU</div>
+        <div class="brand">Business</div>
+      </div>
+      <button class="icon-btn" id="notifBtn" aria-label="Notifications">🔔</button>
+    </header>
+
+    <main id="app"></main>
+
+    <nav class="bottom-nav" aria-label="Primary">
+      <button data-route="home" class="nav-item active"><span>⌂</span><small>Home</small></button>
+      <button data-route="products" class="nav-item"><span>▦</span><small>Products</small></button>
+      <button data-route="orders" class="nav-item"><span>▤</span><small>Orders</small></button>
+      <button data-route="rewards" class="nav-item"><span>★</span><small>Rewards</small></button>
+      <button data-route="account" class="nav-item"><span>●</span><small>Account</small></button>
+    </nav>
+  </div>
+
+  <div class="sheet" id="cartSheet" aria-hidden="true">
+    <div class="sheet-card">
+      <div class="sheet-handle"></div>
+      <div class="sheet-head"><h3>Cart</h3><button class="icon-btn" id="closeCart">✕</button></div>
+      <div id="cartItems"></div>
+      <div class="cart-summary"><span>Total</span><strong id="cartTotal">₹0</strong></div>
+      <button class="primary-btn full" id="placeOrderBtn">Place Order</button>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
