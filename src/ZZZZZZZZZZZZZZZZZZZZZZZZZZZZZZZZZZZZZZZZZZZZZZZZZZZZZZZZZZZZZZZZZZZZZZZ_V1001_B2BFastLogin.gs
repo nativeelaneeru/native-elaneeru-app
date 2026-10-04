@@ -59,6 +59,7 @@ vendorLogin=function(mobile,pin){
   cache.put('VENDOR:'+token,vid,21600);
   try{cache.put('V1000_VENDOR_ROW:'+vid,JSON.stringify(v),30);}catch(err){}
 
+  neB2BRememberSession_(token,v);
   return {
     token:token,
     vendorId:vid,
@@ -66,4 +67,38 @@ vendorLogin=function(mobile,pin){
     version:V1001_B2B_FAST_LOGIN_VERSION,
     home:v1001HomeFromVendor_(v)
   };
+};
+
+/** Durable remembered sessions survive cache eviction and deployment changes.
+ * Store only a token hash, vendor ID and credential version; never the PIN.
+ * Active use renews a 30-day expiry. Logout and PIN changes invalidate it.
+ */
+const NE_B2B_SESSION_DAYS=30;
+function neB2BSessionKey_(token){
+  token=s_(token);if(!/^[a-f0-9-]{36}$/i.test(token))throw new Error('Session has expired. Please login again.');
+  return 'NE_B2B_SESSION:'+hashV8_(token);
+}
+function neB2BRememberSession_(token,v){
+  const props=PropertiesService.getScriptProperties(),now=Date.now();
+  props.setProperty(neB2BSessionKey_(token),JSON.stringify({vendorId:s_(v['Vendor ID']),credentialVersion:hashV8_(v['PIN Hash']),expiresAt:now+NE_B2B_SESSION_DAYS*86400000}));
+}
+vendor_=function(token){
+  token=s_(token);const key=neB2BSessionKey_(token),props=PropertiesService.getScriptProperties(),cache=CacheService.getScriptCache();
+  let record;try{record=JSON.parse(props.getProperty(key)||'null')}catch(e){}
+  // Migrate a still-valid session issued before durable storage was deployed.
+  let id=record&&record.vendorId;
+  if(record&&!(Number(record.expiresAt)>Date.now())){props.deleteProperty(key);cache.remove('VENDOR:'+token);throw new Error('Session has expired. Please login again.');}
+  if(!record)id=cache.get('VENDOR:'+token);
+  if(!id)throw new Error('Session has expired. Please login again.');
+  const v=find_(V8.SHEETS.B2B_VENDORS,'Vendor ID',id);
+  if(!v||!active_(v.Status))throw new Error('Vendor is inactive or unavailable.');
+  if(record&&record.credentialVersion!==hashV8_(v['PIN Hash'])){props.deleteProperty(key);cache.remove('VENDOR:'+token);throw new Error('Session is invalid. Please login again.');}
+  if(!record||Number(record.expiresAt)<Date.now()+29*86400000)neB2BRememberSession_(token,v);
+  cache.put('VENDOR:'+token,id,21600);
+  return v;
+};
+vendorLogout=function(token){
+  token=s_(token);CacheService.getScriptCache().remove('VENDOR:'+token);
+  try{PropertiesService.getScriptProperties().deleteProperty(neB2BSessionKey_(token))}catch(e){}
+  return true;
 };

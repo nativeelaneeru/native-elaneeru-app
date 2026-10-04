@@ -116,6 +116,9 @@ jobs:
           NE_V5_WORKSPACE: src/NE_B2B_Workspace_V5.gs
         run: node scripts/b2b-v5-workspace-regression.cjs
 
+      - name: Verify durable B2B remembered sessions
+        run: node scripts/b2b-remembered-session-regression.cjs src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V1001_B2BFastLogin.gs
+
       - name: Configure clasp project
         shell: bash
         run: |

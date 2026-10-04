@@ -36,29 +36,34 @@ function parse(raw){try{return JSON.parse(raw)}catch(_){return null}}
 function cartKey(){return 'nel_b2b_v5_cart:'+vendor().vendorId}
 function saveCart(){if(!DATA)return;storageSet(cartKey(),JSON.stringify(cart));clearRequest()}
 function clearRequest(){try{localStorage.removeItem('nel_b2b_v5_order_request')}catch(_){}}
-function persistSession(){storageSet('nel_b2b_token',TOKEN);storageSet('nel_b2b_token_saved_at',String(Date.now()));storageSet('nel_b2b_green_session',JSON.stringify({token:TOKEN,savedAt:Date.now()}));window.NEL_B2B_DB?.set('sessionToken',{token:TOKEN,savedAt:Date.now()})?.catch(()=>{})}
+async function persistSession(){storageSet('nel_b2b_token',TOKEN);storageSet('nel_b2b_token_saved_at',String(Date.now()));storageSet('nel_b2b_green_session',JSON.stringify({token:TOKEN,savedAt:Date.now()}));await window.NEL_B2B_DB?.set('sessionToken',{token:TOKEN,savedAt:Date.now()})?.catch(()=>{})}
 function isSessionError(e){return /session.*(expired|invalid)|invalid token|vendor is inactive|please (login|sign in)/i.test(e.message)}
 async function refresh(silent=false){
   if(!TOKEN)return false;if(loading)return loading;const token=TOKEN,epoch=sessionEpoch,serial=++refreshSerial;
   loading=(async()=>{try{const data=await rpc('getB2BWorkspaceV5',[token]);if(TOKEN!==token||sessionEpoch!==epoch)return false;
     const first=!DATA;DATA=data;if(first){cart=parse(storageGet(cartKey()))||{};if(!cart||Array.isArray(cart)||typeof cart!=='object')cart={};}
-    render();return true;
+    render();sessionRestoreUi(false);return true;
   }catch(e){if(TOKEN!==token||sessionEpoch!==epoch)return false;if(isSessionError(e)){logout(false);msg(e.message)}else if(!silent){msg(e.message);if(!DATA)showRecovery()}return false;}finally{if(serial===refreshSerial)loading=null}})();return loading;
 }
-function showRecovery(){$('recoverSession')?.remove();$('login').querySelector('.loginPanel').insertAdjacentHTML('beforeend','<div id="recoverSession" class="retryNote">Your session was found, but account data could not load.<button class="wide" onclick="retrySession()">Retry loading account</button><button class="wide" onclick="logout()">Sign out</button></div>')}
-async function retrySession(){const b=$('recoverSession');if(b)b.remove();if(await refresh())show('home')}
+function sessionRestoreUi(active){
+ const panel=$('login').querySelector('.loginPanel');panel.classList.toggle('restoring',active);
+ if(!active){$('restoreNotice')?.remove();$('recoverSession')?.remove();return}
+ if(!$('restoreNotice'))panel.insertAdjacentHTML('beforeend','<div id="restoreNotice" class="retryNote" role="status">Restoring your account…</div>');
+}
+function showRecovery(){sessionRestoreUi(true);$('restoreNotice')?.remove();$('recoverSession')?.remove();$('login').querySelector('.loginPanel').insertAdjacentHTML('beforeend','<div id="recoverSession" class="retryNote">Your session was found, but account data could not load.<button class="wide" onclick="retrySession()">Retry loading account</button><button class="wide" onclick="logout()">Sign out</button></div>')}
+async function retrySession(){$('recoverSession')?.remove();sessionRestoreUi(true);if(await refresh())show('home')}
 function show(id){if(id!=='login'&&(!TOKEN||!DATA)){msg('Sign in to access your business account');id='login'}const s=$(id);if(!s?.classList.contains('screen'))return msg('This page is unavailable');CURRENT=id;document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('hidden',x!==s));s.scrollTop=0;updateNavigation(id);
   if(id==='products')renderProducts();if(id==='cart')renderCart();if(id==='orders')renderOrders();if(id==='payments'||id==='credit')renderPayments();if(['account','profile','shop','address'].includes(id))renderProfile();if(id==='schemes')schemeTab(false);
 }
 function goPin(){const m=$('loginPhone').value.trim();if(!/^[6-9]\d{9}$/.test(m))return msg('Enter your registered 10-digit mobile number');$('phoneEcho').textContent='+91 '+m;$('phoneStep').classList.add('hidden');$('pinStep').classList.remove('hidden');$('loginPin').focus()}
 function backPhone(){$('pinStep').classList.add('hidden');$('phoneStep').classList.remove('hidden');$('loginPin').value=''}
 async function doLogin(){const m=$('loginPhone').value.trim(),pin=$('loginPin').value;if(!/^[6-9]\d{9}$/.test(m)||!/^\d{4}$/.test(pin))return msg('Enter your mobile number and 4-digit PIN');const btn=document.querySelector('#pinStep .wide');if(btn.disabled)return;btn.disabled=true;btn.textContent='Signing in…';const epoch=++sessionEpoch;
-  try{const r=await rpc('vendorLogin',[m,pin]);if(epoch!==sessionEpoch)return;if(!r.token)throw new Error('Unable to sign in');TOKEN=r.token;DATA=null;cart={};selectedQty={};persistSession();$('loginPin').value='';if(await refresh())show('home');}
+  try{const r=await rpc('vendorLogin',[m,pin]);if(epoch!==sessionEpoch)return;if(!r.token)throw new Error('Unable to sign in');TOKEN=r.token;DATA=null;cart={};selectedQty={};await persistSession();$('loginPin').value='';if(await refresh())show('home');}
   catch(e){msg(e.message)}finally{btn.disabled=false;btn.textContent='Login'}
 }
 function logout(notify=true){const old=TOKEN;sessionEpoch++;refreshSerial++;loading=null;TOKEN='';DATA=null;cart={};selectedQty={};activeOrderId='';clearRequest();
   ['nel_b2b_token','nel_b2b_token_saved_at','nel_b2b_green_session','nel_b2b_approved_token','nel_b2b_approved_home','nel_b2b_data_cache'].forEach(k=>{for(const s of [localStorage,sessionStorage])try{s.removeItem(k)}catch(_){}});
-  window.NEL_B2B_DB?.set('sessionToken',null)?.catch(()=>{});window.NEL_B2B_DB?.set('businessData',null)?.catch(()=>{});window.NEL_B2B_DB?.set('profile',null)?.catch(()=>{});$('loginPin').value='';$('recoverSession')?.remove();backPhone();show('login');if(old&&notify)rpc('vendorLogout',[old]).catch(()=>{});
+  window.NEL_B2B_DB?.set('sessionToken',null)?.catch(()=>{});window.NEL_B2B_DB?.set('businessData',null)?.catch(()=>{});window.NEL_B2B_DB?.set('profile',null)?.catch(()=>{});$('loginPin').value='';sessionRestoreUi(false);backPhone();show('login');if(old&&notify)rpc('vendorLogout',[old]).catch(()=>{});
 }
 function registerVendor(){extraScreen('registration','Business Partner Registration','<div class="card"><b>Register with Native Elaneeru</b><p class="sub">Our vendor onboarding team will register your business, confirm service availability and issue your login PIN.</p><a class="wide" style="display:block;text-align:center;text-decoration:none" href="tel:+917411807675">Call Vendor Support</a><a class="wide" style="display:block;text-align:center;text-decoration:none" href="https://wa.me/917411807675?text=I%20would%20like%20to%20register%20as%20a%20Native%20Elaneeru%20business%20partner" target="_blank" rel="noopener">Contact on WhatsApp</a></div>','login');const s=$('registration');CURRENT='registration';document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('hidden',x!==s))}
 function render(){renderBanners();renderMarket();renderProducts();renderCart();renderOrders();renderProfile();renderDelivery();renderPayments();renderTickets();renderNotifications();if(CURRENT==='schemes')schemeTab(false)}
@@ -154,9 +159,9 @@ function setup(){
   });document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset.dot!==undefined)setBanner(Number(e.target.dataset.dot))});
   let sx=0;$('bannerViewport').addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});$('bannerViewport').addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>35)setBanner(bi+(dx<0?1:-1))},{passive:true});setInterval(()=>{if(CURRENT==='home'&&document.visibilityState==='visible')setBanner(bi+1)},6000);
 }
-async function restoreSession(){const saved=parse(storageGet('nel_b2b_green_session'));let token=storageGet('nel_b2b_token')||storageGet('nel_b2b_token',sessionStorage)||storageGet('nel_b2b_approved_token')||saved?.token;const epoch=sessionEpoch;
+async function restoreSession(){const saved=parse(storageGet('nel_b2b_green_session'));let token=storageGet('nel_b2b_token')||storageGet('nel_b2b_token',sessionStorage)||storageGet('nel_b2b_approved_token')||saved?.token;const epoch=sessionEpoch;if(token)sessionRestoreUi(true);
   if(!token)try{const db=await window.NEL_B2B_DB?.get('sessionToken');token=typeof db==='string'?db:db?.token}catch(_){}
-  if(epoch!==sessionEpoch||!token)return;TOKEN=token;if(await refresh()){persistSession();show('home')}
+  if(epoch!==sessionEpoch||!token)return;sessionRestoreUi(true);TOKEN=token;if(await refresh()){persistSession();show('home')}
 }
 async function installApp(){if(installPrompt){await installPrompt.prompt();await installPrompt.userChoice;installPrompt=null}else msg('Open your browser menu and choose Add to Home screen')}
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installBtn').classList.remove('hidden')});window.addEventListener('appinstalled',()=>$('installBtn').classList.add('hidden'));

@@ -164,6 +164,27 @@ async function testV5(){
   assert(await page.evaluate(`!document.getElementById('mainNavigation').classList.contains('hidden')`),'v5: tracking retains navigation');
   await page.evaluate(`document.querySelector('#mainNavigation [data-page="products"]').click();true`);
   assert(await page.evaluate(`CURRENT==='products'&&document.querySelector('#mainNavigation [aria-current="page"]').dataset.page==='products'`),'v5: shared navigation returns from detail pages and marks current tab');
+  await page.send('Page.addScriptToEvaluateOnNewDocument',{source:`
+   window.qaRestoreCalls=[];
+   HTMLFormElement.prototype.submit=function(){
+    const req=JSON.parse(this.querySelector('[name="payload"]').value);qaRestoreCalls.push(req.method);
+    queueMicrotask(()=>{const h=pending.get(req.requestId);if(!h)return;pending.delete(req.requestId);h.cleanup();
+     if(localStorage.getItem('qaRestoreFailure'))h.reject(new Error('Connection unavailable'));
+     else if(req.method==='getB2BWorkspaceV5')h.resolve(${JSON.stringify(fixture)});
+     else h.reject(new Error('Unexpected restore RPC '+req.method));
+    });
+   };
+  `});
+  await page.navigate('file://'+process.cwd()+'/b2b/index.html');
+  await page.waitFor(`CURRENT==='home'`,5000,'remembered account after reload');
+  assert(await page.evaluate(`TOKEN==='qa-local-token'&&qaRestoreCalls.every(m=>m!=='vendorLogin')`),'v5: reload restores remembered account without PIN or login RPC');
+  await page.evaluate(`localStorage.setItem('qaRestoreFailure','1');true`);
+  await page.navigate('file://'+process.cwd()+'/b2b/index.html');
+  await page.waitFor(`!!document.getElementById('recoverSession')`,5000,'temporary connection recovery');
+  assert(await page.evaluate(`localStorage.getItem('nel_b2b_token')==='qa-local-token'&&getComputedStyle(document.getElementById('phoneStep')).display==='none'`),'v5: connection failure keeps session and hides repeat login form');
+  await page.evaluate(`localStorage.removeItem('qaRestoreFailure');rpc=async()=>(${JSON.stringify(fixture)});retrySession();true`);
+  await page.waitFor(`CURRENT==='home'`,5000,'remembered account retry');
+  assert(await page.evaluate(`!document.getElementById('mainNavigation').classList.contains('hidden')`),'v5: retry restores account and navigation without credentials');
   await page.evaluate(`logout(false);true`);assert(await page.evaluate(`document.getElementById('mainNavigation').classList.contains('hidden')&&CURRENT==='login'&&!localStorage.getItem('nel_b2b_token')`),'v5: logout clears remembered session');
   const errors=page.runtimeErrors();assert(errors.length===0,'v5: no browser exceptions ('+(errors[0]||'clean')+')');
  }finally{await page.close()}
