@@ -111,6 +111,11 @@ jobs:
           NE_AUTO_CORE: src/ZZZZZZZZZZZZZ_V904_B2BOrder.gs
         run: node scripts/b2b-auto-accept-regression.cjs
 
+      - name: Verify approved B2B production data isolation
+        env:
+          NE_V5_WORKSPACE: src/NE_B2B_Workspace_V5.gs
+        run: node scripts/b2b-v5-workspace-regression.cjs
+
       - name: Configure clasp project
         shell: bash
         run: |
