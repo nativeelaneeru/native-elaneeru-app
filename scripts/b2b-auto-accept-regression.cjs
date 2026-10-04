@@ -1,0 +1,35 @@
+const vm=require('vm'),fs=require('fs'),assert=require('node:assert/strict');
+const sandbox={Utilities:{formatDate:d=>new Date(d).toISOString().slice(0,10)},console};vm.createContext(sandbox);vm.runInContext(fs.readFileSync(process.env.NE_AUTO_SOURCE||'auto-accept.gs','utf8'),sandbox);
+const now=Date.parse('2026-10-04T03:00:00Z');
+function fixture(){return {config:{Enabled:true,StockCheckMaxHours:24},checks:[{'Product ID':'TC','Verified At':'2026-10-04T08:00:00+05:30','Verified By':'Stock manager',Status:'VERIFIED','Safety Qty':10}],batches:[{'Batch ID':'BAT-1',Barcode:'NE-1','Product ID':'TC','Available Qty':150,'Reserved Qty':0,'Delivered Qty':0,'Original Qty':150,Status:'AVAILABLE','Created At':'2026-10-03T08:00:00+05:30',_row:2},{'Batch ID':'BAT-2',Barcode:'NE-2','Product ID':'TC','Available Qty':150,'Reserved Qty':0,'Delivered Qty':0,'Original Qty':150,Status:'AVAILABLE','Created At':'2026-10-04T08:00:00+05:30',_row:3}],slots:[{Enabled:true,Area:'Jayanagar','Delivery Date':'2026-10-05',Slot:'07:00-11:00','Capacity Qty':500,'Cutoff At':'2026-10-04T20:00:00+05:30'}],orders:[],items:[]};}
+const input={vendor:{Status:'ACTIVE'},area:'Jayanagar',date:'',slot:'',lines:[{x:{productId:'TC'},q:200}]};
+function plan(ctx,request=input,t=now){return sandbox.neAutoPlan_(request,ctx,t);}
+let f=fixture(),p=plan(f);assert.equal(p.accepted,true);assert.equal(p.allocations.length,2);assert.equal(p.allocations[0].batch['Batch ID'],'BAT-1');assert.equal(p.allocations[0].qty,150);assert.equal(p.allocations[1].qty,50);
+f=fixture();f.config.Enabled=false;assert.equal(plan(f).reason,'AUTO_ACCEPT_DISABLED');
+f=fixture();f.checks[0]['Verified At']='2026-10-01T08:00:00+05:30';assert.equal(plan(f).reason,'STOCK_CHECK_EXPIRED:TC');
+f=fixture();f.checks[0]['Verified By']='';assert.equal(plan(f).reason,'STOCK_NOT_VERIFIED:TC');
+f=fixture();f.batches[0]['Batch ID']='BAT-DEMO';assert.equal(plan(f).reason,'INSUFFICIENT_STOCK:TC');
+f=fixture();f.batches[0]['Reserved Qty']=10;assert.equal(plan(f).reason,'STOCK_BALANCE_INVALID:TC');
+f=fixture();assert.equal(plan(f,{...input,lines:[{x:{productId:'TC'},q:200},{x:{productId:'TC'},q:100}]}).reason,'INSUFFICIENT_STOCK:TC');
+f=fixture();assert.equal(plan(f,{...input,vendor:{Status:'SUSPENDED'}}).reason,'VENDOR_NOT_ACTIVE');
+f=fixture();f.slots[0]['Capacity Qty']=199;assert.equal(plan(f).reason,'DELIVERY_CAPACITY_FULL');
+f=fixture();f.orders=[{'Order ID':'old','Delivery Date':'2026-10-05','Delivery Slot':'07:00-11:00',Area:'Jayanagar',Status:'Confirmed'}];f.items=[{'Order ID':'old',Quantity:350}];assert.equal(plan(f).reason,'DELIVERY_CAPACITY_FULL');f.orders[0].Status='Cancelled';assert.equal(plan(f).accepted,true);
+f=fixture();f.slots.push({...f.slots[0]});assert.equal(plan(f).reason,'DUPLICATE_DELIVERY_SLOT');
+f=fixture();assert.equal(plan(f,input,Date.parse('2026-10-04T14:30:00Z')).reason,'NO_AVAILABLE_DELIVERY_SLOT');assert.equal(plan(f,input,Date.parse('2026-10-04T14:29:59Z')).accepted,true);
+f.checks[0]['Verified At']='2026-10-04T19:59:00+05:30';assert.equal(plan(f,input,Date.parse('2026-10-04T14:29:59Z')).accepted,true);
+// Full canonical handler: lock, duplicate retry, reservation and rollback.
+let db,serial,failAssignment,lockDepth;
+sandbox.s_=v=>String(v??'').trim();sandbox.n_=v=>Number(v)||0;sandbox.digits_=v=>String(v).replace(/\D/g,'');sandbox.id_=p=>p+(++serial);sandbox.now_=()=>new Date(now);sandbox.hashV8_=x=>'hash';sandbox.CacheService={getScriptCache:()=>({remove(){}})};
+sandbox.V8={SHEETS:{B2B_ORDERS:'orders',B2B_ORDER_ITEMS:'items',B2B_VENDORS:'vendors',BATCHES:'batches',ASSIGNMENTS:'assignments'}};
+sandbox.rows_=name=>db[name]||[];sandbox.find_=(name,key,val)=>(db[name]||[]).find(r=>r[key]===val)||null;sandbox.append_=(name,row)=>{assert.equal(lockDepth,1);if(name==='assignments'&&failAssignment&&(failAssignment===true||db.assignments.length>=failAssignment))throw Error('Injected failure');db[name]??=[];const r={...row,_row:db[name].length+2};db[name].push(r);return r._row;};sandbox.updateObj_=(name,row,change)=>{assert.equal(lockDepth,1);Object.assign(db[name].find(x=>x._row===row),change);};sandbox.lockRun_=fn=>{assert.equal(lockDepth,0);lockDepth++;try{return fn();}finally{lockDepth--;}};
+sandbox.vendor_=()=>db.vendors[0];sandbox.b2bProducts_=()=>[{productId:'TC',productName:'Coconut',price:44,moq:50,qtyStep:50,unit:'pc'}];
+vm.runInContext(fs.readFileSync(process.env.NE_AUTO_CORE||'auto-core.gs','utf8'),sandbox);sandbox.findExistingB2BRequestV904_=(vendor,id)=>db.orders.find(o=>o['Vendor ID']===vendor&&o.Source==='B2B WEB|REQ:'+id);
+// fixed clock for prepare; production uses Date.now inside same locked handler.
+sandbox.neAutoPrepare_=(vendor,lines,payload)=>plan({config:db.B2B_Auto_Accept.reduce((o,r)=>(o[r.Setting]=r.Value,o),{}),checks:db.B2B_Stock_Checks,slots:db.B2B_Delivery_Capacity,batches:db.batches,orders:db.orders,items:db.items},{vendor,lines,area:vendor.Area,date:payload.deliveryDate||'',slot:payload.deliverySlot||''});
+function reset(){const x=fixture();serial=0;lockDepth=0;failAssignment=false;db={vendors:[{'Vendor ID':'V1',Area:'Jayanagar',Status:'ACTIVE','Payment Type':'COD',Outstanding:0,_row:2}],orders:[],items:[],batches:x.batches,assignments:[],B2B_Auto_Accept:Object.entries(x.config).map(([Setting,Value],i)=>({Setting,Value,_row:i+2})),B2B_Stock_Checks:x.checks,B2B_Delivery_Capacity:x.slots,B2B_Acceptance_Log:[]};}
+reset();let order=sandbox.placeB2BOrder('token',{clientRequestId:'retry1',items:[{productId:'TC',quantity:200}]});assert.equal(order.status,'Confirmed');assert.equal(order.amount,8800);assert.equal(db.batches[0]['Available Qty'],0);assert.equal(db.batches[1]['Available Qty'],100);assert.equal(db.assignments.length,2);assert.equal(db.orders[0]['Delivery Date'],'2026-10-05');sandbox.placeB2BOrder('token',{clientRequestId:'retry1',items:[{productId:'TC',quantity:200}]});assert.equal(db.orders.length,1);assert.equal(db.assignments.length,2);
+order=sandbox.placeB2BOrder('token',{clientRequestId:'second',items:[{productId:'TC',quantity:200}]});assert.equal(order.status,'Order Received');assert.equal(order.acceptanceReason,'INSUFFICIENT_STOCK:TC');assert.equal(db.assignments.length,2);
+reset();failAssignment=true;order=sandbox.placeB2BOrder('token',{items:[{productId:'TC',quantity:200}]});assert.equal(order.status,'Order Received');assert.equal(order.acceptanceReason,'ACCEPTANCE_WRITE_FAILED');assert.equal(db.batches[0]['Available Qty'],150);assert.equal(db.batches[1]['Available Qty'],150);assert.equal(db.batches[0]['Reserved Qty'],0);
+console.log('PASS: FIFO, safety stock, duplicate lines, inactive vendors, stale verification, demo exclusion, slot cutoff/capacity, manual bookings, duplicate slots, canonical lock, retries, stock contention and rollback.');
+
+reset();failAssignment=1;order=sandbox.placeB2BOrder('token',{items:[{productId:'TC',quantity:200}]});assert.equal(order.status,'Order Received');assert.equal(db.assignments[0].Status,'CANCELLED');assert.equal(db.batches[0]['Available Qty'],150);assert.equal(db.batches[1]['Available Qty'],150);console.log('PASS: partial reservation failure rolls back both batches and cancels prior assignment.');

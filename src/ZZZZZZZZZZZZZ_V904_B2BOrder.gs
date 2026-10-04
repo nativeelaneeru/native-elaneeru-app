@@ -54,6 +54,7 @@ function placeB2BOrderV904Core_(token,p){
     const deliveryCharge=0,total=subtotal+deliveryCharge,credit=pay==='CREDIT'?total:0;
     if(credit>Math.max(0,n_(v['Credit Limit'])-n_(v.Outstanding)))throw new Error('Available credit is insufficient.');
 
+    const acceptance=neAutoPrepare_(v,lines,p);
     const id=id_('NEB2B-'),otp=String(Math.floor(1000+Math.random()*9000)),after=n_(v.Outstanding)+credit;
     append_(V8.SHEETS.B2B_ORDERS,{
       'Order ID':id,'Ordered At':now_(),'Vendor ID':vid,'Business Name':s_(v['Business Name']),'Owner Name':s_(v['Owner Name']),
@@ -61,7 +62,7 @@ function placeB2BOrderV904Core_(token,p){
       Latitude:v.Latitude,Longitude:v.Longitude,'Payment Type':pay,'Payment Status':pay==='CREDIT'?'DUE':'PENDING',
       Subtotal:subtotal,Discount:0,'Total Amount':total,'Outstanding Before':n_(v.Outstanding),'Outstanding After':after,
       Status:'Order Received','Delivery OTP Hash':hashV8_(otp),'Delivery Slot':s_(p.deliverySlot),'Priority':'NORMAL',
-      'Source':requestId?'B2B WEB|REQ:'+requestId:'B2B WEB','Created At':now_(),'Updated At':now_()
+      'Delivery Date':s_(p.deliveryDate),'Source':requestId?'B2B WEB|REQ:'+requestId:'B2B WEB','Created At':now_(),'Updated At':now_()
     });
 
     lines.forEach(z=>append_(V8.SHEETS.B2B_ORDER_ITEMS,{
@@ -71,7 +72,8 @@ function placeB2BOrderV904Core_(token,p){
     }));
 
     if(credit)updateObj_(V8.SHEETS.B2B_VENDORS,v._row,{Outstanding:after,'Updated At':now_()});
-    return {success:true,orderId:id,amount:total,status:'Order Received',deliveryOtp:otp,clientRequestId:requestId};
+    const accepted=neAutoCommit_(id,vid,acceptance);
+    return Object.assign({success:true,orderId:id,amount:total,deliveryOtp:otp,clientRequestId:requestId},accepted);
   });
 }
 
@@ -84,5 +86,6 @@ function getB2BOrderEngineHealthV904(){
   const canonical=src.indexOf('placeB2BOrderV904Core_')>=0;
   const idempotent=src.indexOf('findExistingB2BRequestV904_')>=0;
   const serverCharge=src.indexOf('const deliveryCharge=0')>=0;
-  return {ok:canonical&&idempotent&&serverCharge,version:'9.0.4',canonicalOrderHandler:canonical,idempotency:idempotent,serverControlledDeliveryCharge:serverCharge};
+  return {ok:canonical&&idempotent&&serverCharge,version:'9.0.4',canonicalOrderHandler:canonical,idempotency:idempotent,serverControlledDeliveryCharge:serverCharge,autoAcceptanceHook:src.indexOf('neAutoPrepare_')>=0&&src.indexOf('neAutoCommit_')>=0};
 }
+

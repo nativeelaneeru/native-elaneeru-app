@@ -105,6 +105,12 @@ jobs:
           console.log('Apps Script feature validation passed across all routed app UIs.');
           NODE
 
+      - name: Verify B2B sheet-controlled auto acceptance
+        env:
+          NE_AUTO_SOURCE: src/NE_B2B_Auto_Accept_V967.gs
+          NE_AUTO_CORE: src/ZZZZZZZZZZZZZ_V904_B2BOrder.gs
+        run: node scripts/b2b-auto-accept-regression.cjs
+
       - name: Configure clasp project
         shell: bash
         run: |
@@ -241,8 +247,9 @@ jobs:
             if(!b2cHealth||b2cHealth.ok!==true||b2cHealth.engineVersion!=='9.0.5'||b2cHealth.canonicalOrderHandler!==true||b2cHealth.idempotency!==true||b2cHealth.serverControlledPayment!==true)throw new Error('B2C Checkout Engine V2 is not healthy.');
 
             const b2bHealth=await jsonp(process.env.MAIN_API_URL,'getB2BOrderEngineHealthV904');
-            if(!b2bHealth||b2bHealth.canonicalOrderHandler!==true||b2bHealth.idempotency!==true||b2bHealth.serverControlledDeliveryCharge!==true)throw new Error('B2B canonical order engine is not healthy.');
+            if(!b2bHealth||b2bHealth.canonicalOrderHandler!==true||b2bHealth.idempotency!==true||b2bHealth.serverControlledDeliveryCharge!==true||b2bHealth.autoAcceptanceHook!==true)throw new Error('B2B canonical order engine is not healthy.');
 
             console.log('Live Apps Script verification passed across all app routes. No production order, UPI intent, or valid customer/vendor record was created.');
           })().catch(e=>{console.error(e);process.exit(1)});
           NODE
+
