@@ -18,6 +18,8 @@ ok(/invalidStatus/.test(backend)&&/missingGps/.test(backend)&&/legacyTerminology
 ok(!/(append_|updateObj_|setValue\(|setValues\(|deleteRow\(|insertRow|clearContent\(|clear\()/.test(backend),'Command Center backend remains read-only');
 ok(/Command Center/.test(ui)&&/Operations Command Center/.test(ui),'Admin UI exposes the Command Center');
 ok(/B2C Orders Waiting/.test(ui)&&/B2B Orders Waiting/.test(ui)&&/Picker Queue/.test(ui),'Admin UI surfaces operational queues');
+ok(/purchaseOrdersAwaitingReceipt/.test(backend)&&/unitsAwaitingReceipt/.test(backend)&&/Purchase_Order_Items/.test(backend),'Command Center calculates open purchase order receipts without writes');
+ok(/POs Awaiting Receipt/.test(ui)&&/Units Awaiting Receipt/.test(ui)&&/\?page=purchaseorders/.test(ui),'Admin UI surfaces the procurement receiving queue and links to POs');
 ok(/Market price freshness/.test(ui)&&/Wholesale mandi reference only/.test(ui),'Admin UI clearly separates mandi reference from selling prices');
 ok(/Vendor acquisition funnel/.test(ui)&&/Vendor onboarding data quality/.test(ui),'Admin UI includes acquisition funnel and data-quality visibility');
 ok(/opscenter/.test(nav),'Central Admin navigation knows the Command Center panel');

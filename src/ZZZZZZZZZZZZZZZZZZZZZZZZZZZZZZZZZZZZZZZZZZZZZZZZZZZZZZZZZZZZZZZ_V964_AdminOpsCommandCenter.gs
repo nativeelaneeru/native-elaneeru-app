@@ -76,16 +76,24 @@ function v964ProductStatus_(){
 function getAdminOpsCommandCenterV964(email,pin){
   requireAdmin_(email,pin);
   const b2cOrders=v964Rows_(V8.SHEETS.ORDERS),b2bOrders=v964Rows_(V8.SHEETS.B2B_ORDERS);
+  const purchaseOrders=v964Rows_('Purchase_Orders'),purchaseItems=v964Rows_('Purchase_Order_Items');
   const onboarding=v964Rows_(V8.SHEETS.VENDOR_ONBOARD),vendors=v964Rows_(V8.SHEETS.B2B_VENDORS);
   const picker=v964Rows_(V8.SHEETS.PICKER_TASKS),routes=v964Rows_(V8.SHEETS.ROUTES),stops=v964Rows_(V8.SHEETS.STOPS);
   const tickets=v964Rows_(V8.SHEETS.SUPPORT);
   const vendorQuality=v964VendorQuality_(onboarding),products=v964ProductStatus_();
   const vendorFunnel={pending:0,approved:0,rejected:0,cancelled:0,other:0,activeVendors:vendors.filter(function(r){return active_(r.Status);}).length};
   onboarding.forEach(function(r){const x=v964Status_(r.Status);if(x==='PENDING')vendorFunnel.pending++;else if(x==='APPROVED')vendorFunnel.approved++;else if(x==='REJECTED')vendorFunnel.rejected++;else if(x==='CANCELLED')vendorFunnel.cancelled++;else vendorFunnel.other++;});
+  const receiptByPo={};
+  purchaseItems.forEach(function(r){const poId=s_(r['PO ID']);if(!poId)return;if(!receiptByPo[poId])receiptByPo[poId]={ordered:0,received:0,overReceived:false};const ordered=n_(r.Quantity),received=n_(r['Received Qty']);receiptByPo[poId].ordered+=ordered;receiptByPo[poId].received+=received;if(received>ordered)receiptByPo[poId].overReceived=true;});
+  let purchaseOrdersAwaitingReceipt=0,unitsAwaitingReceipt=0,purchaseOrderReceiptMismatches=0;
+  purchaseOrders.forEach(function(po){const poId=s_(po['PO ID']),status=v964Status_(po.Status),totals=receiptByPo[poId];if(!poId||!totals||status==='CANCELLED')return;const remaining=Math.max(0,totals.ordered-totals.received);if(['ISSUED','PARTIALLY RECEIVED'].includes(status)&&remaining>0){purchaseOrdersAwaitingReceipt++;unitsAwaitingReceipt+=remaining;}if((status==='RECEIVED'&&remaining>0)||totals.overReceived)purchaseOrderReceiptMismatches++;});
   const market=[v964MarketSummary_('Karnataka'),v964MarketSummary_('Tamil Nadu')];
   const metrics={
     openB2COrders:b2cOrders.filter(function(r){return v964OpenStatus_(r.Status);}).length,
     openB2BOrders:b2bOrders.filter(function(r){return v964OpenStatus_(r.Status);}).length,
+    purchaseOrdersAwaitingReceipt:purchaseOrdersAwaitingReceipt,
+    unitsAwaitingReceipt:unitsAwaitingReceipt,
+    purchaseOrderReceiptMismatches:purchaseOrderReceiptMismatches,
     pendingPickerTasks:picker.filter(function(r){return v964OpenStatus_(r.Status);}).length,
     activeRoutes:routes.filter(function(r){return v964OpenStatus_(r.Status);}).length,
     pendingStops:stops.filter(function(r){return v964OpenStatus_(r.Status);}).length,
@@ -99,6 +107,8 @@ function getAdminOpsCommandCenterV964(email,pin){
   function add(severity,title,detail,target){blockers.push({severity:severity,title:title,detail:detail,target:target||''});}
   if(metrics.openB2COrders)add('ACTION','B2C orders waiting',metrics.openB2COrders+' order(s) are not completed.','orders');
   if(metrics.openB2BOrders)add('ACTION','B2B orders waiting',metrics.openB2BOrders+' business order(s) are not completed.','orders');
+  if(metrics.purchaseOrdersAwaitingReceipt)add('ACTION','Purchase orders awaiting receipt',metrics.purchaseOrdersAwaitingReceipt+' purchase order(s) have '+metrics.unitsAwaitingReceipt+' unit(s) not yet received.','purchaseorders');
+  if(metrics.purchaseOrderReceiptMismatches)add('WARN','Purchase order receipt mismatch',metrics.purchaseOrderReceiptMismatches+' order(s) are marked received with outstanding or over-received quantities.','purchaseorders');
   if(metrics.pendingPickerTasks)add('ACTION','Picking queue',metrics.pendingPickerTasks+' picker task(s) need action.','');
   if(metrics.pendingVendorApprovals)add('ACTION','Vendor approvals',metrics.pendingVendorApprovals+' onboarding(s) are pending approval.','');
   if(products.b2c.oos||products.b2b.oos)add('WARN','Products out of stock','B2C OOS '+products.b2c.oos+' • B2B OOS '+products.b2b.oos+'.','adminProductsPanel');
