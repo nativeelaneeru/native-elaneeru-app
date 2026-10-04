@@ -88,6 +88,13 @@ jobs:
           node scripts/b2b-v5-frontend-regression.cjs
           node scripts/b2b-v5-browser-fixture.mjs
 
+      - name: Save B2B mobile verification screenshots
+        uses: actions/upload-artifact@v7
+        with:
+          name: b2b-mobile-debug-proof
+          path: test-results/b2b-mobile-*.png
+          retention-days: 3
+
       - name: Verify live B2C backend health (read-only)
         env:
           API_URL: https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec

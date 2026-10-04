@@ -161,7 +161,7 @@ await page.waitFor(`CURRENT==='place'`,5000,'checkout');
   await page.evaluate(`document.querySelector('[data-reorder="QA_OLD"]').click();true`);assert(await page.evaluate(`CURRENT==='cart'&&document.getElementById('ta').textContent==='₹2,200'`),'v5: reorder uses current vendor price');
   await page.evaluate(`show('account');document.querySelector('#account .menu button').click();document.querySelector('#profile input:not(#profilePhone)').value='Updated Owner';document.querySelector('#profile .wide').click();true`);await page.waitFor(`qaFixture.vendor.ownerName==='Updated Owner'`,5000,'profile save');
   assert(await page.evaluate(`document.getElementById('profilePhone').readOnly`),'v5: registered mobile is locked');
-  await page.evaluate(`show('profile');document.querySelector('#profile input:not(#profilePhone)').value='Unsaved Owner';await refresh(true);true`);
+  await page.evaluate(`(async()=>{show('profile');document.querySelector('#profile input:not(#profilePhone)').value='Unsaved Owner';await refresh(true);return true})()`);
   assert(await page.evaluate(`document.querySelector('#profile input:not(#profilePhone)').value==='Unsaved Owner'`),'v5: background refresh preserves unsaved profile edits');
   await page.evaluate(`show('shop');document.querySelector('#shop input').value='Updated Shop';document.querySelector('#shop .wide').click();true`);await page.waitFor(`qaFixture.vendor.businessName==='Updated Shop'`,5000,'shop save');
   await page.evaluate(`show('address');document.querySelector('#address .wide').click();document.getElementById('addressText').value='Updated Address';document.querySelector('#addressEdit .wide').click();true`);await page.waitFor(`qaFixture.vendor.address==='Updated Address'`,5000,'address save');
@@ -177,6 +177,12 @@ await page.waitFor(`CURRENT==='place'`,5000,'checkout');
   assert(await page.evaluate(`!document.getElementById('mainNavigation').classList.contains('hidden')`),'v5: tracking retains navigation');
   await page.evaluate(`document.querySelector('#mainNavigation [data-page="products"]').click();true`);
   assert(await page.evaluate(`CURRENT==='products'&&document.querySelector('#mainNavigation [aria-current="page"]').dataset.page==='products'`),'v5: shared navigation returns from detail pages and marks current tab');
+  fs.mkdirSync('test-results',{recursive:true});
+  for(const screen of ['products','cart']){
+   await page.evaluate(`show('${screen}');true`);
+   const shot=await page.send('Page.captureScreenshot',{format:'png'});
+   fs.writeFileSync('test-results/b2b-mobile-'+screen+'.png',Buffer.from(shot.data,'base64'));
+  }
   await page.send('Page.addScriptToEvaluateOnNewDocument',{source:`
    window.qaRestoreCalls=[];
    HTMLFormElement.prototype.submit=function(){
