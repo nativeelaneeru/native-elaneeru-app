@@ -206,7 +206,7 @@ async function testB2B(){
     await page.navigate(`${BASE}b2b/?e2e=${Date.now()}`);
     assert(/Native Elaneeru/i.test(await page.evaluate('document.title')), 'b2b: business PWA renders in Chrome');
     assert(/^\d+\.\d+\.\d+$/.test(String(await page.evaluate('window.NEL_B2B_CONFIG && NEL_B2B_CONFIG.appVersion')||'')),'b2b: production app version is present');
-    assert(await page.evaluate('window.NEL_B2B_BASE_PRICE_V952===true'),'b2b: base-price display module is live');
+    assert(await page.evaluate('NEL_B2B_CONFIG.build==="1600"'),'b2b: approved v5 production build is live');
     await checkManifest(page,'b2b');
     await checkServiceWorker(page,'b2b');
     assert(await page.evaluate(`!document.getElementById('login').classList.contains('hidden')`),'b2b: business login screen is visible');
@@ -215,10 +215,11 @@ async function testB2B(){
     assert(health?.ok===true,'b2b: browser iframe/postMessage bridge reaches Apps Script');
     assert(Boolean(health?.x?.canonicalOrderHandler)&&Boolean(health?.x?.idempotency)&&Boolean(health?.x?.serverControlledDeliveryCharge),'b2b: canonical duplicate-safe order engine is live');
 
-    await page.evaluate(`document.getElementById('mobile').value='0000000000';document.getElementById('pin').value='__bad_pin__';document.getElementById('loginBtn').click();true`);
-    await page.waitFor(`/Invalid mobile or PIN/i.test(document.getElementById('msg').textContent)`,20000,'invalid B2B login response');
-    assert(/Invalid mobile or PIN/i.test(await page.evaluate(`document.getElementById('msg').textContent`)),'b2b: invalid login is rejected without creating a session');
-    assert(await page.evaluate(`!sessionStorage.getItem('nel_b2b_token')`),'b2b: failed login does not persist a vendor token');
+    await page.evaluate(`document.getElementById('loginPhone').value='123';goPin();true`);
+    assert(/registered 10-digit mobile/i.test(await page.evaluate(`document.getElementById('toast').textContent`)),'b2b: invalid mobile is rejected before authentication');
+    const denied=await page.evaluate(`rpc('getB2BWorkspaceV5',['__invalid_v5_smoke_token__']).then(()=>({denied:false})).catch(e=>({denied:/Session has expired/i.test(e.message)}))`);
+    assert(denied.denied,'b2b: vendor workspace rejects invalid sessions');
+    assert(await page.evaluate(`!localStorage.getItem('nel_b2b_token')`),'b2b: failed authentication does not persist a vendor token');
 
     const errors=page.runtimeErrors();
     assert(errors.length===0,`b2b: no uncaught JavaScript exceptions (${errors[0]||'clean'})`);

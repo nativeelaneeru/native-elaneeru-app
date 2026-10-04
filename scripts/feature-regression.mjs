@@ -91,7 +91,7 @@ ok(/removeRetailSwitch/.test(b2b),'B2B keeps retail/customer navigation separate
 const b2bConfig=fs.readFileSync('b2b/config.js','utf8');
 const b2bPaymentUi=fs.readFileSync('b2b/payment-upi-v916.js','utf8');
 const b2bPaymentBackend=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZ_V916_B2BPayments.gs','utf8');
-ok(/payment-upi-v916\.js/.test(b2bConfig),'B2B production config loads the UPI payment overlay');
+ok(/prepareB2BUpiPaymentV916/.test(fs.readFileSync('b2b/app-v5.js','utf8'))&&/submitB2BUpiOrderV916/.test(fs.readFileSync('b2b/app-v5.js','utf8')),'B2B approved v5 uses authenticated UPI intents and UTR submission');
 ok(/prepareB2BUpiPaymentV916/.test(b2bPaymentUi)&&/submitB2BUpiOrderV916/.test(b2bPaymentUi),'B2B UPI UI uses payment-intent then UTR submission');
 ok(/Verification Pending/i.test(b2bPaymentUi),'B2B UPI UI clearly states manual verification status');
 ok(/paymentStatus/.test(b2bPaymentUi)&&/UPI Payment/.test(b2bPaymentUi),'B2B order history shows UPI payment verification status');
@@ -138,3 +138,4 @@ ok(/setTimeout\(flush,1200\)/.test(b2cAnalytics)&&/setTimeout\(flush,1200\)/.tes
 ok(/App Funnel/.test(cumulative)&&/getAppAnalyticsV942/.test(cumulative),'Control Tower reports B2C and B2B funnel analytics');
 
 console.log('Feature regression checks passed.');
+

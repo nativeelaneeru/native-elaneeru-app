@@ -81,6 +81,13 @@ jobs:
           })().catch(error=>{console.error(error);process.exit(1)});
           NODE
 
+      - name: Verify approved B2B v5 flows before publishing
+        env:
+          NE_V5_APP: b2b/app-v5.js
+        run: |
+          node scripts/b2b-v5-frontend-regression.cjs
+          node scripts/b2b-v5-browser-fixture.mjs
+
       - name: Verify live B2C backend health (read-only)
         env:
           API_URL: https://script.google.com/macros/s/AKfycbwWt1gjknt21us91HbFVbFdr5DbkEta-ZmETke-axuepZYp8fQRwAiGTnlgiKrxthb3/exec

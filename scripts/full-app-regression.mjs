@@ -134,19 +134,13 @@ const driver=read('src/Driver.html');
 ok(/function localDate\(/.test(driver),'B2B Driver uses local calendar date');
 ok(/d\.stops=Array\.isArray\(d\.stops\)\?d\.stops:\[\]/.test(driver),'B2B Driver guards null route-stop data');
 
-const b2bConfig=read('b2b/config.js');
-ok(/runtime-guard-v918\.js/.test(b2bConfig),'B2B production config loads the V918 runtime guard');
-ok(/session-v985\.js/.test(b2bConfig),'B2B production config loads persistent fast-session support');
-const b2bGuard=read('b2b/runtime-guard-v918.js');
-ok(/d\.products=Array\.isArray\(d\.products\)/.test(b2bGuard)&&/d\.orders=Array\.isArray\(d\.orders\)/.test(b2bGuard),'B2B runtime guard normalises product/order lists');
-ok(/!Array\.isArray\(o\.items\)/.test(b2bGuard),'B2B runtime guard normalises nested order items');
-const b2bSession=read('b2b/session-v985.js');
-const b2bWorker=read('b2b/sw.js');
-ok(/NEL_B2B_DB\.get\('sessionToken'\)/.test(b2bSession),'B2B restores the partner session from IndexedDB');
-ok(/nel_b2b_data_cache/.test(b2bSession)&&/renderCached/.test(b2bSession),'B2B renders cached dashboard data before live refresh');
-ok(/function clearSaved\(/.test(b2bSession)&&/localStorage\.removeItem\('nel_b2b_token'\)/.test(b2bSession),'B2B explicit logout clears the persistent session');
-ok(/staleWhileRevalidate\(request,'\.\/index\.html'\)/.test(b2bWorker),'B2B repeat launches use cached navigation immediately');
-
+const b2bLive=read('b2b/app-v5.js'),b2bWorker=read('b2b/sw.js'),b2bHtml=read('b2b/index.html');
+ok(/app-v5\.js/.test(b2bHtml),'B2B loads approved v5 runtime');
+ok(/getB2BWorkspaceV5/.test(b2bLive),'B2B workspace is fetched through authenticated API');
+ok(/nel_b2b_green_session/.test(b2bLive)&&/nel_b2b_approved_token/.test(b2bLive)&&/sessionToken/.test(b2bLive),'B2B migrates existing partner sessions');
+ok(/function logout\(/.test(b2bLive)&&/removeItem\(k\)/.test(b2bLive),'B2B logout clears persistent sessions');
+ok(/networkFirst\(e.request,true\)/.test(b2bWorker),'B2B launches fetch current layout with offline shell fallback');
+ok(/startsWith\('native-elaneeru-business'\)/.test(b2bWorker),'B2B update preserves caches belonging to other apps');
 const security=read('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V918_ProductionSecurity.gs');
 new Function(security);
 ok(/9000000005/.test(security)&&/9000000006/.test(security),'legacy demo staff identities are explicitly blocked');
@@ -163,3 +157,4 @@ ok(/staleWhileRevalidate\(request,navigationFallback\(url\)\)/.test(directWorker
 ok(/staleWhileRevalidate\(request\)/.test(directWorker),'B2C cached runtime assets refresh in the background');
 
 console.log('Full Native Elaneeru app regression audit passed.');
+

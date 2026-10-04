@@ -102,11 +102,11 @@ if(!/V8\.SHEETS\.PAYMENTS/.test(upiBackend)||!/paymentStorage:'Payment_Ledger'/.
 if(!/paymentIntentBeforeOrder:true/.test(upiBackend)||!/autoMarkPaid:false/.test(upiBackend)||!/manualVerificationRequired:true/.test(upiBackend))fail('backend: direct UPI safety model is incomplete');else pass('backend: UPI intent is created before order and never auto-marked paid');
 if(!/const V913_FALLBACK_UPI_ID = ''/.test(upiBackend))fail('backend: a merchant UPI ID was invented instead of waiting for configuration');else pass('backend: merchant UPI ID remains unconfigured until explicitly supplied');
 
-const b2bConfig=read('b2b/config.js'),b2bDb=read('b2b/idb-v1.js'),b2bGuard=read('b2b/session-guard-v980.js'),b2bSync=read('b2b/order-sync-v1.js');
-if(!/session-guard-v980\.js/.test(b2bConfig))fail('b2b: vendor cart guard is not loaded');else pass('b2b: vendor cart guard is loaded');
-if(!/order-sync-v1\.js/.test(b2bConfig))fail('b2b: duplicate-safe order sync is not loaded');else pass('b2b: duplicate-safe order sync is loaded');
-if(!/clearBusinessCache/.test(b2bDb)||!/cart_owner_mobile/.test(b2bGuard))fail('b2b: vendor-scoped cache protection is incomplete');else pass('b2b: vendor-scoped cache protection is present');
-if(!/clientRequestId/.test(b2bSync))fail('b2b: order sync does not attach a request id');else pass('b2b: order sync attaches request ids');
+const b2bHtml=read('b2b/index.html'),b2bLive=read('b2b/app-v5.js');
+if(!/app-v5\.js/.test(b2bHtml)||/demo-debug\.js/.test(b2bHtml))fail('b2b: approved production runtime missing');else pass('b2b: approved v5 runtime loaded');
+if(!/cartKey\(\)/.test(b2bLive)||!/vendorId/.test(b2bLive))fail('b2b: vendor-specific cart storage missing');else pass('b2b: vendor-specific cart storage present');
+if(!/clientRequestId/.test(b2bLive)||!/orderRequest/.test(b2bLive))fail('b2b: duplicate-safe order request missing');else pass('b2b: stable order request IDs present');
 
 if(failures.length){console.error(`\nSmoke check failed with ${failures.length} issue(s).`);process.exit(1)}
 console.log(`\nSmoke check passed: ${ok.length} checks, 0 failures.`);
+
