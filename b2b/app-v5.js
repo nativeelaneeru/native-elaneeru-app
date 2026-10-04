@@ -20,7 +20,7 @@ function rpc(method,args=[]){return new Promise((resolve,reject)=>{
   const id=uid(),frame=document.createElement('iframe'),form=document.createElement('form'),input=document.createElement('input');
   frame.name='nel_'+id;frame.hidden=true;frame.title='Secure app request';form.method='POST';form.action=CFG.apiUrl+'?bridge=1';form.target=frame.name;form.hidden=true;
   input.type='hidden';input.name='payload';input.value=JSON.stringify({method,args,requestId:id});form.append(input);document.body.append(frame,form);
-  const timer=setTimeout(()=>{pending.delete(id);cleanup();reject(new Error('Request timed out. Retry using the same cart; duplicate orders are prevented.'))},45000);
+  const timer=setTimeout(()=>{pending.delete(id);cleanup();reject(new Error('Request timed out. Retry using the same cart; duplicate orders are prevented.'))},method==='getB2BWorkspaceV5'?15000:45000);
   function cleanup(){clearTimeout(timer);setTimeout(()=>{frame.remove();form.remove()},50)}pending.set(id,{resolve,reject,cleanup});form.submit();
 })}
 const products=()=>DATA?.products||[],orders=()=>DATA?.orders||[],vendor=()=>DATA?.vendor||{};
@@ -36,14 +36,14 @@ function parse(raw){try{return JSON.parse(raw)}catch(_){return null}}
 function cartKey(){return 'nel_b2b_v5_cart:'+vendor().vendorId}
 function saveCart(){if(!DATA)return;storageSet(cartKey(),JSON.stringify(cart));clearRequest()}
 function clearRequest(){try{localStorage.removeItem('nel_b2b_v5_order_request')}catch(_){}}
-async function persistSession(){storageSet('nel_b2b_token',TOKEN);storageSet('nel_b2b_token_saved_at',String(Date.now()));storageSet('nel_b2b_green_session',JSON.stringify({token:TOKEN,savedAt:Date.now()}));await window.NEL_B2B_DB?.set('sessionToken',{token:TOKEN,savedAt:Date.now()})?.catch(()=>{})}
+async function persistSession(){storageSet('nel_b2b_token',TOKEN);storageSet('nel_b2b_token_saved_at',String(Date.now()));storageSet('nel_b2b_green_session',JSON.stringify({token:TOKEN,savedAt:Date.now()}));void window.NEL_B2B_DB?.set('sessionToken',{token:TOKEN,savedAt:Date.now()})?.catch(()=>{})}
 function isSessionError(e){return /session.*(expired|invalid)|invalid token|vendor is inactive|please (login|sign in)/i.test(e.message)}
 async function refresh(silent=false){
   if(!TOKEN)return false;if(loading)return loading;const token=TOKEN,epoch=sessionEpoch,serial=++refreshSerial;
   loading=(async()=>{try{const data=await rpc('getB2BWorkspaceV5',[token]);if(TOKEN!==token||sessionEpoch!==epoch)return false;
     const first=!DATA;DATA=data;if(first){cart=parse(storageGet(cartKey()))||{};if(!cart||Array.isArray(cart)||typeof cart!=='object')cart={};}
-    render();if(CURRENT==='place'&&!confirming)refreshCheckoutView();sessionRestoreUi(false);return true;
-  }catch(e){if(TOKEN!==token||sessionEpoch!==epoch)return false;if(isSessionError(e)){logout(false);msg(e.message)}else if(!silent){msg(e.message);if(!DATA)showRecovery()}return false;}finally{if(serial===refreshSerial)loading=null}})();return loading;
+    render();if(CURRENT==='place'&&!confirming)refreshCheckoutView();sessionRestoreUi(false);if(CURRENT==='login')show('home');return true;
+  }catch(e){if(TOKEN!==token||sessionEpoch!==epoch)return false;if(isSessionError(e)){logout(false);msg(e.message)}else{if(!silent)msg(e.message);if(!DATA)showRecovery()}return false;}finally{if(serial===refreshSerial)loading=null}})();return loading;
 }
 function sessionRestoreUi(active){
  const panel=$('login').querySelector('.loginPanel');panel.classList.toggle('restoring',active);

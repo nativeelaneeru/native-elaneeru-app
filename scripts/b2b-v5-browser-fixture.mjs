@@ -149,6 +149,7 @@ async function testV5(){
   assert(await page.evaluate(`document.querySelector('[data-add="MIX"]').disabled`),'v5: unavailable stock cannot be added');
   await page.evaluate(`document.querySelector('[data-add="TC"]').click();document.querySelector('#mainNavigation button:nth-child(3)').click();true`);
   assert(await page.evaluate(`CURRENT==='cart'&&document.getElementById('ta').textContent==='₹2,200'`),'v5: Cart contains correct quantity and price');
+  assert(await page.evaluate(`(()=>{const q=document.querySelector('#plist .qty');return q.getBoundingClientRect().width<160})()`),'v5: quantity controls stay compact');
   const workspaceReads=await page.evaluate(`qaCalls.filter(c=>c.method==='getB2BWorkspaceV5').length`);
   await page.evaluate(`document.getElementById('checkoutBtn').click();true`);
   assert(await page.evaluate(`qaCalls.filter(c=>c.method==='getB2BWorkspaceV5').length`)===workspaceReads,'v5: checkout opens without waiting for a full account fetch');
@@ -185,8 +186,9 @@ await page.waitFor(`CURRENT==='place'`,5000,'checkout');
   }
   await page.send('Page.addScriptToEvaluateOnNewDocument',{source:`
    window.qaRestoreCalls=[];
+   const realTimeout=window.setTimeout;window.setTimeout=(fn,ms,...args)=>realTimeout(fn,ms===15000?100:ms,...args);
    HTMLFormElement.prototype.submit=function(){
-    const req=JSON.parse(this.querySelector('[name="payload"]').value);qaRestoreCalls.push(req.method);
+    const req=JSON.parse(this.querySelector('[name="payload"]').value);qaRestoreCalls.push(req.method);if(localStorage.getItem('qaRestoreHang'))return;
     queueMicrotask(()=>{const h=pending.get(req.requestId);if(!h)return;pending.delete(req.requestId);h.cleanup();
      if(localStorage.getItem('qaRestoreFailure'))h.reject(new Error('Connection unavailable'));
      else if(req.method==='getB2BWorkspaceV5')h.resolve(${JSON.stringify(fixture)});
@@ -201,9 +203,16 @@ await page.waitFor(`CURRENT==='place'`,5000,'checkout');
   await page.navigate('file://'+process.cwd()+'/b2b/index.html');
   await page.waitFor(`!!document.getElementById('recoverSession')`,5000,'temporary connection recovery');
   assert(await page.evaluate(`localStorage.getItem('nel_b2b_token')==='qa-local-token'&&getComputedStyle(document.getElementById('phoneStep')).display==='none'`),'v5: connection failure keeps session and hides repeat login form');
-  await page.evaluate(`localStorage.removeItem('qaRestoreFailure');rpc=async()=>(${JSON.stringify(fixture)});retrySession();true`);
-  await page.waitFor(`CURRENT==='home'`,5000,'remembered account retry');
+  await page.evaluate(`localStorage.removeItem('qaRestoreFailure');localStorage.setItem('qaRestoreHang','1');true`);
+  await page.navigate('file://'+process.cwd()+'/b2b/index.html');
+  await page.waitFor(`!!document.getElementById('recoverSession')`,5000,'unresponsive restore recovery');
+  assert(await page.evaluate(`pending.size===0&&localStorage.getItem('nel_b2b_token')==='qa-local-token'`),'v5: unresponsive account request times out without deleting the session');
+  await page.evaluate(`localStorage.removeItem('qaRestoreHang');rpc=async()=>(${JSON.stringify(fixture)});refresh(true);true`);
+  await page.waitFor(`CURRENT==='home'`,5000,'background account retry');
   assert(await page.evaluate(`!document.getElementById('mainNavigation').classList.contains('hidden')`),'v5: retry restores account and navigation without credentials');
+  await page.evaluate(`DATA=null;show('login');rpc=async()=>{throw Error('Connection unavailable')};refresh(true);true`);
+  await page.waitFor(`!!document.getElementById('recoverSession')`,5000,'silent refresh recovery');
+  assert(await page.evaluate(`!document.getElementById('restoreNotice')&&!!document.getElementById('recoverSession')`),'v5: failed background restore offers recovery instead of hanging');
   await page.evaluate(`logout(false);true`);assert(await page.evaluate(`document.getElementById('mainNavigation').classList.contains('hidden')&&CURRENT==='login'&&!localStorage.getItem('nel_b2b_token')`),'v5: logout clears remembered session');
   const errors=page.runtimeErrors();assert(errors.length===0,'v5: no browser exceptions ('+(errors[0]||'clean')+')');
  }finally{await page.close()}
