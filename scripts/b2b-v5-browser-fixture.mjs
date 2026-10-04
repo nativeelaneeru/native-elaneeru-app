@@ -150,6 +150,10 @@ async function testV5(){
   await page.evaluate(`document.querySelector('[data-add="TC"]').click();document.querySelector('#mainNavigation button:nth-child(3)').click();true`);
   assert(await page.evaluate(`CURRENT==='cart'&&document.getElementById('ta').textContent==='₹2,200'`),'v5: Cart contains correct quantity and price');
   assert(await page.evaluate(`(()=>{const q=document.querySelector('#plist .qty');return q.getBoundingClientRect().width<160})()`),'v5: quantity controls stay compact');
+  assert(await page.evaluate(`document.querySelector('[data-add="TC"]').textContent==='Add to Cart'&&document.getElementById('cartCount').textContent==='50'&&!document.getElementById('cartCount').classList.contains('hidden')`),'v5: Add to Cart updates navigation quantity badge');
+  await page.evaluate(`q('TC',1,true);true`);
+  assert(await page.evaluate(`document.getElementById('cartCount').textContent==='100'`),'v5: changing cart quantity updates badge');
+  await page.evaluate(`q('TC',-1,true);true`);
   const workspaceReads=await page.evaluate(`qaCalls.filter(c=>c.method==='getB2BWorkspaceV5').length`);
   await page.evaluate(`document.getElementById('checkoutBtn').click();true`);
   assert(await page.evaluate(`qaCalls.filter(c=>c.method==='getB2BWorkspaceV5').length`)===workspaceReads,'v5: checkout opens without waiting for a full account fetch');
@@ -214,6 +218,7 @@ await page.waitFor(`CURRENT==='place'`,5000,'checkout');
   await page.waitFor(`!!document.getElementById('recoverSession')`,5000,'silent refresh recovery');
   assert(await page.evaluate(`!document.getElementById('restoreNotice')&&!!document.getElementById('recoverSession')`),'v5: failed background restore offers recovery instead of hanging');
   await page.evaluate(`logout(false);true`);assert(await page.evaluate(`document.getElementById('mainNavigation').classList.contains('hidden')&&CURRENT==='login'&&!localStorage.getItem('nel_b2b_token')`),'v5: logout clears remembered session');
+  assert(await page.evaluate(`document.getElementById('cartCount').classList.contains('hidden')`),'v5: logout clears cart badge');
   const errors=page.runtimeErrors();assert(errors.length===0,'v5: no browser exceptions ('+(errors[0]||'clean')+')');
  }finally{await page.close()}
 }
