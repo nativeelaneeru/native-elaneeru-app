@@ -158,6 +158,12 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v5
 
+      - name: Verify approved v5 B2B on the live URL
+        env:
+          SITE_URL: ${{ steps.deployment.outputs.page_url }}
+          B2B_ONLY: '1'
+        run: node scripts/live-browser-e2e.mjs
+
       - name: Verify live B2C and B2B PWAs in Chrome
         env:
           SITE_URL: ${{ steps.deployment.outputs.page_url }}

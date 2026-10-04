@@ -236,9 +236,8 @@ let stderr='';browser.stderr.on('data',b=>{stderr+=String(b)});
 
 try{
   await waitForDebugger(profileDir);
-  await testRoot();
-  await testB2C();
   await testB2B();
+  if(process.env.B2B_ONLY!=='1'){await testRoot();await testB2C();}
 }finally{
   browser.kill('SIGTERM');
   await sleep(300);

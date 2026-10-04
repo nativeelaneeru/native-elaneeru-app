@@ -24,6 +24,8 @@ ok(/Prices increased due to market uptrend/.test(b2b)&&/We have a better price f
 ok(/CART\[id\]\.product=Object\.assign/.test(b2b),'B2B live pricing reconciles existing cart items to the fresh server price');
 ok(/nel_b2b_last_prices_v950_/.test(b2b),'B2B remembers last-seen prices separately for each vendor');
 ok(/live-pricing-v10440\.js/.test(b2cConfig)&&/live-pricing-v10440/.test(b2cWorker),'B2C production config and PWA cache load live pricing');
-ok(/live-pricing-v950\.js/.test(b2bConfig)&&/live-pricing-v950/.test(b2bWorker),'B2B production config and PWA cache load live pricing');
+const v5=read('b2b/app-v5.js');
+ok(/app-v5\.js/.test(read('b2b/index.html'))&&/app-v5/.test(b2bWorker)&&/getB2BLivePricingV950/.test(v5)&&/POLL_MS=5000/.test(v5),'B2B approved v5 polls authenticated live prices and updates cart totals');
 
 console.log('Live pricing regression checks passed.');
+

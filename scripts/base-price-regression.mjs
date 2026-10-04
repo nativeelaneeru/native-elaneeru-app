@@ -46,7 +46,8 @@ ok(/base-price-v10450\.js/.test(b2cConfig)&&/base-price-v10450/.test(b2cWorker),
 ok(/appVersion:\s*'10\.60\.1-pwa'/.test(b2cConfig)&&/native-elaneeru-b2c-v10\.60\.1/.test(b2cWorker),'B2C cache version is bumped for the scratched-price release');
 ok(/request\.mode==='navigate'[\s\S]*staleWhileRevalidate\(request,navigationFallback\(url\)\)/.test(b2cWorker),'B2C repeat navigation keeps its immediate cached launch');
 ok(/pricingCritical[\s\S]*networkFirst\(request\)/.test(b2cWorker)&&/config\|ui-v125\|live-pricing-v10440\|base-price-v10450\|pricing-hierarchy-v10582/.test(b2cWorker),'B2C pricing/config scripts fetch latest scratched-price UI first when online');
-ok(/base-price-v952\.js/.test(b2bConfig)&&/base-price-v952/.test(b2bWorker),'B2B production config and service worker load base-price display');
+const v5=read('b2b/app-v5.js');
+ok(/app-v5\.js/.test(read('b2b/index.html'))&&/app-v5/.test(b2bWorker)&&/base>sell&&sell>0/.test(v5),'B2B approved v5 displays actual base prices only above selling prices');
 
 try{new Function(channels);new Function(liveBackend);new Function(b2cLive);new Function(b2bLive);new Function(b2cDisplay);new Function(b2bDisplay);new Function(b2cHistory);ok(true,'base-price backend and client JavaScript parse')}catch(e){ok(false,'base-price backend and client JavaScript parse: '+e.message)}
 try{[...admin.matchAll(/<script>([\s\S]*?)<\/script>/g)].forEach(x=>new Function(x[1]));ok(true,'base-price Admin JavaScript parses')}catch(e){ok(false,'base-price Admin JavaScript parses: '+e.message)}
