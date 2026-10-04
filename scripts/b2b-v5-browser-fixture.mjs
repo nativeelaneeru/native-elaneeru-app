@@ -142,7 +142,7 @@ async function testV5(){
   assert(await page.evaluate(`qaWorkerMessage===''&&updateActionRequested===false`),'v5: update waits while order submission is active');
   await page.evaluate(`confirming=false;dismissUpdatePrompt();true`);
   assert(await page.evaluate(`document.getElementById('updatePrompt').classList.contains('hidden')`),'v5: customer can defer an update');
-  showUpdatePrompt();await page.evaluate(`applyAppUpdate();true`);
+  await page.evaluate(`showUpdatePrompt();applyAppUpdate();true`);
   assert(await page.evaluate(`qaWorkerMessage==='SKIP_WAITING'&&updateActionRequested`),'v5: update starts only after customer chooses Update now');
   await page.evaluate(`show('products');document.querySelector('#plist img').src='missing-product-test.png';true`);
   await page.waitFor(`document.querySelector('#plist img').dataset.fallback==='1'&&document.querySelector('#plist img').naturalWidth>0`,5000,'broken image fallback');
