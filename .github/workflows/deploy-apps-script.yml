@@ -119,6 +119,9 @@ jobs:
       - name: Verify durable B2B remembered sessions
         run: node scripts/b2b-remembered-session-regression.cjs src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V1001_B2BFastLogin.gs
 
+      - name: Verify purchase order receiving and idempotency
+        run: node scripts/purchase-order-receiving-regression.mjs
+
       - name: Configure clasp project
         shell: bash
         run: |

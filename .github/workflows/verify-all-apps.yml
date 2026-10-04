@@ -53,6 +53,9 @@ jobs:
       - name: Serviceability map regression
         run: node scripts/serviceability-regression.mjs
 
+      - name: Purchase order receiving regression
+        run: node scripts/purchase-order-receiving-regression.mjs
+
       - name: Admin Operations Command Center regression
         run: node scripts/admin-ops-command-center-regression.mjs
 
