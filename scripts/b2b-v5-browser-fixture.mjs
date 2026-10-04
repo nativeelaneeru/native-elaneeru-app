@@ -123,16 +123,17 @@ async function testV5(){
   assert(await page.evaluate(`document.getElementById('loginPhone').value==='' && !document.body.textContent.includes('Demo PIN')`),'v5: no sample credentials are present');
   await page.evaluate(`document.getElementById('loginPhone').value='123';goPin();true`);
   assert(/registered 10-digit/.test(await page.evaluate(`document.getElementById('toast').textContent`)),'v5: invalid mobile is blocked');
+  assert(await page.evaluate(`document.getElementById('mainNavigation').classList.contains('hidden')`),'v5: navigation stays hidden before authentication');
   assert(await page.evaluate(`document.querySelector('.loginBrandLogo').complete&&document.querySelector('.loginBrandLogo').naturalWidth>0`),'v5: official login logo loads');
   assert(await page.evaluate(`document.querySelector('.loginHero').getBoundingClientRect().height<240`),'v5: login branding uses compact height');
   const fixture={vendor:{vendorId:'QA_VENDOR',ownerName:'QA Owner',businessName:'QA Business',mobile:'6111111111',address:'QA Address',area:'QA Area',paymentType:'COD',creditLimit:0,outstanding:0,availableCredit:0},products:[{productId:'TC',productName:'Tender Coconut',unit:'piece',price:44,moq:50,qtyStep:50,stockTracked:true,availableQty:180},{productId:'MIX',productName:'Mixed Coconut',unit:'piece',price:42,moq:50,qtyStep:10,stockTracked:true,availableQty:0}],orders:[{orderId:'QA_OLD',orderedAt:'01 Oct 2026',amount:2000,status:'Delivered',paymentType:'COD',paymentStatus:'PAID',items:[{productId:'TC',productName:'Tender Coconut',quantity:50,unitPrice:40,lineAmount:2000}]}],banners:[],marketRates:[],tickets:[],payments:[],target:null,deliverySlots:[],paymentConfig:{methods:['COD']}};
   await page.evaluate(`window.qaFixture=${JSON.stringify(fixture)};window.qaCalls=[];rpc=async(method,args)=>{qaCalls.push({method,args});if(method==='vendorLogin')return {token:'qa-local-token'};if(method==='getB2BWorkspaceV5')return structuredClone(qaFixture);if(method==='saveB2BProfileV5'){Object.assign(qaFixture.vendor,args[1]);return {success:true}};if(method==='createB2BTicketV5'){qaFixture.tickets.unshift({ticketId:'QA_TICKET',...args[1],status:'OPEN',createdAt:'Today'});return {success:true,ticketId:'QA_TICKET'}};if(method==='getVendorLiveTracking')return {active:false,message:'Delivery schedule pending'};if(method==='placeB2BOrderV9')return {success:true,orderId:'QA_NEW',amount:2200,status:'Order Received',autoAccepted:false};throw Error('Fixture blocked unexpected method: '+method)};document.getElementById('loginPhone').value='6111111111';goPin();document.getElementById('loginPin').value='9876';doLogin();true`);
   await page.waitFor(`CURRENT==='home'`,5000,'fixture login');
   assert(await page.evaluate(`document.querySelector('.greet h2').textContent.includes('QA')`),'v5: Home displays authenticated vendor name');
-  await page.evaluate(`document.querySelector('#home .nav button:nth-child(2)').click();true`);
+  await page.evaluate(`document.querySelector('#mainNavigation button:nth-child(2)').click();true`);
   assert(await page.evaluate(`CURRENT==='products'&&document.querySelectorAll('#plist .product').length===2`),'v5: Products navigation renders live catalogue');
   assert(await page.evaluate(`document.querySelector('[data-add="MIX"]').disabled`),'v5: unavailable stock cannot be added');
-  await page.evaluate(`document.querySelector('[data-add="TC"]').click();document.querySelector('#products .nav button:nth-child(3)').click();true`);
+  await page.evaluate(`document.querySelector('[data-add="TC"]').click();document.querySelector('#mainNavigation button:nth-child(3)').click();true`);
   assert(await page.evaluate(`CURRENT==='cart'&&document.getElementById('ta').textContent==='₹2,200'`),'v5: Cart contains correct quantity and price');
   await page.evaluate(`document.getElementById('checkoutBtn').click();true`);await page.waitFor(`CURRENT==='place'`,5000,'checkout');
   assert(await page.evaluate(`document.querySelector('#place .card:nth-child(2)').textContent.includes('No delivery slots')&&document.querySelector('input[value="UPI"]').disabled&&document.querySelector('input[value="CREDIT"]').disabled`),'v5: checkout uses unpublished-slot state and actual payment eligibility');
@@ -147,13 +148,17 @@ async function testV5(){
   await page.evaluate(`show('address');document.querySelector('#address .wide').click();document.getElementById('addressText').value='Updated Address';document.querySelector('#addressEdit .wide').click();true`);await page.waitFor(`qaFixture.vendor.address==='Updated Address'`,5000,'address save');
   await page.evaluate(`show('support');document.getElementById('issue').value='Delivery was late';document.querySelector('#support .pad > .wide').click();true`);assert(await page.evaluate(`!document.getElementById('draft').classList.contains('hidden')&&document.getElementById('cat').value==='Delivery Issue'`),'v5: ticket draft is editable and categorized');
   await page.evaluate(`document.querySelector('#draft .wide').click();true`);await page.waitFor(`document.getElementById('tickets').textContent.includes('QA_TICKET')`,5000,'ticket persistence');
-  for(const screen of ['home','products','cart','orders','schemes','payments','credit','account','profile','shop','address','support','notifications']){
+  for(const screen of ['place','confirmation','addressEdit','history','legal','upi','home','products','cart','orders','schemes','payments','credit','account','profile','shop','address','support','notifications']){
    await page.evaluate(`show('${screen}');true`);
    assert(await page.evaluate(`document.querySelectorAll('.screen:not(.hidden)').length===1&&CURRENT==='${screen}'`),'v5: '+screen+' screen opens correctly');
+   assert(await page.evaluate(`(()=>{const nav=document.getElementById('mainNavigation');const before=nav.getBoundingClientRect();document.getElementById('${screen}').scrollTop=10000;const after=nav.getBoundingClientRect();return document.querySelectorAll('.nav').length===1&&!nav.classList.contains('hidden')&&nav.parentElement.classList.contains('phone')&&Math.abs(after.bottom-844)<1&&before.top===after.top&&after.height>=67})()`),'v5: fixed navigation survives '+screen+' and scrolling');
   }
   await page.evaluate(`openTrack('QA_OLD');true`);await page.waitFor(`document.getElementById('liveTracking').textContent.includes('pending')`,5000,'tracking');
   assert(await page.evaluate(`!document.getElementById('liveTracking').textContent.includes('45')`),'v5: tracking has no sample ETA');
-  await page.evaluate(`logout(false);true`);assert(await page.evaluate(`CURRENT==='login'&&!localStorage.getItem('nel_b2b_token')`),'v5: logout clears remembered session');
+  assert(await page.evaluate(`!document.getElementById('mainNavigation').classList.contains('hidden')`),'v5: tracking retains navigation');
+  await page.evaluate(`document.querySelector('#mainNavigation [data-page="products"]').click();true`);
+  assert(await page.evaluate(`CURRENT==='products'&&document.querySelector('#mainNavigation [aria-current="page"]').dataset.page==='products'`),'v5: shared navigation returns from detail pages and marks current tab');
+  await page.evaluate(`logout(false);true`);assert(await page.evaluate(`document.getElementById('mainNavigation').classList.contains('hidden')&&CURRENT==='login'&&!localStorage.getItem('nel_b2b_token')`),'v5: logout clears remembered session');
   const errors=page.runtimeErrors();assert(errors.length===0,'v5: no browser exceptions ('+(errors[0]||'clean')+')');
  }finally{await page.close()}
 }

@@ -3,7 +3,7 @@
   "name": "Native Elaneeru Business",
   "short_name": "Elaneeru Business",
   "description": "Fast tender coconut ordering for Native Elaneeru vendors.",
-  "start_url": "./?build=1601",
+  "start_url": "./?build=1602",
   "scope": "./",
   "display": "standalone",
   "background_color": "#eef5f0",
