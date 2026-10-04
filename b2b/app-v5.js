@@ -33,6 +33,19 @@ function orderQty(o){return (o.items||[]).reduce((n,i)=>n+Number(i.quantity||0),
 function storageGet(key,where=localStorage){try{return where.getItem(key)}catch(_){return null}}
 function storageSet(key,value){try{localStorage.setItem(key,value)}catch(_){}}
 function parse(raw){try{return JSON.parse(raw)}catch(_){return null}}
+const HOME_CACHE_KEY='nel_b2b_home_snapshot_v1';
+function rememberHome(token,data){
+ const v=data?.vendor;if(!token||!v?.vendorId||!Array.isArray(data.products))return;
+ const snapshot={vendor:{vendorId:v.vendorId,businessName:v.businessName||'',ownerName:v.ownerName||'',area:v.area||'',paymentType:v.paymentType||'COD'},
+  products:data.products.map(p=>({productId:p.productId,productName:p.productName,unit:p.unit,price:p.price,basePrice:p.basePrice,moq:p.moq,qtyStep:p.qtyStep,stockTracked:!!p.stockTracked,availableQty:p.availableQty,imageUrl:safeUrl(p.imageUrl)})),
+  banners:(data.banners||[]).slice(0,6).map(b=>({title:b.title,subtitle:b.subtitle,offerText:b.offerText,redirectType:b.redirectType,redirectValue:safeUrl(b.redirectValue),imageUrl:safeUrl(b.imageUrl)})),
+  marketRates:(data.marketRates||[]).slice(0,3),marketPrices:(data.marketPrices||[]).slice(0,3),orders:[],payments:[],tickets:[],target:null,deliverySlots:[],paymentConfig:{methods:[]}};
+ const record=JSON.stringify({token,cachedAt:Date.now(),data:snapshot});if(record.length<90000)storageSet(HOME_CACHE_KEY,record);
+}
+function rememberedHome(token){
+ const saved=parse(storageGet(HOME_CACHE_KEY));if(saved?.token!==token||Date.now()-Number(saved.cachedAt||0)>30*86400000)return null;
+ const d=saved.data;if(!d?.vendor?.vendorId||!Array.isArray(d.products))return null;return d;
+}
 function cartKey(){return 'nel_b2b_v5_cart:'+vendor().vendorId}
 function saveCart(){if(!DATA)return;storageSet(cartKey(),JSON.stringify(cart));clearRequest()}
 function clearRequest(){try{localStorage.removeItem('nel_b2b_v5_order_request')}catch(_){}}
@@ -41,7 +54,7 @@ function isSessionError(e){return /session.*(expired|invalid)|invalid token|vend
 async function refresh(silent=false){
   if(!TOKEN)return false;if(loading)return loading;const token=TOKEN,epoch=sessionEpoch,serial=++refreshSerial;
   loading=(async()=>{try{const data=await rpc('getB2BWorkspaceV5',[token]);if(TOKEN!==token||sessionEpoch!==epoch)return false;
-    const first=!DATA;DATA=data;workspaceReady=true;if(first){cart=parse(storageGet(cartKey()))||{};if(!cart||Array.isArray(cart)||typeof cart!=='object')cart={};}
+    const first=!DATA;DATA=data;workspaceReady=true;rememberHome(token,data);if(first){cart=parse(storageGet(cartKey()))||{};if(!cart||Array.isArray(cart)||typeof cart!=='object')cart={};}
     render();if(CURRENT==='place'&&!confirming)refreshCheckoutView();sessionRestoreUi(false);if(CURRENT==='login')show('home');return true;
   }catch(e){if(TOKEN!==token||sessionEpoch!==epoch)return false;if(isSessionError(e)){logout(false);msg(e.message)}else{if(!silent)msg(e.message);if(!DATA)showRecovery()}return false;}finally{if(serial===refreshSerial)loading=null}})();return loading;
 }
@@ -52,7 +65,7 @@ function sessionRestoreUi(active){
 }
 function showRecovery(){sessionRestoreUi(true);$('restoreNotice')?.remove();$('recoverSession')?.remove();$('login').querySelector('.loginPanel').insertAdjacentHTML('beforeend','<div id="recoverSession" class="retryNote">Your session was found, but account data could not load.<button class="wide" onclick="retrySession()">Retry loading account</button><button class="wide" onclick="logout()">Sign out</button></div>')}
 async function retrySession(){$('recoverSession')?.remove();sessionRestoreUi(true);if(!DATA)return restoreAccount(TOKEN);if(await refresh())show('home')}
-function show(id){if(id!=='login'&&(!TOKEN||!DATA)){msg('Sign in to access your business account');id='login'}if(TOKEN&&DATA&&!workspaceReady&&['orders','payments','credit','schemes','place','history'].includes(id))return msg('Loading account details. Please try again shortly.');const s=$(id);if(!s?.classList.contains('screen'))return msg('This page is unavailable');CURRENT=id;document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('hidden',x!==s));s.scrollTop=0;const content=s.querySelector(':scope > .pad');if(content)content.scrollTop=0;if(voice&&id!=='support'){try{voice.abort()}catch(_){}voice=null}updateNavigation(id);
+function show(id){if(id!=='login'&&(!TOKEN||!DATA)){msg('Sign in to access your business account');id='login'}if(TOKEN&&DATA&&!workspaceReady&&['orders','payments','credit','schemes','place','history','account','profile','shop','address','support','notifications','track'].includes(id))return msg('Loading account details. Please try again shortly.');const s=$(id);if(!s?.classList.contains('screen'))return msg('This page is unavailable');CURRENT=id;document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('hidden',x!==s));s.scrollTop=0;const content=s.querySelector(':scope > .pad');if(content)content.scrollTop=0;if(voice&&id!=='support'){try{voice.abort()}catch(_){}voice=null}updateNavigation(id);
   if(id==='products')renderProducts();if(id==='cart')renderCart();if(id==='orders')renderOrders();if(id==='payments'||id==='credit')renderPayments();if(['account','profile','shop','address'].includes(id))renderProfile(true);if(id==='schemes')schemeTab(false);
 }
 function goPin(){const m=$('loginPhone').value.trim();if(!/^[6-9]\d{9}$/.test(m))return msg('Enter your registered 10-digit mobile number');$('phoneEcho').textContent='+91 '+m;$('phoneStep').classList.add('hidden');$('pinStep').classList.remove('hidden');$('loginPin').focus()}
@@ -62,7 +75,7 @@ async function doLogin(){const m=$('loginPhone').value.trim(),pin=$('loginPin').
   catch(e){msg(e.message)}finally{btn.disabled=false;btn.textContent='Login'}
 }
 function logout(notify=true){if(voice){try{voice.abort()}catch(_){}voice=null}const old=TOKEN;sessionEpoch++;refreshSerial++;loading=null;TOKEN='';DATA=null;workspaceReady=false;cart={};selectedQty={};activeOrderId='';renderCartBadge(0);clearRequest();
-  ['nel_b2b_token','nel_b2b_token_saved_at','nel_b2b_green_session','nel_b2b_approved_token','nel_b2b_approved_home','nel_b2b_data_cache'].forEach(k=>{for(const s of [localStorage,sessionStorage])try{s.removeItem(k)}catch(_){}});
+  ['nel_b2b_token','nel_b2b_token_saved_at','nel_b2b_green_session','nel_b2b_approved_token','nel_b2b_approved_home','nel_b2b_data_cache',HOME_CACHE_KEY].forEach(k=>{for(const s of [localStorage,sessionStorage])try{s.removeItem(k)}catch(_){}});
   window.NEL_B2B_DB?.set('sessionToken',null)?.catch(()=>{});window.NEL_B2B_DB?.set('businessData',null)?.catch(()=>{});window.NEL_B2B_DB?.set('profile',null)?.catch(()=>{});$('loginPin').value='';sessionRestoreUi(false);backPhone();show('login');if(old&&notify)rpc('vendorLogout',[old]).catch(()=>{});
 }
 function registerVendor(){extraScreen('registration','Business Partner Registration','<div class="card"><b>Register with Native Elaneeru</b><p class="sub">Our vendor onboarding team will register your business, confirm service availability and issue your login PIN.</p><a class="wide" style="display:block;text-align:center;text-decoration:none" href="tel:+917411807675">Call Vendor Support</a><a class="wide" style="display:block;text-align:center;text-decoration:none" href="https://wa.me/917411807675?text=I%20would%20like%20to%20register%20as%20a%20Native%20Elaneeru%20business%20partner" target="_blank" rel="noopener">Contact on WhatsApp</a></div>','login');const s=$('registration');CURRENT='registration';document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('hidden',x!==s))}
@@ -188,7 +201,7 @@ function setup(){
   let sx=0;$('bannerViewport').addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});$('bannerViewport').addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>35)setBanner(bi+(dx<0?1:-1))},{passive:true});setInterval(()=>{if(CURRENT==='home'&&document.visibilityState==='visible')setBanner(bi+1)},6000);
 }
 function openFastHome(data){
- DATA=data;workspaceReady=false;cart=parse(storageGet(cartKey()))||{};if(!cart||Array.isArray(cart)||typeof cart!=='object')cart={};
+ DATA=data;rememberHome(TOKEN,data);workspaceReady=false;cart=parse(storageGet(cartKey()))||{};if(!cart||Array.isArray(cart)||typeof cart!=='object')cart={};
  render();sessionRestoreUi(false);show('home');
 }
 async function restoreAccount(token){
@@ -197,11 +210,11 @@ async function restoreAccount(token){
   const data=await rpc('getB2BHomeFastV1000',[token]);if(TOKEN!==token||epoch!==sessionEpoch)return;
   if(!data?.vendor?.vendorId||!Array.isArray(data.products))throw Error('Account data could not load. Please retry.');
   openFastHome(data);persistSession();void refresh();
- }catch(e){if(TOKEN!==token||epoch!==sessionEpoch)return;if(isSessionError(e)){logout(false);msg(e.message)}else{showRecovery();msg(e.message)}}
+ }catch(e){if(TOKEN!==token||epoch!==sessionEpoch)return;if(isSessionError(e)){logout(false);msg(e.message)}else if(!DATA){showRecovery();msg(e.message)}else{sessionRestoreUi(false);msg('Could not reconnect yet. Your saved Home is available; try refresh when online.')}}
 }
 async function restoreSession(){const saved=parse(storageGet('nel_b2b_green_session'));let token=storageGet('nel_b2b_token')||storageGet('nel_b2b_token',sessionStorage)||storageGet('nel_b2b_approved_token')||saved?.token;const epoch=sessionEpoch;if(token)sessionRestoreUi(true);
   if(!token)try{const db=await window.NEL_B2B_DB?.get('sessionToken');token=typeof db==='string'?db:db?.token}catch(_){}
-  if(epoch!==sessionEpoch||!token)return;sessionRestoreUi(true);TOKEN=token;await restoreAccount(token)
+  if(epoch!==sessionEpoch||!token)return;TOKEN=token;const savedHome=rememberedHome(token);if(savedHome){openFastHome(savedHome);msg('Showing saved Home while account details refresh.');void restoreAccount(token);return}sessionRestoreUi(true);await restoreAccount(token)
 }
 async function installApp(){if(installPrompt){await installPrompt.prompt();await installPrompt.userChoice;installPrompt=null}else msg('Open your browser menu and choose Add to Home screen')}
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installBtn').classList.remove('hidden')});window.addEventListener('appinstalled',()=>$('installBtn').classList.add('hidden'));
