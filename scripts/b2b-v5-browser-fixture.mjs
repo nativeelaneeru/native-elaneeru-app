@@ -190,7 +190,7 @@ await page.waitFor(`CURRENT==='place'`,5000,'checkout');
   }
   await page.send('Page.addScriptToEvaluateOnNewDocument',{source:`
    window.qaRestoreCalls=[];
-   const realTimeout=window.setTimeout;window.setTimeout=(fn,ms,...args)=>realTimeout(fn,ms===15000?100:ms,...args);
+   const realTimeout=window.setTimeout;window.setTimeout=(fn,ms,...args)=>realTimeout(fn,ms===15000?(localStorage.getItem('qaHoldWorkspace')?5000:100):ms,...args);
    HTMLFormElement.prototype.submit=function(){
     const req=JSON.parse(this.querySelector('[name="payload"]').value);qaRestoreCalls.push(req.method);if(localStorage.getItem('qaRestoreHang'))return;if(req.method==='getB2BWorkspaceV5'&&localStorage.getItem('qaHoldWorkspace')){window.qaHeldWorkspace=req.requestId;return;}
     queueMicrotask(()=>{const h=pending.get(req.requestId);if(!h)return;pending.delete(req.requestId);h.cleanup();
