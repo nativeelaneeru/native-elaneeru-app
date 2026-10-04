@@ -136,6 +136,14 @@ async function testV5(){
   await page.evaluate(`window.qaFixture=${JSON.stringify(fixture)};window.qaCalls=[];rpc=async(method,args)=>{qaCalls.push({method,args});if(method==='vendorLogin')return {token:'qa-local-token'};if(method==='getB2BWorkspaceV5')return structuredClone(qaFixture);if(method==='saveB2BProfileV5'){Object.assign(qaFixture.vendor,args[1]);return {success:true}};if(method==='createB2BTicketV5'){qaFixture.tickets.unshift({ticketId:'QA_TICKET',...args[1],status:'OPEN',createdAt:'Today'});return {success:true,ticketId:'QA_TICKET'}};if(method==='getVendorLiveTracking')return {active:false,message:'Delivery schedule pending'};if(method==='placeB2BOrderV9')return {success:true,orderId:'QA_NEW',amount:2200,status:'Order Received',autoAccepted:false};throw Error('Fixture blocked unexpected method: '+method)};document.getElementById('loginPhone').value='6111111111';goPin();document.getElementById('loginPin').value='9876';doLogin();true`);
   await page.waitFor(`CURRENT==='home'`,5000,'fixture login');
   assert(await page.evaluate(`document.querySelector('.greet h2').textContent.includes('QA')`),'v5: Home displays authenticated vendor name');
+  await page.evaluate(`Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:{controller:{},addEventListener:(name,fn)=>window.qaControllerChange=fn}});window.qaWorkerMessage='';window.qaWorker={postMessage:m=>window.qaWorkerMessage=m};window.qaUpdateRegistration={waiting:qaWorker,installing:null,addEventListener(){}};watchAppUpdate(qaUpdateRegistration);true`);
+  assert(await page.evaluate(`!document.getElementById('updatePrompt').classList.contains('hidden')`),'v5: new release offers Update now and Later');
+  await page.evaluate(`confirming=true;applyAppUpdate();true`);
+  assert(await page.evaluate(`qaWorkerMessage===''&&updateActionRequested===false`),'v5: update waits while order submission is active');
+  await page.evaluate(`confirming=false;dismissUpdatePrompt();true`);
+  assert(await page.evaluate(`document.getElementById('updatePrompt').classList.contains('hidden')`),'v5: customer can defer an update');
+  showUpdatePrompt();await page.evaluate(`applyAppUpdate();true`);
+  assert(await page.evaluate(`qaWorkerMessage==='SKIP_WAITING'&&updateActionRequested`),'v5: update starts only after customer chooses Update now');
   await page.evaluate(`show('products');document.querySelector('#plist img').src='missing-product-test.png';true`);
   await page.waitFor(`document.querySelector('#plist img').dataset.fallback==='1'&&document.querySelector('#plist img').naturalWidth>0`,5000,'broken image fallback');
   assert(await page.evaluate(`document.querySelector('#plist img').src.includes('tender-coconut-v2.webp')`),'v5: broken product images recover with bundled coconut photo');
