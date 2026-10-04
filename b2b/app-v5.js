@@ -1,7 +1,7 @@
 'use strict';
 const CFG={apiUrl:'https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec',build:'1600'};
 const $=id=>document.getElementById(id),pending=new Map();
-let TOKEN='',DATA=null,cart={},selectedQty={},category='All',orderFilter='All',CURRENT='login',activeOrderId='',loading=null,confirming=false,voice=null,bi=0,installPrompt=null,sessionEpoch=0,refreshSerial=0;
+let TOKEN='',DATA=null,cart={},selectedQty={},category='All',orderFilter='All',CURRENT='login',activeOrderId='',loading=null,confirming=false,voice=null,bi=0,installPrompt=null,sessionEpoch=0,refreshSerial=0,workspaceReady=false;
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2});
 const safeUrl=v=>/^https?:\/\//i.test(String(v||''))?String(v):'';
@@ -20,7 +20,7 @@ function rpc(method,args=[]){return new Promise((resolve,reject)=>{
   const id=uid(),frame=document.createElement('iframe'),form=document.createElement('form'),input=document.createElement('input');
   frame.name='nel_'+id;frame.hidden=true;frame.title='Secure app request';form.method='POST';form.action=CFG.apiUrl+'?bridge=1';form.target=frame.name;form.hidden=true;
   input.type='hidden';input.name='payload';input.value=JSON.stringify({method,args,requestId:id});form.append(input);document.body.append(frame,form);
-  const timer=setTimeout(()=>{pending.delete(id);cleanup();reject(new Error('Request timed out. Retry using the same cart; duplicate orders are prevented.'))},method==='getB2BWorkspaceV5'?15000:45000);
+  const timer=setTimeout(()=>{pending.delete(id);cleanup();reject(new Error('Request timed out. Retry using the same cart; duplicate orders are prevented.'))},['getB2BWorkspaceV5','getB2BHomeFastV1000'].includes(method)?15000:45000);
   function cleanup(){clearTimeout(timer);setTimeout(()=>{frame.remove();form.remove()},50)}pending.set(id,{resolve,reject,cleanup});form.submit();
 })}
 const products=()=>DATA?.products||[],orders=()=>DATA?.orders||[],vendor=()=>DATA?.vendor||{};
@@ -41,7 +41,7 @@ function isSessionError(e){return /session.*(expired|invalid)|invalid token|vend
 async function refresh(silent=false){
   if(!TOKEN)return false;if(loading)return loading;const token=TOKEN,epoch=sessionEpoch,serial=++refreshSerial;
   loading=(async()=>{try{const data=await rpc('getB2BWorkspaceV5',[token]);if(TOKEN!==token||sessionEpoch!==epoch)return false;
-    const first=!DATA;DATA=data;if(first){cart=parse(storageGet(cartKey()))||{};if(!cart||Array.isArray(cart)||typeof cart!=='object')cart={};}
+    const first=!DATA;DATA=data;workspaceReady=true;if(first){cart=parse(storageGet(cartKey()))||{};if(!cart||Array.isArray(cart)||typeof cart!=='object')cart={};}
     render();if(CURRENT==='place'&&!confirming)refreshCheckoutView();sessionRestoreUi(false);if(CURRENT==='login')show('home');return true;
   }catch(e){if(TOKEN!==token||sessionEpoch!==epoch)return false;if(isSessionError(e)){logout(false);msg(e.message)}else{if(!silent)msg(e.message);if(!DATA)showRecovery()}return false;}finally{if(serial===refreshSerial)loading=null}})();return loading;
 }
@@ -51,17 +51,17 @@ function sessionRestoreUi(active){
  if(!$('restoreNotice'))panel.insertAdjacentHTML('beforeend','<div id="restoreNotice" class="retryNote" role="status">Restoring your account…</div>');
 }
 function showRecovery(){sessionRestoreUi(true);$('restoreNotice')?.remove();$('recoverSession')?.remove();$('login').querySelector('.loginPanel').insertAdjacentHTML('beforeend','<div id="recoverSession" class="retryNote">Your session was found, but account data could not load.<button class="wide" onclick="retrySession()">Retry loading account</button><button class="wide" onclick="logout()">Sign out</button></div>')}
-async function retrySession(){$('recoverSession')?.remove();sessionRestoreUi(true);if(await refresh())show('home')}
-function show(id){if(id!=='login'&&(!TOKEN||!DATA)){msg('Sign in to access your business account');id='login'}const s=$(id);if(!s?.classList.contains('screen'))return msg('This page is unavailable');CURRENT=id;document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('hidden',x!==s));s.scrollTop=0;const content=s.querySelector(':scope > .pad');if(content)content.scrollTop=0;if(voice&&id!=='support'){try{voice.abort()}catch(_){}voice=null}updateNavigation(id);
+async function retrySession(){$('recoverSession')?.remove();sessionRestoreUi(true);if(!DATA)return restoreAccount(TOKEN);if(await refresh())show('home')}
+function show(id){if(id!=='login'&&(!TOKEN||!DATA)){msg('Sign in to access your business account');id='login'}if(TOKEN&&DATA&&!workspaceReady&&['orders','payments','credit','schemes','place','history'].includes(id))return msg('Loading account details. Please try again shortly.');const s=$(id);if(!s?.classList.contains('screen'))return msg('This page is unavailable');CURRENT=id;document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('hidden',x!==s));s.scrollTop=0;const content=s.querySelector(':scope > .pad');if(content)content.scrollTop=0;if(voice&&id!=='support'){try{voice.abort()}catch(_){}voice=null}updateNavigation(id);
   if(id==='products')renderProducts();if(id==='cart')renderCart();if(id==='orders')renderOrders();if(id==='payments'||id==='credit')renderPayments();if(['account','profile','shop','address'].includes(id))renderProfile(true);if(id==='schemes')schemeTab(false);
 }
 function goPin(){const m=$('loginPhone').value.trim();if(!/^[6-9]\d{9}$/.test(m))return msg('Enter your registered 10-digit mobile number');$('phoneEcho').textContent='+91 '+m;$('phoneStep').classList.add('hidden');$('pinStep').classList.remove('hidden');$('loginPin').focus()}
 function backPhone(){$('pinStep').classList.add('hidden');$('phoneStep').classList.remove('hidden');$('loginPin').value=''}
 async function doLogin(){const m=$('loginPhone').value.trim(),pin=$('loginPin').value;if(!/^[6-9]\d{9}$/.test(m)||!/^\d{4}$/.test(pin))return msg('Enter your mobile number and 4-digit PIN');const btn=document.querySelector('#pinStep .wide');if(btn.disabled)return;btn.disabled=true;btn.textContent='Signing in…';const epoch=++sessionEpoch;
-  try{const r=await rpc('vendorLogin',[m,pin]);if(epoch!==sessionEpoch)return;if(!r.token)throw new Error('Unable to sign in');TOKEN=r.token;DATA=null;cart={};selectedQty={};await persistSession();$('loginPin').value='';if(await refresh())show('home');}
+  try{const r=await rpc('vendorLogin',[m,pin]);if(epoch!==sessionEpoch)return;if(!r.token)throw new Error('Unable to sign in');TOKEN=r.token;DATA=null;cart={};selectedQty={};await persistSession();$('loginPin').value='';if(r.home?.vendor){openFastHome(r.home);void refresh()}else if(await refresh())show('home');}
   catch(e){msg(e.message)}finally{btn.disabled=false;btn.textContent='Login'}
 }
-function logout(notify=true){if(voice){try{voice.abort()}catch(_){}voice=null}const old=TOKEN;sessionEpoch++;refreshSerial++;loading=null;TOKEN='';DATA=null;cart={};selectedQty={};activeOrderId='';renderCartBadge(0);clearRequest();
+function logout(notify=true){if(voice){try{voice.abort()}catch(_){}voice=null}const old=TOKEN;sessionEpoch++;refreshSerial++;loading=null;TOKEN='';DATA=null;workspaceReady=false;cart={};selectedQty={};activeOrderId='';renderCartBadge(0);clearRequest();
   ['nel_b2b_token','nel_b2b_token_saved_at','nel_b2b_green_session','nel_b2b_approved_token','nel_b2b_approved_home','nel_b2b_data_cache'].forEach(k=>{for(const s of [localStorage,sessionStorage])try{s.removeItem(k)}catch(_){}});
   window.NEL_B2B_DB?.set('sessionToken',null)?.catch(()=>{});window.NEL_B2B_DB?.set('businessData',null)?.catch(()=>{});window.NEL_B2B_DB?.set('profile',null)?.catch(()=>{});$('loginPin').value='';sessionRestoreUi(false);backPhone();show('login');if(old&&notify)rpc('vendorLogout',[old]).catch(()=>{});
 }
@@ -84,7 +84,7 @@ function renderCartBadge(qty=totals().qty){
  button.setAttribute('aria-label',qty?'Cart, '+qty+' units':'Cart');
  if(qty>previous)badge.animate?.([{transform:'scale(.6)'},{transform:'scale(1.2)'},{transform:'scale(1)'}],{duration:260});
 }
-function renderCart(){const t=totals();renderCartBadge(t.qty);$('cartList').innerHTML=Object.entries(cart).map(([id,n])=>{const p=product(id),key=encodeURIComponent(id);if(!p)return `<div class="cartRow"><div class="sub">This product is no longer available.</div><button class="chip" data-remove="${key}">Remove</button></div>`;return `<div class="cartRow"><img src="${esc(safeUrl(p.imageUrl)||'../b2c/images/tender-coconut-v2.webp')}" alt="${esc(p.productName)}"><div><div class="pname">${esc(p.productName)}</div><div class="price">${priceHtml(p)}</div>${n>stockOf(p)?'<div class="sub" style="color:var(--red)">Quantity exceeds current stock</div>':''}<div class="qty"><button data-cart-qty="${key}" data-dir="-1" ${n<=minQty(p)?'disabled':''}>−</button><b>${n}</b><button data-cart-qty="${key}" data-dir="1" ${n+Math.max(1,Number(p.qtyStep)||1)>stockOf(p)?'disabled':''}>+</button></div><button class="chip" data-remove="${key}">Remove</button></div><b>${money(n*p.price)}</b></div>`}).join('')||'<div class="emptyState"><div class="ico">🛒</div><b>Your cart is empty</b><p>Add at least the minimum order quantity from Products.</p><button class="wide" onclick="show(\'products\')">Browse Products</button></div><div class="infoPanel"><b>MOQ Reminder</b><p>MOQ is the minimum starting quantity. Increase quantities using the product’s step.</p></div>';$('tq').textContent=t.qty+' units';$('ta').textContent=money(t.amount);$('checkoutBtn').disabled=!cartValid();$('cartSummary').classList.toggle('hidden',!t.qty)}
+function renderCart(){const t=totals();renderCartBadge(t.qty);$('cartList').innerHTML=Object.entries(cart).map(([id,n])=>{const p=product(id),key=encodeURIComponent(id);if(!p)return `<div class="cartRow"><div class="sub">This product is no longer available.</div><button class="chip" data-remove="${key}">Remove</button></div>`;return `<div class="cartRow"><img src="${esc(safeUrl(p.imageUrl)||'../b2c/images/tender-coconut-v2.webp')}" alt="${esc(p.productName)}"><div><div class="pname">${esc(p.productName)}</div><div class="price">${priceHtml(p)}</div>${n>stockOf(p)?'<div class="sub" style="color:var(--red)">Quantity exceeds current stock</div>':''}<div class="qty"><button data-cart-qty="${key}" data-dir="-1" ${n<=minQty(p)?'disabled':''}>−</button><b>${n}</b><button data-cart-qty="${key}" data-dir="1" ${n+Math.max(1,Number(p.qtyStep)||1)>stockOf(p)?'disabled':''}>+</button></div><button class="chip" data-remove="${key}">Remove</button></div><b>${money(n*p.price)}</b></div>`}).join('')||'<div class="emptyState"><div class="ico">🛒</div><b>Your cart is empty</b><p>Add at least the minimum order quantity from Products.</p><button class="wide" onclick="show(\'products\')">Browse Products</button></div><div class="infoPanel"><b>MOQ Reminder</b><p>MOQ is the minimum starting quantity. Increase quantities using the product’s step.</p></div>';$('tq').textContent=t.qty+' units';$('ta').textContent=money(t.amount);$('checkoutBtn').disabled=!workspaceReady||!cartValid();$('checkoutBtn').textContent=workspaceReady?'Proceed to Order':'Loading checkout…';$('cartSummary').classList.toggle('hidden',!t.qty)}
 let pricingBusy=false;
 const POLL_MS=5000;
 async function pollPricing(){
@@ -106,7 +106,7 @@ function renderDelivery(){const o=orders().find(o=>!['DELIVERED','CANCELLED','RE
 function renderOrders(){const list=orders().filter(o=>orderFilter==='All'||orderFilter==='Processing'&&!['DELIVERED','CANCELLED','REJECTED','OUT FOR DELIVERY'].includes(o.status.toUpperCase())||orderFilter==='In Transit'&&o.status.toUpperCase()==='OUT FOR DELIVERY'||orderFilter.toUpperCase()===o.status.toUpperCase());$('orderList').innerHTML=list.map(o=>`<div class="orderCard"><div class="row"><div><b>#${esc(o.orderId)}</b><div class="sub">${esc(o.orderedAt)} • ${orderQty(o)} units</div></div><span class="pill">${esc(o.status)}</span></div><div class="row" style="margin-top:9px"><div class="amt">${money(o.amount)}</div><button class="cta" data-track="${encodeURIComponent(o.orderId)}">View details ›</button></div><p class="sub">${esc(o.paymentType)} · ${esc(o.paymentStatus||'Payment pending')}</p><div class="row"><button class="chip" data-invoice="${encodeURIComponent(o.orderId)}">Invoice</button><button class="chip" data-reorder="${encodeURIComponent(o.orderId)}">Reorder</button></div></div>`).join('')||'<div class="emptyState"><div class="ico">📋</div><b>No orders in this category</b><p>Your supply orders will appear here.</p></div>';const b=$('orders').querySelector('.mainSummary')?.querySelectorAll('b');if(b){b[0].textContent=orders().filter(o=>!['Delivered','Cancelled','Rejected'].includes(o.status)).length+' Orders';b[1].textContent=orders().filter(o=>o.status==='Delivered').length+' Orders';b[2].textContent=orders().reduce((n,o)=>n+orderQty(o),0)+' units'}}
 function filterOrders(f,b){orderFilter=f;document.querySelectorAll('#orders .orderTabs .chip').forEach(x=>x.classList.toggle('on',x===b));renderOrders()}
 function reorder(id){const o=orders().find(x=>x.orderId===id);if(!o)return;cart={};selectedQty={};let adjusted=false;for(const i of o.items||[]){const p=product(i.productId);if(!p){adjusted=true;continue}const step=Math.max(1,Number(p.qtyStep)||1),max=stockOf(p),n=Math.min(Math.ceil(Math.max(i.quantity,minQty(p))/step)*step,Number.isFinite(max)?Math.floor(max/step)*step:Infinity);if(n<minQty(p)){adjusted=true;continue}cart[p.productId]=n;if(n!==i.quantity)adjusted=true;}saveCart();show('cart');msg(adjusted?'Reorder adjusted to current products and stock. Review quantities and prices.':'Reorder uses your current prices. Review before confirming.')}
-function beginCheckout(){if(confirming)return msg('Your order is still being submitted. Please wait.');if(!cartValid())return msg('Review products, quantities and stock before checkout');renderCheckout();show('place')}
+function beginCheckout(){if(!workspaceReady)return msg('Loading payment and delivery details. Please try again shortly.');if(confirming)return msg('Your order is still being submitted. Please wait.');if(!cartValid())return msg('Review products, quantities and stock before checkout');renderCheckout();show('place')}
 function refreshCheckoutView(){
  const choice=$('deliveryChoice'),previous=choice?.value===''?null:choice?._slots?.[Number(choice.value)],pay=document.querySelector('input[name="pay"]:checked')?.value||'COD';
  renderCheckout();
@@ -172,9 +172,21 @@ function setup(){
   });document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset.dot!==undefined)setBanner(Number(e.target.dataset.dot))});
   let sx=0;$('bannerViewport').addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});$('bannerViewport').addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx;if(Math.abs(dx)>35)setBanner(bi+(dx<0?1:-1))},{passive:true});setInterval(()=>{if(CURRENT==='home'&&document.visibilityState==='visible')setBanner(bi+1)},6000);
 }
+function openFastHome(data){
+ DATA=data;workspaceReady=false;cart=parse(storageGet(cartKey()))||{};if(!cart||Array.isArray(cart)||typeof cart!=='object')cart={};
+ render();sessionRestoreUi(false);show('home');
+}
+async function restoreAccount(token){
+ const epoch=sessionEpoch;
+ try{
+  const data=await rpc('getB2BHomeFastV1000',[token]);if(TOKEN!==token||epoch!==sessionEpoch)return;
+  if(!data?.vendor?.vendorId||!Array.isArray(data.products))throw Error('Account data could not load. Please retry.');
+  openFastHome(data);persistSession();void refresh();
+ }catch(e){if(TOKEN!==token||epoch!==sessionEpoch)return;if(isSessionError(e)){logout(false);msg(e.message)}else{showRecovery();msg(e.message)}}
+}
 async function restoreSession(){const saved=parse(storageGet('nel_b2b_green_session'));let token=storageGet('nel_b2b_token')||storageGet('nel_b2b_token',sessionStorage)||storageGet('nel_b2b_approved_token')||saved?.token;const epoch=sessionEpoch;if(token)sessionRestoreUi(true);
   if(!token)try{const db=await window.NEL_B2B_DB?.get('sessionToken');token=typeof db==='string'?db:db?.token}catch(_){}
-  if(epoch!==sessionEpoch||!token)return;sessionRestoreUi(true);TOKEN=token;if(await refresh()){persistSession();show('home')}
+  if(epoch!==sessionEpoch||!token)return;sessionRestoreUi(true);TOKEN=token;await restoreAccount(token)
 }
 async function installApp(){if(installPrompt){await installPrompt.prompt();await installPrompt.userChoice;installPrompt=null}else msg('Open your browser menu and choose Add to Home screen')}
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('installBtn').classList.remove('hidden')});window.addEventListener('appinstalled',()=>$('installBtn').classList.add('hidden'));

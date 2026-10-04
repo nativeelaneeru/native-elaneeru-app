@@ -192,16 +192,20 @@ await page.waitFor(`CURRENT==='place'`,5000,'checkout');
    window.qaRestoreCalls=[];
    const realTimeout=window.setTimeout;window.setTimeout=(fn,ms,...args)=>realTimeout(fn,ms===15000?100:ms,...args);
    HTMLFormElement.prototype.submit=function(){
-    const req=JSON.parse(this.querySelector('[name="payload"]').value);qaRestoreCalls.push(req.method);if(localStorage.getItem('qaRestoreHang'))return;
+    const req=JSON.parse(this.querySelector('[name="payload"]').value);qaRestoreCalls.push(req.method);if(localStorage.getItem('qaRestoreHang'))return;if(req.method==='getB2BWorkspaceV5'&&localStorage.getItem('qaHoldWorkspace')){window.qaHeldWorkspace=req.requestId;return;}
     queueMicrotask(()=>{const h=pending.get(req.requestId);if(!h)return;pending.delete(req.requestId);h.cleanup();
      if(localStorage.getItem('qaRestoreFailure'))h.reject(new Error('Connection unavailable'));
-     else if(req.method==='getB2BWorkspaceV5')h.resolve(${JSON.stringify(fixture)});
+     else if(['getB2BWorkspaceV5','getB2BHomeFastV1000'].includes(req.method))h.resolve(${JSON.stringify(fixture)});
      else h.reject(new Error('Unexpected restore RPC '+req.method));
     });
    };
   `});
+  await page.evaluate(`localStorage.setItem('qaHoldWorkspace','1');true`);
   await page.navigate('file://'+process.cwd()+'/b2b/index.html');
-  await page.waitFor(`CURRENT==='home'`,5000,'remembered account after reload');
+  await page.waitFor(`CURRENT==='home'&&!!qaHeldWorkspace`,5000,'fast remembered account before history');
+  assert(await page.evaluate(`!workspaceReady&&qaRestoreCalls[0]==='getB2BHomeFastV1000'&&document.getElementById('checkoutBtn').disabled`),'v5: validated fast Home opens before slow history and keeps checkout gated');
+  await page.evaluate(`(()=>{localStorage.removeItem('qaHoldWorkspace');const h=pending.get(qaHeldWorkspace);pending.delete(qaHeldWorkspace);h.cleanup();h.resolve({vendor:{vendorId:'QA_VENDOR',ownerName:'QA Owner',businessName:'QA Business',mobile:'6111111111',address:'QA Address',area:'QA Area',paymentType:'COD',creditLimit:0,outstanding:0,availableCredit:0},products:[{productId:'TC',productName:'Tender Coconut',unit:'piece',price:44,moq:50,qtyStep:50,stockTracked:true,availableQty:180},{productId:'MIX',productName:'Mixed Coconut',unit:'piece',price:42,moq:50,qtyStep:10,stockTracked:true,availableQty:0}],orders:[{orderId:'QA_OLD',orderedAt:'01 Oct 2026',amount:2000,status:'Delivered',paymentType:'COD',paymentStatus:'PAID',items:[{productId:'TC',productName:'Tender Coconut',quantity:50,unitPrice:40,lineAmount:2000}]}],banners:[],marketRates:[],tickets:[],payments:[],target:null,deliverySlots:[],paymentConfig:{methods:['COD']}});return true})()`);
+  await page.waitFor(`workspaceReady`,5000,'background workspace completion');
   assert(await page.evaluate(`TOKEN==='qa-local-token'&&qaRestoreCalls.every(m=>m!=='vendorLogin')`),'v5: reload restores remembered account without PIN or login RPC');
   await page.evaluate(`localStorage.setItem('qaRestoreFailure','1');true`);
   await page.navigate('file://'+process.cwd()+'/b2b/index.html');
