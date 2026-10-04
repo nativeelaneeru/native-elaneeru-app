@@ -22,5 +22,7 @@ ctx.hits=0;run('pending.set("nonce",{resolve:()=>hits++,reject:()=>{},cleanup:()
   // Token migration loads authenticated server data before showing Home.
   let gotToken='';ctx.mockRpc=async(method,args)=>{gotToken=args[0];return fixture};run('rpc=mockRpc;TOKEN="";DATA=null;');storage.setItem('nel_b2b_green_session',JSON.stringify({token:'legacy-token',savedAt:Date.now()}));await run('restoreSession()');assert.equal(gotToken,'legacy-token');assert.equal(run('CURRENT'),'home');
   run('logout(false)');assert.equal(run('TOKEN'),'');assert.equal(storage.getItem('nel_b2b_token'),null);assert.equal(run('CURRENT'),'login');
+  // A reply for a signed-out account cannot overwrite a new account refresh.
+  let staleResolve,freshResolve;ctx.mockRpc=async(method,args)=>new Promise(resolve=>{if(args[0]==='old-session')staleResolve=resolve;else freshResolve=resolve});run('rpc=mockRpc;TOKEN="old-session";DATA=null;');const stale=run('refresh()');run('logout(false);TOKEN="new-session";');const fresh=run('refresh()');assert(freshResolve);staleResolve({...fixture,vendor:{vendorId:'OLD'}});await stale;assert.equal(run('DATA'),null);freshResolve({...fixture,vendor:{...fixture.vendor,vendorId:'NEW'}});await fresh;assert.equal(run('vendor().vendorId'),'NEW');
   console.log('PASS: auth gates, legacy session migration, stock/MOQ/steps, live checkout schedule and methods, historical totals, reorder prices, trusted bridge replies, double taps, timeout retries and logout');
 })().catch(e=>{console.error(e);process.exit(1)});

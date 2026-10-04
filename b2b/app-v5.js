@@ -1,7 +1,7 @@
 'use strict';
 const CFG={apiUrl:'https://script.google.com/macros/s/AKfycbx2s0l5A8LAdD1j24395XJSTMd5cEU7QdUkTI8LarDzatF-vVw6ODfm5x7MVJUkP9aB/exec',build:'1600'};
 const $=id=>document.getElementById(id),pending=new Map();
-let TOKEN='',DATA=null,cart={},selectedQty={},category='All',orderFilter='All',CURRENT='login',activeOrderId='',loading=null,confirming=false,voice=null,bi=0,installPrompt=null,sessionEpoch=0;
+let TOKEN='',DATA=null,cart={},selectedQty={},category='All',orderFilter='All',CURRENT='login',activeOrderId='',loading=null,confirming=false,voice=null,bi=0,installPrompt=null,sessionEpoch=0,refreshSerial=0;
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2});
 const safeUrl=v=>/^https?:\/\//i.test(String(v||''))?String(v):'';
@@ -39,11 +39,11 @@ function clearRequest(){try{localStorage.removeItem('nel_b2b_v5_order_request')}
 function persistSession(){storageSet('nel_b2b_token',TOKEN);storageSet('nel_b2b_token_saved_at',String(Date.now()));storageSet('nel_b2b_green_session',JSON.stringify({token:TOKEN,savedAt:Date.now()}));window.NEL_B2B_DB?.set('sessionToken',{token:TOKEN,savedAt:Date.now()})?.catch(()=>{})}
 function isSessionError(e){return /session.*(expired|invalid)|invalid token|vendor is inactive|please (login|sign in)/i.test(e.message)}
 async function refresh(silent=false){
-  if(!TOKEN)return false;if(loading)return loading;const token=TOKEN,epoch=sessionEpoch;
+  if(!TOKEN)return false;if(loading)return loading;const token=TOKEN,epoch=sessionEpoch,serial=++refreshSerial;
   loading=(async()=>{try{const data=await rpc('getB2BWorkspaceV5',[token]);if(TOKEN!==token||sessionEpoch!==epoch)return false;
     const first=!DATA;DATA=data;if(first){cart=parse(storageGet(cartKey()))||{};if(!cart||Array.isArray(cart)||typeof cart!=='object')cart={};}
     render();return true;
-  }catch(e){if(TOKEN!==token||sessionEpoch!==epoch)return false;if(isSessionError(e)){logout(false);msg(e.message)}else if(!silent){msg(e.message);if(!DATA)showRecovery()}return false;}finally{loading=null}})();return loading;
+  }catch(e){if(TOKEN!==token||sessionEpoch!==epoch)return false;if(isSessionError(e)){logout(false);msg(e.message)}else if(!silent){msg(e.message);if(!DATA)showRecovery()}return false;}finally{if(serial===refreshSerial)loading=null}})();return loading;
 }
 function showRecovery(){$('recoverSession')?.remove();$('login').querySelector('.loginPanel').insertAdjacentHTML('beforeend','<div id="recoverSession" class="retryNote">Your session was found, but account data could not load.<button class="wide" onclick="retrySession()">Retry loading account</button><button class="wide" onclick="logout()">Sign out</button></div>')}
 async function retrySession(){const b=$('recoverSession');if(b)b.remove();if(await refresh())show('home')}
@@ -56,7 +56,7 @@ async function doLogin(){const m=$('loginPhone').value.trim(),pin=$('loginPin').
   try{const r=await rpc('vendorLogin',[m,pin]);if(epoch!==sessionEpoch)return;if(!r.token)throw new Error('Unable to sign in');TOKEN=r.token;DATA=null;cart={};selectedQty={};persistSession();$('loginPin').value='';if(await refresh())show('home');}
   catch(e){msg(e.message)}finally{btn.disabled=false;btn.textContent='Login'}
 }
-function logout(notify=true){const old=TOKEN;sessionEpoch++;TOKEN='';DATA=null;cart={};selectedQty={};activeOrderId='';clearRequest();
+function logout(notify=true){const old=TOKEN;sessionEpoch++;refreshSerial++;loading=null;TOKEN='';DATA=null;cart={};selectedQty={};activeOrderId='';clearRequest();
   ['nel_b2b_token','nel_b2b_token_saved_at','nel_b2b_green_session','nel_b2b_approved_token','nel_b2b_approved_home','nel_b2b_data_cache'].forEach(k=>{for(const s of [localStorage,sessionStorage])try{s.removeItem(k)}catch(_){}});
   window.NEL_B2B_DB?.set('sessionToken',null)?.catch(()=>{});window.NEL_B2B_DB?.set('businessData',null)?.catch(()=>{});window.NEL_B2B_DB?.set('profile',null)?.catch(()=>{});$('loginPin').value='';$('recoverSession')?.remove();backPhone();show('login');if(old&&notify)rpc('vendorLogout',[old]).catch(()=>{});
 }
