@@ -126,6 +126,7 @@ async function testV5(){
   assert(await page.evaluate(`document.getElementById('mainNavigation').classList.contains('hidden')`),'v5: navigation stays hidden before authentication');
   assert(await page.evaluate(`document.querySelector('.loginBrandLogo').complete&&document.querySelector('.loginBrandLogo').naturalWidth>0`),'v5: official login logo loads');
   assert(await page.evaluate(`document.querySelector('.loginHero').getBoundingClientRect().height<240`),'v5: login branding uses compact height');
+  await page.send('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:1});
   for(const viewport of [{width:320,height:568},{width:360,height:640},{width:390,height:844},{width:412,height:915},{width:430,height:932},{width:844,height:390}]){
    await page.send('Emulation.setDeviceMetricsOverride',{...viewport,deviceScaleFactor:1,mobile:true});
    assert(await page.evaluate(`(()=>{const phone=document.querySelector('.phone').getBoundingClientRect(),screen=document.getElementById('login'),input=document.getElementById('loginPhone').getBoundingClientRect();return Math.abs(phone.width-innerWidth)<1&&Math.abs(phone.height-innerHeight)<1&&document.documentElement.scrollWidth<=innerWidth&&input.left>=0&&input.right<=innerWidth&&screen.scrollHeight>=screen.clientHeight})()`),'v5: login fits '+viewport.width+'×'+viewport.height+' mobile viewport');
