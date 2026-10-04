@@ -136,12 +136,23 @@ async function testV5(){
   await page.evaluate(`window.qaFixture=${JSON.stringify(fixture)};window.qaCalls=[];rpc=async(method,args)=>{qaCalls.push({method,args});if(method==='vendorLogin')return {token:'qa-local-token'};if(method==='getB2BWorkspaceV5')return structuredClone(qaFixture);if(method==='saveB2BProfileV5'){Object.assign(qaFixture.vendor,args[1]);return {success:true}};if(method==='createB2BTicketV5'){qaFixture.tickets.unshift({ticketId:'QA_TICKET',...args[1],status:'OPEN',createdAt:'Today'});return {success:true,ticketId:'QA_TICKET'}};if(method==='getVendorLiveTracking')return {active:false,message:'Delivery schedule pending'};if(method==='placeB2BOrderV9')return {success:true,orderId:'QA_NEW',amount:2200,status:'Order Received',autoAccepted:false};throw Error('Fixture blocked unexpected method: '+method)};document.getElementById('loginPhone').value='6111111111';goPin();document.getElementById('loginPin').value='9876';doLogin();true`);
   await page.waitFor(`CURRENT==='home'`,5000,'fixture login');
   assert(await page.evaluate(`document.querySelector('.greet h2').textContent.includes('QA')`),'v5: Home displays authenticated vendor name');
+  await page.evaluate(`show('products');document.querySelector('#plist img').src='missing-product-test.png';true`);
+  await page.waitFor(`document.querySelector('#plist img').dataset.fallback==='1'&&document.querySelector('#plist img').naturalWidth>0`,5000,'broken image fallback');
+  assert(await page.evaluate(`document.querySelector('#plist img').src.includes('tender-coconut-v2.webp')`),'v5: broken product images recover with bundled coconut photo');
+  await page.evaluate(`window.SpeechRecognition=class{constructor(){window.qaVoice=this}start(){}abort(){window.qaVoiceAborted=true}};show('support');document.getElementById('voiceLang').value='kn-IN';startVoice();true`);
+  assert(await page.evaluate(`qaVoice.lang==='kn-IN'`),'v5: Kannada voice uses a valid recognition language code');
+  await page.evaluate(`show('home');delete window.SpeechRecognition;true`);
+  assert(await page.evaluate(`qaVoiceAborted===true`),'v5: leaving support stops voice recording');
+
   await page.evaluate(`document.querySelector('#mainNavigation button:nth-child(2)').click();true`);
   assert(await page.evaluate(`CURRENT==='products'&&document.querySelectorAll('#plist .product').length===2`),'v5: Products navigation renders live catalogue');
   assert(await page.evaluate(`document.querySelector('[data-add="MIX"]').disabled`),'v5: unavailable stock cannot be added');
   await page.evaluate(`document.querySelector('[data-add="TC"]').click();document.querySelector('#mainNavigation button:nth-child(3)').click();true`);
   assert(await page.evaluate(`CURRENT==='cart'&&document.getElementById('ta').textContent==='₹2,200'`),'v5: Cart contains correct quantity and price');
-  await page.evaluate(`document.getElementById('checkoutBtn').click();true`);await page.waitFor(`CURRENT==='place'`,5000,'checkout');
+  const workspaceReads=await page.evaluate(`qaCalls.filter(c=>c.method==='getB2BWorkspaceV5').length`);
+  await page.evaluate(`document.getElementById('checkoutBtn').click();true`);
+  assert(await page.evaluate(`qaCalls.filter(c=>c.method==='getB2BWorkspaceV5').length`)===workspaceReads,'v5: checkout opens without waiting for a full account fetch');
+await page.waitFor(`CURRENT==='place'`,5000,'checkout');
   assert(await page.evaluate(`document.querySelector('#place .card:nth-child(2)').textContent.includes('No delivery slots')&&document.querySelector('input[value="UPI"]').disabled&&document.querySelector('input[value="CREDIT"]').disabled`),'v5: checkout uses unpublished-slot state and actual payment eligibility');
   await page.evaluate(`document.getElementById('confirmOrderBtn').click();true`);await page.waitFor(`CURRENT==='confirmation'`,5000,'order confirmation');
   assert(await page.evaluate(`document.querySelector('#confirmation .card').textContent.includes('QA_NEW')&&document.querySelector('#confirmation .card').textContent.includes('Operations will confirm')`),'v5: confirmation displays server order and pending acceptance');
@@ -150,6 +161,8 @@ async function testV5(){
   await page.evaluate(`document.querySelector('[data-reorder="QA_OLD"]').click();true`);assert(await page.evaluate(`CURRENT==='cart'&&document.getElementById('ta').textContent==='₹2,200'`),'v5: reorder uses current vendor price');
   await page.evaluate(`show('account');document.querySelector('#account .menu button').click();document.querySelector('#profile input:not(#profilePhone)').value='Updated Owner';document.querySelector('#profile .wide').click();true`);await page.waitFor(`qaFixture.vendor.ownerName==='Updated Owner'`,5000,'profile save');
   assert(await page.evaluate(`document.getElementById('profilePhone').readOnly`),'v5: registered mobile is locked');
+  await page.evaluate(`show('profile');document.querySelector('#profile input:not(#profilePhone)').value='Unsaved Owner';await refresh(true);true`);
+  assert(await page.evaluate(`document.querySelector('#profile input:not(#profilePhone)').value==='Unsaved Owner'`),'v5: background refresh preserves unsaved profile edits');
   await page.evaluate(`show('shop');document.querySelector('#shop input').value='Updated Shop';document.querySelector('#shop .wide').click();true`);await page.waitFor(`qaFixture.vendor.businessName==='Updated Shop'`,5000,'shop save');
   await page.evaluate(`show('address');document.querySelector('#address .wide').click();document.getElementById('addressText').value='Updated Address';document.querySelector('#addressEdit .wide').click();true`);await page.waitFor(`qaFixture.vendor.address==='Updated Address'`,5000,'address save');
   await page.evaluate(`show('support');document.getElementById('issue').value='Delivery was late';document.querySelector('#support .pad > .wide').click();true`);assert(await page.evaluate(`!document.getElementById('draft').classList.contains('hidden')&&document.getElementById('cat').value==='Delivery Issue'`),'v5: ticket draft is editable and categorized');
@@ -157,7 +170,7 @@ async function testV5(){
   for(const screen of ['place','confirmation','addressEdit','history','legal','upi','home','products','cart','orders','schemes','payments','credit','account','profile','shop','address','support','notifications']){
    await page.evaluate(`show('${screen}');true`);
    assert(await page.evaluate(`document.querySelectorAll('.screen:not(.hidden)').length===1&&CURRENT==='${screen}'`),'v5: '+screen+' screen opens correctly');
-   assert(await page.evaluate(`(()=>{const nav=document.getElementById('mainNavigation');const before=nav.getBoundingClientRect();document.getElementById('${screen}').scrollTop=10000;const after=nav.getBoundingClientRect();return document.querySelectorAll('.nav').length===1&&!nav.classList.contains('hidden')&&nav.parentElement.classList.contains('phone')&&Math.abs(after.bottom-844)<1&&before.top===after.top&&after.height>=67})()`),'v5: fixed navigation survives '+screen+' and scrolling');
+   assert(await page.evaluate(`(()=>{const nav=document.getElementById('mainNavigation');const before=nav.getBoundingClientRect();const screen=document.getElementById('${screen}'),pad=screen.querySelector(':scope > .pad'),header=screen.querySelector('.head,.simpleHead'),headTop=header?.getBoundingClientRect().top;const spacer=document.createElement('div');spacer.style.height='2000px';pad.append(spacer);pad.scrollTop=10000;window.scrollTo(0,500);const after=nav.getBoundingClientRect(),headStill=!header||Math.abs(header.getBoundingClientRect().top-headTop)<1,rootStill=window.scrollY===0;spacer.remove();pad.scrollTop=0;return headStill&&rootStill&&document.querySelectorAll('.nav').length===1&&!nav.classList.contains('hidden')&&nav.parentElement.classList.contains('phone')&&Math.abs(after.bottom-844)<1&&before.top===after.top&&after.height>=67})()`),'v5: fixed navigation survives '+screen+' and scrolling');
   }
   await page.evaluate(`openTrack('QA_OLD');true`);await page.waitFor(`document.getElementById('liveTracking').textContent.includes('pending')`,5000,'tracking');
   assert(await page.evaluate(`!document.getElementById('liveTracking').textContent.includes('45')`),'v5: tracking has no sample ETA');
