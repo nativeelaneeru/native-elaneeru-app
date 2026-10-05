@@ -6,12 +6,12 @@
     const lines=(po.items||[]).map(function(item,li){
       const ordered=Number(item.quantity||0),received=Number(item.receivedQty||0),remaining=Math.max(0,ordered-received);
       const qtyId='receive-qty-'+pi+'-'+li,locId='receive-loc-'+pi+'-'+li;
-      const receive=['ISSUED','PARTIALLY RECEIVED'].includes(status)&&remaining>0
+      const receive=['ISSUED','PARTIALLY RECEIVED'].includes(status)&&remaining>0&&po.supplierVerified===true
         ?'<div class="receiptLine"><div class="muted">Stock receipt · ordered '+ordered+' · received '+received+' · remaining '+remaining+'</div><div class="receiptFields"><div><label for="'+qtyId+'">Good units received</label><input id="'+qtyId+'" type="number" min="1" max="'+remaining+'" step="1" value="'+remaining+'"></div><div><label for="'+locId+'">Storage location</label><input id="'+locId+'" maxlength="120" value="'+esc(po.deliveryLocation||'HUB')+'"></div><button type="button" class="btn alt" data-receive-po="'+esc(po.poId)+'" data-receive-line="'+Number(item.lineNo)+'" data-receive-input="'+qtyId+'" data-receive-location="'+locId+'">Receive & create stock</button></div><div id="receive-msg-'+pi+'-'+li+'" class="muted" aria-live="polite"></div></div>'
-        :'';
+        :(['ISSUED','PARTIALLY RECEIVED'].includes(status)&&remaining>0&&!po.supplierVerified?'<div class="receiptLine muted"><b>Receipt blocked:</b> this legacy PO supplier is not verified in NE Supplier Master. Create a new PO for the actual coconut supplier.</div>':'');
       return '<div><b>'+esc(item.productName)+'</b> × '+ordered+' '+esc(item.unit||'pc')+' · received '+received+receive+'</div>';
     }).join('');
-    return '<div class="po"><b>'+esc(po.poId)+'</b> <span class="status">'+esc(po.status)+'</span><div class="muted">'+esc(po.supplierName)+' · '+esc(po.poDate)+' · ₹'+Number(po.subTotal||0)+'</div>'+lines+'<button class="btn alt" data-print-po="'+esc(po.poId)+'">Print PO</button></div>';
+    return '<div class="po"><b>'+esc(po.poId)+'</b> <span class="status">'+esc(po.status)+'</span><div class="muted">'+esc(po.supplierName)+(po.supplierVerified?'':' · LEGACY SUPPLIER UNVERIFIED')+' · '+esc(po.poDate)+' · ₹'+Number(po.subTotal||0)+'</div>'+lines+'<button class="btn alt" data-print-po="'+esc(po.poId)+'">Print PO</button></div>';
   }).join('')||'<div class="muted">No purchase orders yet.</div>';
   $('orders').onclick=function(event){
     const receive=event.target.closest&&event.target.closest('[data-receive-po]');

@@ -7,6 +7,8 @@ new Function(backend);
 for(const match of ui.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))new Function(match[1]);
 assert.match(ui,/recordPurchaseOrderReceiptV968/);
 assert.match(ui,/Good units received/);
+assert.match(ui,/po\.supplierVerified===true/);
+assert.match(ui,/legacy PO supplier is not verified/);
 assert.match(ui,/Storage location/);
 assert.match(backend,/PURCHASE_RECEIPT/);
 assert.match(backend,/V944:BUNCH_STOCK/);
@@ -19,9 +21,9 @@ assert.match(backend,/B2B customers cannot be used as suppliers/);
 assert.doesNotMatch(fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V931_PurchaseOrders.gs','utf8'),/B2B_VENDORS/);
 
 const sheets={
-  Purchase_Orders:[{'PO ID':'PO-100','Supplier ID':'SUP-100','Status':'ISSUED','Updated At':'','_row':2}],
+  Purchase_Orders:[{'PO ID':'PO-100','Supplier ID':'SUP-100','Status':'ISSUED','Updated At':'','_row':2},{'PO ID':'PO-200','Supplier ID':'VEN-CUSTOMER-1','Supplier Name':'Assha Coconut','Status':'ISSUED','Updated At':'','_row':3}],
   NE_Suppliers:[{'Supplier ID':'SUP-100','Supplier Name':'Test farm','Status':'ACTIVE','_row':2}],
-  Purchase_Order_Items:[{'PO ID':'PO-100','Line No':1,'Product ID':'TC','Product Name':'Tender Coconut','Quantity':100,'Unit':'pc','Received Qty':0,'_row':2}],
+  Purchase_Order_Items:[{'PO ID':'PO-100','Line No':1,'Product ID':'TC','Product Name':'Tender Coconut','Quantity':100,'Unit':'pc','Received Qty':0,'_row':2},{'PO ID':'PO-200','Line No':1,'Product ID':'TC','Product Name':'Tender Coconut','Quantity':20,'Unit':'pc','Received Qty':0,'_row':3}],
   Products:[{'Product ID':'TC','Product Name':'Tender Coconut','_row':2}],
   Coconut_Batches:[],
   Inventory_Ledger:[],
@@ -79,4 +81,9 @@ assert.equal(sheets.Coconut_Batches.length,2);
 assert.equal(sheets.Inventory_Ledger.length,2);
 assert.throws(()=>api('admin@example.com','1234',{poId:'PO-100',lineNo:1,qty:1,location:'HUB',idempotencyKey:'RECEIPT-KEY-0003'}),/issued or partially received/);
 assert.throws(()=>api('admin@example.com','1234',{poId:'PO-100',lineNo:1,qty:1,location:'HUB',idempotencyKey:'bad'}),/request key is invalid/);
+const batchesBeforeLegacy=sheets.Coconut_Batches.length,ledgerBeforeLegacy=sheets.Inventory_Ledger.length,receiptsBeforeLegacy=sheets.Purchase_Receipts.length;
+assert.throws(()=>api('admin@example.com','1234',{poId:'PO-200',lineNo:1,qty:20,location:'HUB',idempotencyKey:'RECEIPT-LEGACY-0001'}),/not linked to an active NE supplier record/);
+assert.equal(sheets.Coconut_Batches.length,batchesBeforeLegacy,'unverified legacy PO must not create a stock batch');
+assert.equal(sheets.Inventory_Ledger.length,ledgerBeforeLegacy,'unverified legacy PO must not change inventory');
+assert.equal(sheets.Purchase_Receipts.length,receiptsBeforeLegacy,'unverified legacy PO must not create a receipt');
 console.log('Purchase order receiving regression passed: partial receipt, locked stock linkage, retry recovery, idempotency and over-receipt guards.');
