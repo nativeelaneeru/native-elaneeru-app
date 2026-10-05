@@ -16,7 +16,7 @@ assert.match(backend,/Received Qty/);
 assert.match(backend,/qty>remaining/);
 assert.match(backend,/NE_Suppliers/);
 assert.match(backend,/B2B customers cannot be used as suppliers/);
-assert.doesNotMatch((await fs.promises.readFile('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V931_PurchaseOrders.gs','utf8')),/B2B_VENDORS/);
+assert.doesNotMatch(fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V931_PurchaseOrders.gs','utf8'),/B2B_VENDORS/);
 
 const sheets={
   Purchase_Orders:[{'PO ID':'PO-100','Supplier ID':'SUP-100','Status':'ISSUED','Updated At':'','_row':2}],
