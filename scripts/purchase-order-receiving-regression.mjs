@@ -14,7 +14,7 @@ assert.match(backend,/Idempotency Key/);
 assert.match(backend,/PROCESSING/);
 assert.match(backend,/Received Qty/);
 assert.match(backend,/qty>remaining/);
-assert.match(backend,/NE_Suppliers/);
+assert.match(backend,/V931_SUPPLIERS_SHEET/);
 assert.match(backend,/B2B customers cannot be used as suppliers/);
 assert.doesNotMatch(fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V931_PurchaseOrders.gs','utf8'),/B2B_VENDORS/);
 
