@@ -21,7 +21,7 @@ function v931Dto_(po,items,supplierVerified){return {supplierVerified:supplierVe
 
 function getPurchaseOrderConsoleV931(email,pin){
   requireAdmin_(email,pin);v931Setup_();
-  const products=rows_(V8.SHEETS.PRODUCTS).filter(function(p){return s_(p['Product ID'])}).map(function(p){return {productId:s_(p['Product ID']),productName:s_(p['Product Name']),unit:s_(p.Unit)||'pc',price:n_(p['B2B Default Price'])||n_(p['B2C Price'])};});
+  const products=rows_(V8.SHEETS.PRODUCTS).filter(function(p){return s_(p['Product ID'])}).map(function(p){return {productId:s_(p['Product ID']),productName:s_(p['Product Name']),unit:s_(p.Unit)||'pc'};});
   const suppliers=rows_(V931_SUPPLIERS_SHEET).filter(function(v){return s_(v['Supplier ID'])&&String(v.Status||'').toUpperCase()==='ACTIVE'}).map(function(v){return {supplierId:s_(v['Supplier ID']),supplierName:s_(v['Supplier Name']),mobile:digits_(v.Mobile),address:s_(v.Location)};});
   const allItems=v931Rows_(V931_PO_ITEMS_SHEET),orders=v931Rows_(V931_PO_SHEET).filter(function(p){return s_(p['PO ID'])}).sort(function(a,b){return new Date(b['Created At']||0)-new Date(a['Created At']||0)}).slice(0,50);
   return {success:true,version:'9.3.1',products:products,suppliers:suppliers,orders:orders.map(function(po){const verified=suppliers.some(function(v){return s_(v.supplierId)===s_(po['Supplier ID'])});return v931Dto_(po,allItems.filter(function(i){return s_(i['PO ID'])===s_(po['PO ID'])}),verified);})};
@@ -34,8 +34,9 @@ function createPurchaseOrderV931(email,pin,p){
     if(!supplier)throw new Error('Select an active supplier.');
     const items=(Array.isArray(p.items)?p.items:[]).map(function(x){return {productId:s_(x.productId),quantity:Math.floor(n_(x.quantity)),unitPrice:n_(x.unitPrice)};}).filter(function(x){return x.productId&&x.quantity>0;});
     if(!items.length)throw new Error('Add at least one product and quantity.');
+    if(items.some(function(x){return !Number.isFinite(x.unitPrice)||x.unitPrice<=0}))throw new Error('Enter the supplier\'s agreed purchase rate for every PO item.');
     const products=rows_(V8.SHEETS.PRODUCTS),poId=id_('PO-'),now=now_();let total=0;
-    const lines=items.map(function(x,i){const product=products.find(function(p){return s_(p['Product ID'])===x.productId});if(!product)throw new Error('Unknown product: '+x.productId);const rate=x.unitPrice>0?x.unitPrice:(n_(product['B2B Default Price'])||n_(product['B2C Price']));const line=x.quantity*rate;total+=line;return {'PO ID':poId,'Line No':i+1,'Product ID':x.productId,'Product Name':s_(product['Product Name']),'Quantity':x.quantity,Unit:s_(product.Unit)||'pc','Unit Price':rate,'Line Total':line,'Received Qty':0};});
+    const lines=items.map(function(x,i){const product=products.find(function(p){return s_(p['Product ID'])===x.productId});if(!product)throw new Error('Unknown product: '+x.productId);const rate=x.unitPrice;const line=x.quantity*rate;total+=line;return {'PO ID':poId,'Line No':i+1,'Product ID':x.productId,'Product Name':s_(product['Product Name']),'Quantity':x.quantity,Unit:s_(product.Unit)||'pc','Unit Price':rate,'Line Total':line,'Received Qty':0};});
     append_(V931_PO_SHEET,{'PO ID':poId,'PO Date':s_(p.poDate)||v931Iso_(now),'Supplier ID':supplierId,'Supplier Name':s_(supplier['Business Name'])||s_(supplier['Owner Name']),'Supplier Mobile':digits_(supplier.Mobile),'Delivery Location':s_(p.deliveryLocation)||'Native Elaneeru Hub','Expected Date':s_(p.expectedDate),'Status':'ISSUED','Sub Total':total,Notes:s_(p.notes),'Created By':s_(email),'Created At':now,'Updated At':now});
     lines.forEach(function(line){append_(V931_PO_ITEMS_SHEET,line)});
     return {success:true,poId:poId};

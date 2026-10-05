@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 const backend=fs.readFileSync('src/NE_Purchase_Order_Receiving_V968.gs','utf8');
 const ui=fs.readFileSync('src/PurchaseOrders.html','utf8');
+const poBackend=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V931_PurchaseOrders.gs','utf8');
 new Function(backend);
 for(const match of ui.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))new Function(match[1]);
 assert.match(ui,/recordPurchaseOrderReceiptV968/);
@@ -10,6 +11,9 @@ assert.match(ui,/Good units received/);
 assert.match(ui,/po\.supplierVerified===true/);
 assert.match(ui,/legacy PO supplier is not verified/);
 assert.match(ui,/Storage location/);
+assert.match(ui,/Supplier purchase rate/);
+assert.match(poBackend,/supplier\\'s agreed purchase rate/);
+assert.doesNotMatch(poBackend,/B2B Default Price|B2C Price/);
 assert.match(backend,/PURCHASE_RECEIPT/);
 assert.match(backend,/V944:BUNCH_STOCK/);
 assert.match(backend,/Idempotency Key/);
