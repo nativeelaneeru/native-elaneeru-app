@@ -14,9 +14,13 @@ assert.match(backend,/Idempotency Key/);
 assert.match(backend,/PROCESSING/);
 assert.match(backend,/Received Qty/);
 assert.match(backend,/qty>remaining/);
+assert.match(backend,/NE_Suppliers/);
+assert.match(backend,/B2B customers cannot be used as suppliers/);
+assert.doesNotMatch((await fs.promises.readFile('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V931_PurchaseOrders.gs','utf8')),/B2B_VENDORS/);
 
 const sheets={
-  Purchase_Orders:[{'PO ID':'PO-100','Status':'ISSUED','Updated At':'','_row':2}],
+  Purchase_Orders:[{'PO ID':'PO-100','Supplier ID':'SUP-100','Status':'ISSUED','Updated At':'','_row':2}],
+  NE_Suppliers:[{'Supplier ID':'SUP-100','Supplier Name':'Test farm','Status':'ACTIVE','_row':2}],
   Purchase_Order_Items:[{'PO ID':'PO-100','Line No':1,'Product ID':'TC','Product Name':'Tender Coconut','Quantity':100,'Unit':'pc','Received Qty':0,'_row':2}],
   Products:[{'Product ID':'TC','Product Name':'Tender Coconut','_row':2}],
   Coconut_Batches:[],
@@ -44,7 +48,7 @@ const v931Rows_=rows_;
 const Utilities={formatDate:()=> '261004'};
 const CacheService={getScriptCache:()=>({remove:()=>{}})};
 const api=new Function('V8','rows_','append_','updateObj_','find_','id_','now_','lockRun_','requireAdmin_','s_','n_','v931Setup_','v931Ensure_','v931Rows_','Utilities','CacheService',
-  "const V931_PO_SHEET='Purchase_Orders';const V931_PO_ITEMS_SHEET='Purchase_Order_Items';"+backend+";return recordPurchaseOrderReceiptV968;")(
+  "const V931_PO_SHEET='Purchase_Orders';const V931_PO_ITEMS_SHEET='Purchase_Order_Items';const V931_SUPPLIERS_SHEET='NE_Suppliers';"+backend+";return recordPurchaseOrderReceiptV968;")(
   V8,rows_,append_,updateObj_,find_,id_,now_,lockRun_,requireAdmin_,s_,n_,v931Setup_,v931Ensure_,v931Rows_,Utilities,CacheService
 );
 const first={poId:'PO-100',lineNo:1,qty:40,location:'HALL',idempotencyKey:'RECEIPT-KEY-0001'};

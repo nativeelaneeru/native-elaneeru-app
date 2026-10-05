@@ -10,6 +10,8 @@ function v968FinalizeReceipt_(receipt){
   const receiptId=s_(receipt['Receipt ID']),poId=s_(receipt['PO ID']),lineNo=n_(receipt['Line No']),qty=n_(receipt.Quantity),productId=s_(receipt['Product ID']);
   const po=rows_(V931_PO_SHEET).find(function(r){return s_(r['PO ID'])===poId;});
   if(!po)throw new Error('Purchase order for this receipt no longer exists.');
+  const supplier=rows_(V931_SUPPLIERS_SHEET).find(function(r){return s_(r['Supplier ID'])===s_(po['Supplier ID'])&&String(r.Status||'').toUpperCase()==='ACTIVE';});
+  if(!supplier)throw new Error('This PO is not linked to an active NE supplier record. B2B customers cannot be used as suppliers.');
   const item=rows_(V931_PO_ITEMS_SHEET).find(function(r){return s_(r['PO ID'])===poId&&n_(r['Line No'])===lineNo;});
   if(!item)throw new Error('Purchase order line for this receipt no longer exists.');
   const product=find_(V8.SHEETS.PRODUCTS,'Product ID',productId);
@@ -84,6 +86,8 @@ function recordPurchaseOrderReceiptV968(email,pin,payload){
     }
     const po=rows_(V931_PO_SHEET).find(function(r){return s_(r['PO ID'])===poId;});
     if(!po)throw new Error('Purchase order not found.');
+    const supplier=rows_(V931_SUPPLIERS_SHEET).find(function(r){return s_(r['Supplier ID'])===s_(po['Supplier ID'])&&String(r.Status||'').toUpperCase()==='ACTIVE';});
+    if(!supplier)throw new Error('This PO is not linked to an active NE supplier record. B2B customers cannot be used as suppliers.');
     const status=s_(po.Status).toUpperCase();
     if(!['ISSUED','PARTIALLY RECEIVED'].includes(status))throw new Error('Only issued or partially received purchase orders can receive stock.');
     const item=rows_(V931_PO_ITEMS_SHEET).find(function(r){return s_(r['PO ID'])===poId&&n_(r['Line No'])===lineNo;});
