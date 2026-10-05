@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 const backend=fs.readFileSync('src/NE_Purchase_Order_Receiving_V968.gs','utf8');
 const ui=fs.readFileSync('src/PurchaseOrders.html','utf8');
+const b2c=fs.readFileSync('b2c/index.html','utf8');
 const poBackend=fs.readFileSync('src/ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ_V931_PurchaseOrders.gs','utf8');
 new Function(backend);
 for(const match of ui.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi))new Function(match[1]);
@@ -12,6 +13,10 @@ assert.match(ui,/po\.supplierVerified===true/);
 assert.match(ui,/legacy PO supplier is not verified/);
 assert.match(ui,/Storage location/);
 assert.match(ui,/Supplier purchase rate/);
+assert.match(ui,/This is a purchase order, not a tax invoice/);
+assert.match(b2c,/Invoice details/);
+assert.match(b2c,/Print \/ Save PDF/);
+assert.match(b2c,/HSN/);
 assert.match(poBackend,/supplier\\'s agreed purchase rate/);
 assert.doesNotMatch(poBackend,/B2B Default Price|B2C Price/);
 assert.match(backend,/PURCHASE_RECEIPT/);
