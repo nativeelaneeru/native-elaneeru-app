@@ -24,7 +24,7 @@ assert.match(b2b,/Print \/ Save PDF/);
 assert.match(b2b,/brandLogo/);
 assert.ok(b2b.includes('data:image/webp;base64'));
 assert.match(ui,/brandLogo/);
-assert.ok(ui.includes('data:image/webp;base64'));
+assert.ok(ui.includes('data:image/png;base64'));
 assert.match(ui,/Supplier acknowledgment/);
 assert.match(poBackend,/supplier\\'s agreed purchase rate/);
 assert.doesNotMatch(poBackend,/B2B Default Price|B2C Price/);
