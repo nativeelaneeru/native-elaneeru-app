@@ -35,12 +35,12 @@ This feature is deliberately *not* enabled by merging code alone.
    a Google Sheet, or this chat.** Limit Apps Script editor access because
    this server-side key is privileged.
 4. Set `NE_SHADOW_ENABLED` to `true`.
-5. In the Apps Script editor run `neShadowSecretFreeStatusV1011` to check
-   activation state; run `neShadowTickV1011` once.
+5. In the Apps Script editor run `neShadowAdminStatusV1011` to check
+   activation state; run `neShadowAdminTestV1011` once.
 6. Check Supabase via SQL editor:
    `select source_sheet,count(*) from public.ne_shadow_records group by 1 order by 1;`
    The client roles `anon` and `authenticated` have no table grants.
-7. Only after a first clean run, run `neShadowInstallTriggerV1011` to install
+7. Only after a first clean run, run `neShadowAdminInstallV1011` to install
    the 5-minute trigger. It replaces an existing trigger with the same handler.
 8. Reconcile current orders and payments (counts and amounts) against Sheets;
    review exception rows and confirm every order is mirrored before a cutover.
@@ -63,12 +63,12 @@ This feature is deliberately *not* enabled by merging code alone.
   switching business-critical applications.
 
 ### Emergency pause
-Run `neShadowPauseV1011()` or set `NE_SHADOW_ENABLED=false`. This stops
+Run `neShadowAdminPauseV1011()` or set `NE_SHADOW_ENABLED=false`. This stops
 mirror sends without affecting customer checkouts or the existing data in
 either Google Sheets or Supabase.
 
 ### SQL data flow
-`Google Sheets -> neShadowTickV1011 (Apps Script server with protected service JWT)
+`Google Sheets -> neShadowAdminTestV1011 (Apps Script server with protected service JWT)
  -> Supabase RPC public.ne_shadow_upsert -> public.ne_shadow_records`
 
 The RPC accepts only a service-role connection, only allowed source tabs, a
@@ -82,3 +82,13 @@ mapping is tested; vendor credit and inventory invariants are validated;
 Supabase advisors are reviewed; real mobile app login/order/payment/driver
 workflows pass; backout instructions are tested. Until then, **do not change
 frontend API destinations**.
+
+## Anonymous-web-app security
+The actual clock handler is `neShadowTickV1011(e)`; it **requires the
+stored, private installable trigger UID**. Calls without that UID are rejected.
+Owner-only controls `neShadowAdminStatusV1011`,
+`neShadowAdminTestV1011`, `neShadowAdminInstallV1011` and
+`neShadowAdminPauseV1011` require a nonempty active user email matching the
+script's effective owner email. Other implementation helpers end with an
+underscore so `google.script.run` cannot call them from customer pages.
+The script editor must be operated by the Apps Script deploying account.
