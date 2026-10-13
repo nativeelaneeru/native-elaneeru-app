@@ -3,6 +3,12 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#103e32"><meta name="description" content="Native Elaneeru Business 2.0 — an interactive, simulated vendor ordering experience.">
 <title>Native Elaneeru Business 2.0 | Interactive Demo</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="../../b2b/icons/icon-192.png">
+<link rel="apple-touch-icon" href="../../b2b/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="NE Business Demo">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,6 +18,12 @@
 svg{width:20px;height:20px}.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .demo-strip{height:33px;background:#183d32;color:#f7ffec;display:flex;align-items:center;justify-content:center;gap:8px;font-size:10px;font-weight:800;letter-spacing:.095em;padding:0 10px;text-align:center}.demo-dot{width:7px;height:7px;border-radius:50%;background:#cbef7b;box-shadow:0 0 0 4px #c7e96a22}.notice{font-size:11px;color:#78897e}.eyebrow{font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:800;color:#6f8c72}.btn{border:0;border-radius:12px;padding:12px 17px;display:inline-flex;align-items:center;justify-content:center;gap:9px;font-weight:800;transition:transform .15s,background .15s}.btn:active{transform:scale(.985)}.btn.dark{color:white;background:var(--forest)}.btn.dark:hover{background:#196348}.btn.lime{color:#224027;background:var(--lime)}.btn.lime:hover{background:#e4f2b9}.btn.outline{color:#294938;background:white;border:1px solid #e2eae0}.btn.outline:hover{background:#f4f8f1}.btn.flat{color:var(--forest);background:transparent}.btn.small{padding:9px 12px;font-size:12px}.btn.block{width:100%}.btn:disabled{transform:none}
 .badge{display:inline-flex;align-items:center;gap:5px;padding:6px 9px;font-weight:800;font-size:10px;border-radius:9px;background:#ecf5eb;color:#31734b;white-space:nowrap}.badge.ink{background:#e8eee8;color:#5a705f}.badge.amber{background:#fff0db;color:#9d6b1b}.badge.red{background:#fde9e5;color:#a25349}.green-dot{width:6px;height:6px;border-radius:50%;background:#35ae63;display:inline-block}
+.install-inline{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;font-weight:800}
+.install-inline svg{height:16px;width:16px}
+.install-help{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start;background:#f0f7e9;border:1px solid #dfead6;padding:15px;border-radius:14px;margin:12px 0}
+.install-help .num{width:31px;height:31px;border-radius:10px;background:#d6ebc6;display:grid;place-items:center;font-weight:900;color:#326748}
+.install-help strong{font-size:12px;display:block;margin-bottom:4px}
+.install-help span{font-size:11px;color:#708679;line-height:1.7}
 .frame{display:flex;min-height:calc(100vh - 33px)}
 .sidebar{width:249px;flex:0 0 249px;background:#fff;border-right:1px solid var(--line);height:calc(100vh - 33px);position:sticky;top:0;display:flex;flex-direction:column;padding:27px 15px}
 .logo-line{display:flex;align-items:center;gap:10px;padding:0 10px}.logo-tile{width:42px;height:42px;display:grid;place-items:center;border-radius:14px;background:#eaf2da;flex:none}.logo-tile svg{width:32px;height:32px}.logo-title{font:800 15px/1.15 Manrope,sans-serif;letter-spacing:-.055em;color:#183c2a}.logo-sub{font-size:9px;font-weight:900;color:#a0ad9d;letter-spacing:.14em;margin-top:3px}.side-caption{margin:35px 13px 10px;color:#a8b3a5;font-size:10px;font-weight:800;letter-spacing:.13em}.side-nav{display:flex;flex-direction:column;gap:4px}.navbtn{border:0;background:transparent;color:#708477;border-radius:12px;padding:13px 14px;text-align:left;font-weight:750;display:flex;align-items:center;gap:13px;width:100%}.navbtn.active{background:#ecf4e7;color:#14563b}.navbtn:hover:not(.active){background:#f6f8f4;color:#1b5339}.navbtn svg{width:19px;height:19px}.side-support{margin-top:auto;border:1px solid #e3ecdf;border-radius:16px;padding:15px;background:linear-gradient(145deg,#fafef6,#f1f6ea)}.side-support h4{font-size:13px;margin:10px 0 6px}.side-support p{font-size:11px;line-height:1.55;color:#748777;margin:0 0 10px}.profile-side{border-top:1px solid var(--line);padding:18px 8px 0;margin-top:20px;display:flex;align-items:center;gap:10px}.avatar{width:37px;height:37px;border-radius:12px;background:#daebd2;color:#286343;display:grid;place-items:center;font-weight:900}.profile-side strong{display:block;font-size:12px}.profile-side small{font-size:10px;color:#859688}
@@ -84,6 +96,7 @@ svg{width:20px;height:20px}.sr{position:absolute;width:1px;height:1px;padding:0;
 <label for="vendorPhone">Mobile number <span style="font-weight:500;color:#98a99c">(optional)</span></label>
 <input class="field" type="tel" id="vendorPhone" autocomplete="off" inputmode="numeric" maxlength="10" placeholder="Sample mode — no verification">
 <button class="btn dark block" id="enter">Explore demo <svg><use href="#i-chevron"/></svg></button>
+<button class="btn outline block" data-action="install" style="margin-top:10px">📱 &nbsp; Install mobile demo</button>
 <div class="form-foot"><b>Protected sample environment.</b> No mobile number or PIN is sent to a server. This demo is not linked to customer, vendor, inventory or payment records.</div>
 </div></div></section>
 <div class="frame" id="app" hidden>
@@ -103,7 +116,7 @@ svg{width:20px;height:20px}.sr{position:absolute;width:1px;height:1px;padding:0;
 <main class="main">
 <header class="top"><div class="mobile-brand"><div class="logo-tile"><svg><use href="#logo"/></svg></div><div><b>Native Elaneeru</b><small>BUSINESS · DEMO</small></div></div>
 <div class="crumb" id="crumb">Business <span style="color:#c4cec3;margin:0 6px">/</span> <b>Overview</b></div>
-<div class="top-controls"><span class="top-date" id="dateLabel"></span><button class="top-icon" data-action="help" title="Support"><svg><use href="#i-help"/></svg></button><button class="top-icon" data-action="notifications" title="Demo notifications"><svg><use href="#i-bell"/></svg></button><div class="avatar" title="Sample vendor account">VS</div></div></header>
+<div class="top-controls"><button class="btn outline small install-inline" data-action="install" id="installTop">📱 <span>Install</span></button><span class="top-date" id="dateLabel"></span><button class="top-icon" data-action="help" title="Support"><svg><use href="#i-help"/></svg></button><button class="top-icon" data-action="notifications" title="Demo notifications"><svg><use href="#i-bell"/></svg></button><div class="avatar" title="Sample vendor account">VS</div></div></header>
 <section class="page active" id="page-home">
 <div class="hero"><div class="hero-copy"><div class="kicker">WELCOME TO YOUR WHOLESALE HUB</div><h1>Fresh coconuts.<br>Fewer hassles.</h1><p>Place your next supply order in seconds and see every delivery milestone at a glance.</p><button class="btn lime" data-page="products">Shop coconuts <svg><use href="#i-chevron"/></svg></button></div><svg class="hero-art"><use href="#coconut"/></svg><div class="hero-stamp">FRESH<br>EVERY<br>DAY</div></div>
 <div class="cards3">
@@ -136,7 +149,7 @@ svg{width:20px;height:20px}.sr{position:absolute;width:1px;height:1px;padding:0;
 <div class="panel panel-pad"><h2 class="sec-title" style="margin-bottom:22px">Business profile</h2><div class="info-grid"><div>Vendor</div><div>Vijaya Coconut Point</div><div>Location</div><div>Bannerghatta, Bengaluru</div><div>Status</div><div><span class="badge">Sample profile</span></div><div>Payment</div><div>Cash on delivery</div><div>Products</div><div>Tender Coconut, Mixed Tender Coconut</div></div><button class="btn outline small" style="margin-top:25px" data-action="logout">Exit demo</button></div>
 <div class="panel panel-pad"><h2 class="sec-title" style="margin-bottom:8px">Help & support</h2><div class="help-item"><div class="iconbox"><svg><use href="#i-help"/></svg></div><div><b>Vendor support</b><p>Order issues, quality and delivery queries</p></div><button class="btn outline small" data-action="help">Open</button></div><div class="help-item"><div class="iconbox"><svg><use href="#i-truck"/></svg></div><div><b>Track your supply</b><p>Detailed milestones and proof of delivery</p></div><button class="btn outline small" data-page="orders">Track</button></div><div class="help-item"><div class="iconbox"><svg><use href="#i-wallet"/></svg></div><div><b>Payment questions</b><p>COD collections, receipts and credit</p></div><button class="btn outline small" data-page="wallet">View</button></div></div>
 <div class="panel panel-pad"><h2 class="sec-title">The Native Elaneeru promise</h2><p class="page-sub" style="margin-top:14px">Grow Farmers • Empower Vendors • Serve Everyone.</p><p style="font-size:12px;color:#6a8271;line-height:1.9">This concept keeps the ordering experience easy for roadside coconut vendors while giving operations teams the technology for sourcing, bunch-level barcode tracking, FIFO dispatch and timely deliveries.</p></div>
-<div class="panel panel-pad"><h2 class="sec-title">About this preview</h2><p style="font-size:12px;color:#6a8271;line-height:1.9">The design is not connected to real vendor accounts, Google Sheets, Supabase, payment processors or route systems. It's safe to tap every action, try sample checkouts and test the order status screens.</p><button class="btn outline" data-action="reset">Reset demo orders</button></div>
+<div class="panel panel-pad"><h2 class="sec-title">About this preview</h2><p style="font-size:12px;color:#6a8271;line-height:1.9">The design is not connected to real vendor accounts, Google Sheets, Supabase, payment processors or route systems. It's safe to tap every action, try sample checkouts and test the order status screens.</p><button class="btn outline" data-action="reset">Reset demo orders</button><button class="btn dark" data-action="install" style="margin-top:9px">📱 Install this demo on my phone</button></div>
 </div></section>
 </main>
 <nav class="mobile-nav" aria-label="App navigation"><button class="active" data-page="home"><svg><use href="#i-home"/></svg>Home</button><button data-page="products"><svg><use href="#i-shop"/></svg>Shop</button><button data-page="orders"><svg><use href="#i-truck"/></svg>Orders</button><button data-page="wallet"><svg><use href="#i-wallet"/></svg>Credit</button><button data-page="account"><svg><use href="#i-user"/></svg>Account</button></nav>
@@ -207,7 +220,38 @@ function invoice(id){var o=getOrder(id);if(!o)return;var p=product(o.pid);var ht
 open('Sample invoice','DOCUMENT PREVIEW',html,'<button class="btn outline block" id="printSample">Print sample invoice</button>');$('printSample').onclick=function(){window.print()};
 }
 function help(){open('Here to help','SUPPORT PREVIEW','<div class="panel-pad" style="padding:5px 0"><div style="display:flex;align-items:center;gap:13px"><div class="logo-tile">'+icon('i-help')+'</div><div><b>Native Elaneeru support</b><p class="page-sub">Phone: 7411807675</p></div></div><hr class="divider"><p class="page-sub" style="line-height:1.9">For order concerns, price clarification, delivery delays, replacements or payment collections, the final app will provide issue-specific support.</p><div class="soft-alert">This screen is a simulated interface. No support ticket is created.</div></div>','<button class="btn dark block" data-action="close">Back to app</button>')}
-function action(name){if(name==='repeat')return build('TC');if(name==='notifications')return notify('No real alerts. Your demo is running safely.');if(name==='help')return help();if(name==='close')return close();if(name==='logout'){$('app').hidden=true;$('login').hidden=false;goto('home');window.scrollTo(0,0);return}if(name==='reset'){demo=[];save();renderHome();renderOrders();notify('All sample orders cleared.');return}}
+var deferredInstall=null;
+window.addEventListener('beforeinstallprompt',function(event){event.preventDefault();deferredInstall=event;});
+window.addEventListener('appinstalled',function(){deferredInstall=null;notify('Demo installed. Launch it from your home screen.');});
+if('serviceWorker' in navigator && location.protocol==='https:'){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(function(){notify('Offline support is unavailable on this browser.');});
+  });
+}
+function installDemo(){
+  var standalone=(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true;
+  if(standalone){notify('This demo is already running as an installed mobile app.');return;}
+  if(deferredInstall){
+    var choiceEvent=deferredInstall;deferredInstall=null;
+    choiceEvent.prompt();
+    choiceEvent.userChoice.then(function(choice){
+      if(choice.outcome==='accepted')notify('Installation accepted. Look for NE Business Demo on your home screen.');
+      else notify('You can install the demo later from your browser menu.');
+    }).catch(function(){notify('Use the browser menu to install the demo.');});
+    return;
+  }
+  var agent=navigator.userAgent||'';
+  var ios=/iPad|iPhone|iPod/i.test(agent);
+  var android=/Android/i.test(agent);
+  var steps=ios?
+    [['1','Open this page in Safari'],['2','Tap the Share icon at the bottom of Safari'],['3','Choose Add to Home Screen, then Add']]:
+    android?
+    [['1','Open this page in Chrome on Android'],['2','Tap the ⋮ menu, then Install app or Add to Home screen'],['3','Confirm Install and open NE Business Demo from your home screen']]:
+    [['1','Open this demo URL on an Android phone or iPhone'],['2','Android: Chrome menu → Install app'],['3','iPhone: Safari Share → Add to Home Screen']];
+  var info='<p class="page-sub">This is an installable web app (PWA). It opens from your home screen like an app, but it is not an Android APK or an App Store listing.</p>'+steps.map(function(s){return '<div class="install-help"><div class="num">'+s[0]+'</div><div><strong>Step '+s[0]+'</strong><span>'+s[1]+'</span></div></div>'}).join('')+'<div class="soft-alert">All orders and balances are samples. Your production Business app remains unchanged. This demo works offline after its first successful load.</div>';
+  open('Install mobile demo','ADD TO HOME SCREEN',info,'<button class="btn dark block" data-action="close">Back to demo</button>');
+}
+function action(name){if(name==='install')return installDemo();if(name==='repeat')return build('TC');if(name==='notifications')return notify('No real alerts. Your demo is running safely.');if(name==='help')return help();if(name==='close')return close();if(name==='logout'){$('app').hidden=true;$('login').hidden=false;goto('home');window.scrollTo(0,0);return}if(name==='reset'){demo=[];save();renderHome();renderOrders();notify('All sample orders cleared.');return}}
 document.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.page){goto(b.dataset.page);return}if(b.dataset.buy){build(b.dataset.buy);return}if(b.dataset.action){action(b.dataset.action);return}if(b.dataset.track){track(b.dataset.track);return}if(b.dataset.invoice){invoice(b.dataset.invoice);return}});
 $('enter').onclick=function(){$('login').hidden=true;$('app').hidden=false;var d=new Date();$('dateLabel').textContent=d.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});goto('home');renderHome();renderCatalog();notify('Welcome! Explore your new Business app.')};
 $('productSearch').oninput=renderCatalog;
