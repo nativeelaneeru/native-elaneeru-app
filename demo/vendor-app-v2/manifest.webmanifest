@@ -1,0 +1,40 @@
+{
+  "id": "./?app=business-v2-demo",
+  "name": "Native Elaneeru Business V2 — Demo",
+  "short_name": "NE Business Demo",
+  "description": "Installable Native Elaneeru Business V2 mobile preview. Simulated vendor ordering with no production data or payments.",
+  "start_url": "./?source=installed-demo",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone"
+  ],
+  "background_color": "#f7f8f4",
+  "theme_color": "#103e32",
+  "orientation": "portrait-primary",
+  "lang": "en-IN",
+  "categories": [
+    "business",
+    "shopping"
+  ],
+  "icons": [
+    {
+      "src": "../../b2b/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../../b2b/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../../b2b/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
