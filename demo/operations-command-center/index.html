@@ -1,0 +1,153 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#123f31">
+<title>Native Elaneeru — Operations Dashboard Demo</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap');
+:root{--green:#165d42;--deep:#123f31;--cream:#f7f9f4;--text:#213b2b;--muted:#758979;--line:#e2eae1;--sage:#eaf4e4;--red:#aa5146;--amber:#9f742e}*{box-sizing:border-box}
+body{margin:0;background:var(--cream);color:var(--text);font:13px 'DM Sans',system-ui}button,select{font:inherit}button{cursor:pointer}button:focus-visible,select:focus-visible{outline:2px solid #8ab98b;outline-offset:3px}[hidden]{display:none!important}
+.strip{background:#15382a;color:#dcedda;text-align:center;padding:9px;font-size:10px;font-weight:800;letter-spacing:.07em}.strip strong{color:#dcf39e}
+.app{display:flex;min-height:calc(100vh - 33px)}.side{width:235px;background:white;border-right:1px solid var(--line);flex:none;padding:25px 15px;position:sticky;top:0;height:calc(100vh - 33px);display:flex;flex-direction:column}.brand{display:flex;align-items:center;gap:10px;padding:0 7px}.logo{width:40px;height:40px;background:#e7f2d8;border-radius:13px;display:grid;place-items:center;font-size:22px}.brand b{display:block;font:800 15px Manrope;letter-spacing:-.05em}.brand small{display:block;color:#879b88;font-size:9px;font-weight:800;letter-spacing:.1em}.subnav{margin:33px 12px 10px;color:#9eaea1;font-size:10px;font-weight:800;letter-spacing:.1em}
+.nav{border:0;text-align:left;padding:13px;border-radius:11px;background:none;width:100%;color:#718676;font-weight:800;margin:2px 0;display:flex;gap:11px;align-items:center}.nav.active,.nav:hover{background:#eaf4e5;color:#155d3b}.nav span{font-size:17px;width:21px;text-align:center}.sidefoot{margin-top:auto;padding:14px;border-radius:13px;background:#edf5e7;color:#69826c;font-size:11px;line-height:1.5}.sidefoot b{display:block;color:#275f3b;margin-bottom:5px}
+.main{flex:1;min-width:0;padding:0 clamp(16px,3vw,40px) 55px;max-width:1500px;margin:0 auto;width:100%}.top{height:83px;display:flex;align-items:center;justify-content:space-between;gap:12px}.top strong{font-weight:850;font-size:12px}.top .hint{color:var(--muted);font-size:11px;margin-top:4px}.controls{display:flex;align-items:center;gap:8px}.sel{background:white;border:1px solid var(--line);border-radius:10px;padding:9px;color:#37533e;font-size:11px;font-weight:800}.btn{background:var(--green);border:0;color:white;border-radius:10px;padding:10px 13px;font-size:11px;font-weight:850}.btn.alt{background:white;border:1px solid var(--line);color:var(--green)}.btn:hover{filter:brightness(.96)}.pill{background:#e8f3e4;color:#38774a;display:inline-block;font-size:10px;font-weight:850;padding:7px 9px;border-radius:100px}.pill.orange{background:#fff1d9;color:#a27628}.pill.red{background:#fae7e2;color:#b45648}
+h1{font:800 clamp(23px,2.4vw,29px) Manrope;letter-spacing:-.055em;margin:0 0 5px}h2{font:800 17px Manrope;letter-spacing:-.04em;margin:0}.muted{color:var(--muted);font-size:12px;line-height:1.6}.page{display:none}.page.active{display:block}.hero{border-radius:20px;background:linear-gradient(110deg,#133b2c,#23714b);padding:29px;color:#fff;display:flex;justify-content:space-between;align-items:center;overflow:hidden}.hero h1{font-size:29px;margin:7px 0}.hero .muted{color:#cbe1c9;max-width:480px}.hero .coco{font-size:93px;transform:rotate(-12deg);filter:drop-shadow(0 10px 15px #082c1870)}.hero small{color:#d4e9ac;font-weight:800;letter-spacing:.13em;font-size:10px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0 25px}.metric,.card{border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 9px 30px #123f3108}.metric{padding:18px}.metric small{color:#849686;font-size:10px;text-transform:uppercase;font-weight:850;letter-spacing:.05em}.metric strong{display:block;font:800 25px Manrope;letter-spacing:-.06em;margin:9px 0 4px}.metric .fine{font-size:10px;color:#92a094}.section{margin:25px 0 12px}.sectop{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:13px}.action{border:0;background:none;color:var(--green);font-weight:850;font-size:12px}.grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:15px}.content{padding:19px}.bars{height:180px;display:flex;align-items:end;justify-content:space-between;gap:13px;padding:14px 7px 0}.barcol{flex:1;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:end}.barwrap{height:137px;display:flex;justify-content:center;align-items:end;gap:4px;width:100%}.bar{width:29%;background:#7cbf84;min-height:3px;border-radius:4px 4px 0 0}.bar.dark{background:#205a40}.barcol small{color:#829586;font-size:10px}.legend{color:#7c9081;font-size:11px;margin-top:15px}.legend em{display:inline-block;width:9px;height:9px;background:#7cbf84;margin-right:5px;border-radius:3px}.legend em.dark{background:#205a40;margin-left:14px}
+.listrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid #edf1ea}.listrow:last-child{border:0}.listrow b{display:block;font-size:12px}.listrow p{color:#8b9d8d;font-size:11px;margin:5px 0 0}.tilegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.tile{padding:19px}.tile b{display:block;font-size:11px;color:#7d927e}.tile strong{display:block;font:800 25px Manrope;margin:12px 0 5px}.tile .muted{font-size:11px}.tabbar{display:flex;gap:8px;flex-wrap:wrap;margin:21px 0 14px}.tab{background:white;border:1px solid #dce8dd;border-radius:99px;padding:9px 13px;font-size:11px;color:#5d8166;font-weight:800}.tab.on{background:#1c5e42;color:white;border-color:#1c5e42}
+.tablebox{overflow:auto}.table{border-collapse:collapse;text-align:left;width:100%;min-width:630px}.table th{background:#f9fbf8;color:#829584;letter-spacing:.06em;font-size:10px;padding:14px 15px;text-transform:uppercase}.table td{font-size:12px;padding:13px 15px;border-top:1px solid #eef2ed;white-space:nowrap}.table td:first-child{font-weight:800}.table button{border:1px solid var(--line);background:white;padding:7px 10px;color:var(--green);border-radius:8px;font-size:11px;font-weight:800}.progress{height:6px;width:80px;border-radius:10px;background:#e7f0e7;overflow:hidden}.progress div{height:100%;background:#60a76d}.notice{background:#fff5e5;border:1px solid #f1dfbe;border-radius:13px;padding:13px 15px;color:#8c692c;font-size:11px;line-height:1.65;margin-top:16px}.alert{border:1px solid var(--line);border-left:4px solid #d7a14e;background:white;border-radius:12px;padding:16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px}.alert.red{border-left-color:#c97a6b}.alert.green{border-left-color:#75b384}.alert b{font-size:12px}.alert p{font-size:11px;color:#829484;line-height:1.5;margin:5px 0 0}
+.overlay{position:fixed;inset:0;background:#061b1399;z-index:80;display:none;justify-content:flex-end}.overlay.on{display:flex}.drawer{background:white;width:min(460px,100%);height:100%;display:flex;flex-direction:column}.drawtop{padding:21px;display:flex;justify-content:space-between;border-bottom:1px solid var(--line)}.drawtop h2{margin-top:6px}.drawbody{padding:22px;flex:1;overflow:auto}.drawfoot{padding:19px;border-top:1px solid var(--line)}.close{border:0;background:#eef4ec;color:var(--deep);border-radius:10px;padding:8px 12px}.item{display:flex;justify-content:space-between;border-bottom:1px solid #edf0ec;padding:13px 0;gap:14px;font-size:12px}.item span{color:#869888}.item b{text-align:right}.toast{position:fixed;bottom:20px;right:18px;background:#18432e;color:white;padding:12px 16px;border-radius:10px;font-size:12px;opacity:0;transition:.2s;transform:translateY(10px);z-index:99;pointer-events:none}.toast.on{opacity:1;transform:translateY(0)}.mobile-nav{display:none}
+@media(max-width:1080px){.side{width:202px}.metrics{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:790px){.grid2{grid-template-columns:1fr}.tilegrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.side{display:none}.main{padding:0 14px 95px}.top{height:69px}.hero{padding:21px;min-height:171px}.hero h1{font-size:22px}.hero .coco{font-size:72px;position:absolute;right:-18px;opacity:.4}.hero .muted{max-width:270px}.metrics{gap:8px}.metric{padding:13px}.metric strong{font-size:20px}.metric small{font-size:9px}.tilegrid{grid-template-columns:1fr 1fr}.mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;height:calc(69px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:white;border-top:1px solid var(--line);z-index:50;justify-content:space-around;align-items:center}.mobile-nav button{border:0;background:none;color:#8ba18c;flex:1;font-size:10px;font-weight:800;display:flex;align-items:center;flex-direction:column;gap:3px}.mobile-nav button.active{color:#176241}.mobile-nav span{font-size:19px}.toast{bottom:82px;left:12px;right:12px}}
+</style></head><body>
+<div class="strip">🔒 INTERNAL OPERATIONS DASHBOARD <strong>· INTERACTIVE SAMPLE DATA ONLY · NOT CONNECTED TO LIVE SYSTEMS</strong></div>
+<div class="app"><aside class="side"><div class="brand"><div class="logo">🥥</div><div><b>Native Elaneeru</b><small>OPERATIONS CENTER</small></div></div><div class="subnav">MANAGEMENT DASHBOARD</div>
+<button class="nav active" data-page="overview"><span>◫</span>Overview</button>
+<button class="nav" data-page="sales"><span>▥</span>Sales performance</button>
+<button class="nav" data-page="po"><span>▤</span>Purchase orders</button>
+<button class="nav" data-page="inward"><span>⇩</span>Inwarding & QC</button>
+<button class="nav" data-page="stock"><span>▣</span>Stock availability</button>
+<button class="nav" data-page="alerts"><span>⚠</span>Exceptions & alerts</button>
+<div class="sidefoot"><b>Management-only in production</b>Data access must use the existing secured Admin login, not public Google Sheets links.</div></aside>
+<main class="main"><header class="top"><div><strong>🥥 Native Elaneeru / <span id="crumb">Overview</span></strong><div class="hint">Operations Command Center · sample dataset dated 14 Oct 2026</div></div>
+<div class="controls"><span class="pill">DEMO</span><select id="range" class="sel"><option value="all">All sales dates</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option></select><button class="btn alt" id="refresh">↻ Refresh</button></div></header>
+<section class="page active" id="page-overview"><div class="hero"><div><small>MANAGEMENT CONTROL TOWER</small><h1>Everything in one place.</h1><div class="muted">Track sales, inwarding, purchase orders, physical stock and fulfillment exceptions.</div></div><div class="coco">🥥</div></div>
+<div class="metrics" id="overviewKpis"></div>
+<div class="grid2"><div><div class="section sectop"><h2>Sales by channel</h2><button class="action" data-page="sales">Full report →</button></div><div class="card content"><div id="chart" class="bars"></div><div class="legend"><em></em>B2C Direct <em class="dark"></em>B2B Vendors</div></div></div><div><div class="section sectop"><h2>Requires attention</h2><button class="action" data-page="alerts">View all →</button></div><div id="homeAlerts" class="card"></div></div></div>
+<div class="section sectop"><h2>Supply-chain snapshot</h2><span class="pill">PO → Inward → Inventory</span></div><div id="snapshot" class="tilegrid"></div></section>
+<section class="page" id="page-sales"><h1>Sales performance</h1><p class="muted">Booked and delivered GMV are distinct. Cancelled orders are excluded; pending collections aren't paid revenue.</p><div class="metrics" id="salesKpis"></div>
+<div class="section sectop"><h2>Order register</h2><select class="sel" id="channel"><option value="ALL">Both channels</option><option value="B2B">B2B only</option><option value="B2C">B2C only</option></select></div>
+<div class="card tablebox"><table class="table"><thead><tr><th>Order</th><th>Channel</th><th>Ordered</th><th>GMV</th><th>Status</th><th></th></tr></thead><tbody id="salesRows"></tbody></table></div></section>
+<section class="page" id="page-po"><h1>Purchase orders</h1><p class="muted">Track ordered quantity, expected inward date, receipts and supplier PO status.</p><div class="metrics" id="poKpis"></div><div class="tabbar"><button class="tab on" data-po-filter="all">All</button><button class="tab" data-po-filter="pending">Awaiting receipt</button><button class="tab" data-po-filter="partial">Partial</button><button class="tab" data-po-filter="received">Received</button></div>
+<div class="card tablebox"><table class="table"><thead><tr><th>Purchase order</th><th>Expected</th><th>Ordered</th><th>Received</th><th>Progress</th><th>Status</th><th></th></tr></thead><tbody id="poRows"></tbody></table></div></section>
+<section class="page" id="page-inward"><h1>Inwarding & quality</h1><p class="muted">Record physical arrivals, accepted stock, rejected coconuts and PO references.</p><div class="metrics" id="inwardKpis"></div>
+<div class="section sectop"><h2>Inwarding register</h2><span class="pill">QC verified · sample</span></div><div class="card tablebox"><table class="table"><thead><tr><th>Inward ID</th><th>PO</th><th>Received</th><th>Accepted</th><th>Rejected</th><th>Status</th><th></th></tr></thead><tbody id="inwardRows"></tbody></table></div>
+<div class="notice">Production inwarding must create a traceable stock movement and bunch barcode record; otherwise physical and system stock cannot be reconciled.</div></section>
+<section class="page" id="page-stock"><h1>Stock availability</h1><p class="muted">Available stock excludes reserved and delivered units. Every batch should balance against physical inwarding and a movement ledger.</p><div class="metrics" id="stockKpis"></div>
+<div class="section sectop"><h2>Barcode-level stock register</h2><span class="pill">FIFO view</span></div><div class="card tablebox"><table class="table"><thead><tr><th>Batch</th><th>Product</th><th>Original</th><th>Available</th><th>Reserved</th><th>Delivered</th><th>Balance</th><th></th></tr></thead><tbody id="stockRows"></tbody></table></div>
+<div class="notice"><strong>Live-data gap:</strong> Inventory_Ledger currently has no movement entries. Do not interpret this sample dashboard as a verified live stock count.</div></section>
+<section class="page" id="page-alerts"><h1>Exceptions & alerts</h1><p class="muted">An operations control tower should surface missing data and unresolved exceptions—not just show green totals.</p><div class="section" id="alertsRows"></div></section>
+</main></div>
+<nav class="mobile-nav"><button data-page="overview" class="active"><span>◫</span>Home</button><button data-page="sales"><span>▥</span>Sales</button><button data-page="po"><span>▤</span>PO</button><button data-page="inward"><span>⇩</span>Inward</button><button data-page="stock"><span>▣</span>Stock</button><button data-page="alerts"><span>⚠</span>Alerts</button></nav>
+<div id="overlay" class="overlay" aria-hidden="true"><div class="drawer"><div class="drawtop"><div><small class="pill orange">EXAMPLE RECORD</small><h2 id="detailTitle"></h2></div><button class="close" id="close">✕</button></div><div class="drawbody" id="detailBody"></div><div class="drawfoot"><button class="btn alt" id="dismiss" style="width:100%">Close details</button></div></div></div>
+<div id="toast" class="toast"></div>
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var sales=[
+{id:'B2C-SAMPLE-101',date:'2026-10-14',type:'B2C',gmv:550,status:'Delivered'},
+{id:'B2C-SAMPLE-102',date:'2026-10-13',type:'B2C',gmv:475,status:'Order Received'},
+{id:'B2C-SAMPLE-103',date:'2026-10-10',type:'B2C',gmv:825,status:'Assigned'},
+{id:'B2C-SAMPLE-104',date:'2026-09-21',type:'B2C',gmv:980,status:'Delivered'},
+{id:'B2B-SAMPLE-201',date:'2026-10-14',type:'B2B',gmv:8400,status:'Delivered'},
+{id:'B2B-SAMPLE-202',date:'2026-10-13',type:'B2B',gmv:12600,status:'Out for Delivery'},
+{id:'B2B-SAMPLE-203',date:'2026-10-12',type:'B2B',gmv:16800,status:'Order Received'},
+{id:'B2B-SAMPLE-204',date:'2026-10-08',type:'B2B',gmv:42000,status:'Assigned'},
+{id:'B2B-SAMPLE-205',date:'2026-09-21',type:'B2B',gmv:21000,status:'Delivered'},
+{id:'B2B-SAMPLE-206',date:'2026-10-09',type:'B2B',gmv:5000,status:'Cancelled'}
+];
+var pos=[
+{id:'PO-SAMPLE-101',supplier:'Supplier A',qty:1500,received:1200,rate:26,expected:'2026-10-11',status:'PARTIALLY RECEIVED'},
+{id:'PO-SAMPLE-102',supplier:'Supplier B',qty:900,received:900,rate:27,expected:'2026-10-12',status:'RECEIVED'},
+{id:'PO-SAMPLE-103',supplier:'Supplier C',qty:800,received:650,rate:25,expected:'2026-10-13',status:'PARTIALLY RECEIVED'},
+{id:'PO-SAMPLE-104',supplier:'Supplier D',qty:2000,received:0,rate:28,expected:'2026-10-16',status:'ISSUED'}
+];
+var inward=[
+{id:'INW-SAMPLE-01',po:'PO-SAMPLE-101',received:1240,accepted:1200,rejected:40,status:'QC Done'},
+{id:'INW-SAMPLE-02',po:'PO-SAMPLE-102',received:930,accepted:900,rejected:30,status:'QC Done'},
+{id:'INW-SAMPLE-03',po:'PO-SAMPLE-103',received:680,accepted:650,rejected:30,status:'QC Done'}
+];
+var batches=[
+{id:'BAT-SAMPLE-A',product:'Tender Coconut',original:1100,available:650,reserved:250,delivered:200},
+{id:'BAT-SAMPLE-B',product:'Tender Coconut',original:800,available:400,reserved:200,delivered:200},
+{id:'BAT-SAMPLE-C',product:'Tender Coconut',original:600,available:520,reserved:80,delivered:0},
+{id:'BAT-SAMPLE-D',product:'Mixed Hybrid',original:250,available:220,reserved:0,delivered:30}
+];
+var days=['2026-10-08','2026-10-09','2026-10-10','2026-10-11','2026-10-12','2026-10-13','2026-10-14'];
+var dates=['08','09','10','11','12','13','14'];
+var filter='all',channel='ALL',poFilter='all',timeout=0;
+var inr=function(x){return '₹'+Number(x||0).toLocaleString('en-IN')},n=function(x){return Number(x||0).toLocaleString('en-IN')};
+var sum=function(rows,k){return rows.reduce(function(a,r){return a+Number(r[k]||0)},0)};
+var day=function(x){return x.slice(8,10)+' '+(x.slice(5,7)==='09'?'Sep':'Oct')};
+var safe=function(x){return String(x==null?'':x).replace(/[&<>"']/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]})};
+function orders(){var a=filter==='all'?sales:sales.filter(function(o){return o.date>=(filter==='7'?'2026-10-08':'2026-09-15')});return a}
+function active(){return orders().filter(function(x){return x.status!=='Cancelled'})}
+function tag(s){var cl=/CANCELLED|MISMATCH/i.test(s)?'red':/RECEIVED|DELIVERED|BALANCED|QC DONE/i.test(s)?'':/ISSUED|PARTIAL|OUT|ASSIGNED|ORDER RECEIVED/i.test(s)?'orange':'';return '<span class="pill '+cl+'">'+safe(s)+'</span>'}
+function metric(k,v,h){return '<div class="metric"><small>'+safe(k)+'</small><strong>'+safe(v)+'</strong><div class="fine">'+safe(h)+'</div></div>'}
+function tile(k,v,h){return '<div class="card tile"><b>'+safe(k)+'</b><strong>'+safe(v)+'</strong><div class="muted">'+safe(h)+'</div></div>'}
+function problems(){
+var pending=pos.filter(function(p){return p.received<p.qty}),unread=pos.filter(function(p){return p.expected<'2026-10-14'&&p.received<p.qty}),reject=sum(inward,'rejected'),total=sum(inward,'received');
+return [
+{heading:'POs waiting for inwarding',detail:pending.length+' POs · '+n(pending.reduce(function(a,p){return a+p.qty-p.received},0))+' units pending',page:'po',type:'warn'},
+{heading:'Overdue PO receipts',detail:unread.length+' example POs behind expected date',page:'po',type:'warn'},
+{heading:'Quality rejection',detail:n(reject)+' rejected of '+n(total)+' inspected pieces',page:'inward',type:'warn'},
+{heading:'Movement ledger coverage',detail:'Production Inventory_Ledger is empty; reconciliation unavailable',page:'stock',type:'red'},
+{heading:'Sample batch arithmetic',detail:batches.every(function(b){return b.original===b.available+b.reserved+b.delivered})?'All sample batches balance; not physical verification':'Mismatch found',page:'stock',type:'ok'}
+];
+}
+function overview(){
+$('overviewKpis').innerHTML=metric('Booked GMV',inr(sum(active(),'gmv')),'Placed, non-cancelled orders')+metric('Delivered GMV',inr(sum(active().filter(function(x){return x.status==='Delivered'}),'gmv')),'Delivered, not cash collected')+metric('Stock available',n(sum(batches,'available'))+' pcs','Unreserved demo batches')+metric('PO quantity pending',n(pos.reduce(function(a,p){return a+p.qty-p.received},0))+' pcs','Ordered less received');
+var mx=42000;
+$('chart').innerHTML=days.map(function(d,i){var b2c=sum(active().filter(function(o){return o.date===d&&o.type==='B2C'}),'gmv'),b2b=sum(active().filter(function(o){return o.date===d&&o.type==='B2B'}),'gmv');return '<div class="barcol"><div class="barwrap"><div class="bar" title="B2C '+inr(b2c)+'" style="height:'+Math.max(2,b2c/mx*100)+'%"></div><div class="bar dark" title="B2B '+inr(b2b)+'" style="height:'+Math.max(2,b2b/mx*100)+'%"></div></div><small>'+dates[i]+'</small></div>'}).join('');
+$('homeAlerts').innerHTML=problems().slice(0,4).map(function(p){return '<div class="listrow"><div><b>'+safe(p.heading)+'</b><p>'+safe(p.detail)+'</p></div><button class="action" data-page="'+p.page+'">Inspect →</button></div>'}).join('');
+$('snapshot').innerHTML=tile('Purchase orders',String(pos.length)+' POs','Issued / partial / received')+tile('Inwarding accepted',n(sum(inward,'accepted'))+' pcs',n(sum(inward,'rejected'))+' rejected')+tile('Stock reserved',n(sum(batches,'reserved'))+' pcs','Not for new sale');
+}
+function salesPage(){
+var book=active(),done=book.filter(function(x){return x.status==='Delivered'});
+$('salesKpis').innerHTML=metric('Booked GMV',inr(sum(book,'gmv')),'Not recognised cash receipts')+metric('Delivered GMV',inr(sum(done,'gmv')),'Fulfilled orders')+metric('B2B Bookings',inr(sum(book.filter(function(x){return x.type==='B2B'}),'gmv')),'Wholesale')+metric('B2C Bookings',inr(sum(book.filter(function(x){return x.type==='B2C'}),'gmv')),'Direct');
+var shown=orders().filter(function(o){return channel==='ALL'||channel===o.type});
+$('salesRows').innerHTML=shown.map(function(o){return '<tr><td>'+safe(o.id)+'</td><td>'+o.type+'</td><td>'+day(o.date)+'</td><td>'+inr(o.gmv)+'</td><td>'+tag(o.status)+'</td><td><button data-id="SALE:'+o.id+'">Details</button></td></tr>'}).join('')||'<tr><td colspan="6">No orders in this filter.</td></tr>';
+}
+function poPage(){
+var pending=pos.filter(function(x){return x.received<x.qty});
+$('poKpis').innerHTML=metric('Total POs',n(pos.length),'Purchase order register')+metric('PO value',inr(pos.reduce(function(a,p){return a+p.qty*p.rate},0)),'Ordered value')+metric('Pending receipt',n(pending.length),'Not fully inwarded')+metric('Qty pending',n(pending.reduce(function(a,p){return a+p.qty-p.received},0))+' pcs','Needs supplier follow-up');
+var shown=pos.filter(function(p){return poFilter==='all'||poFilter==='pending'&&p.received<p.qty||poFilter==='partial'&&p.received>0&&p.received<p.qty||poFilter==='received'&&p.received===p.qty});
+$('poRows').innerHTML=shown.map(function(p){var progress=100*p.received/p.qty;return '<tr><td>'+p.id+'<div class="muted">'+p.supplier+'</div></td><td>'+day(p.expected)+'</td><td>'+n(p.qty)+'</td><td>'+n(p.received)+'</td><td><div class="progress"><div style="width:'+progress+'%"></div></div><small>'+Math.round(progress)+'%</small></td><td>'+tag(p.status)+'</td><td><button data-id="PO:'+p.id+'">View</button></td></tr>'}).join('')||'<tr><td colspan="7">No matching POs.</td></tr>';
+document.querySelectorAll('[data-po-filter]').forEach(function(e){e.classList.toggle('on',e.dataset.poFilter===poFilter)});
+}
+function inwardPage(){
+$('inwardKpis').innerHTML=metric('Inward events',n(inward.length),'Sample receipts')+metric('Received',n(sum(inward,'received'))+' pcs','Before QC')+metric('Accepted',n(sum(inward,'accepted'))+' pcs','Approved units')+metric('Rejected',n(sum(inward,'rejected'))+' pcs','Requires discrepancy tracking');
+$('inwardRows').innerHTML=inward.map(function(i){return '<tr><td>'+i.id+'</td><td>'+i.po+'</td><td>'+n(i.received)+'</td><td>'+n(i.accepted)+'</td><td>'+n(i.rejected)+'</td><td>'+tag(i.status)+'</td><td><button data-id="IN:'+i.id+'">View</button></td></tr>'}).join('');
+}
+function stockPage(){
+$('stockKpis').innerHTML=metric('Original inwarded',n(sum(batches,'original'))+' pcs','Accepted into sample batches')+metric('Available',n(sum(batches,'available'))+' pcs','Can be allocated')+metric('Reserved',n(sum(batches,'reserved'))+' pcs','Already committed')+metric('Delivered',n(sum(batches,'delivered'))+' pcs','Not current inventory');
+$('stockRows').innerHTML=batches.map(function(b){var v=b.original-b.available-b.reserved-b.delivered;return '<tr><td>'+b.id+'</td><td>'+b.product+'</td><td>'+n(b.original)+'</td><td>'+n(b.available)+'</td><td>'+n(b.reserved)+'</td><td>'+n(b.delivered)+'</td><td>'+tag(v?'MISMATCH':'BALANCED')+'</td><td><button data-id="BATCH:'+b.id+'">View</button></td></tr>'}).join('');
+}
+function alertsPage(){$('alertsRows').innerHTML=problems().map(function(p){return '<div class="alert '+(p.type==='red'?'red':p.type==='ok'?'green':'')+'"><div><b>'+safe(p.heading)+'</b><p>'+safe(p.detail)+'</p></div><button class="btn alt" data-page="'+p.page+'">Inspect</button></div>'}).join('')}
+function render(){overview();salesPage();poPage();inwardPage();stockPage();alertsPage()}
+function goto(p){document.querySelectorAll('.page').forEach(function(x){x.classList.toggle('active',x.id==='page-'+p)});document.querySelectorAll('[data-page]').forEach(function(x){x.classList.toggle('active',x.dataset.page===p)});$('crumb').textContent={overview:'Overview',sales:'Sales',po:'Purchase orders',inward:'Inwarding',stock:'Stock',alerts:'Alerts'}[p];render();window.scrollTo({top:0,behavior:'smooth'})}
+function detail(key){var values=key.split(':'),type=values[0],id=values[1],r=(type==='SALE'?sales:type==='PO'?pos:type==='IN'?inward:batches).find(function(x){return x.id===id});if(!r)return;
+$('detailTitle').textContent=id;
+var pairs=Object.entries(r).map(function(k){return [k[0],k[0]==='gmv'||k[0]==='rate'?inr(k[1]):String(k[1]) ]});
+$('detailBody').innerHTML='<span class="pill orange">READ-ONLY EXAMPLE</span>'+pairs.map(function(p){return '<div class="item"><span>'+safe(p[0])+'</span><b>'+safe(p[1])+'</b></div>'}).join('')+'<div class="notice">This demonstration is not connected to production. Real records require restricted Admin authentication and audit references.</div>';
+$('overlay').classList.add('on');$('overlay').setAttribute('aria-hidden','false')}
+function close(){$('overlay').classList.remove('on');$('overlay').setAttribute('aria-hidden','true')}
+function toast(s){$('toast').textContent=s;$('toast').classList.add('on');clearTimeout(timeout);timeout=setTimeout(function(){$('toast').classList.remove('on')},2600)}
+document.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;if(b.dataset.page){goto(b.dataset.page);return}if(b.dataset.id){detail(b.dataset.id);return}if(b.dataset.poFilter){poFilter=b.dataset.poFilter;poPage();return}});
+$('range').onchange=function(){filter=this.value;render();toast('Sample sales filter applied; this is not live data.')};
+$('channel').onchange=function(){channel=this.value;salesPage()};
+$('refresh').onclick=function(){render();toast('Sample dashboard refreshed; no backend connected.')};
+$('close').onclick=close;$('dismiss').onclick=close;$('overlay').onclick=function(e){if(e.target===$('overlay'))close()};document.addEventListener('keydown',function(e){if(e.key==='Escape')close()});
+render();
+})();
+</script></body></html>
