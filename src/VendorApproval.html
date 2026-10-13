@@ -55,7 +55,6 @@ async function login(){
   try{
     await call('adminLogin',[E,P]);
     $('login').classList.add('hidden');$('app').classList.remove('hidden');
-    try{await call('repairVendorOnboardingV934',[E,P,'ONB-260911170045-XT67']);}catch(repairError){}
     await Promise.all([loadPending(),loadRewards()]);
   }catch(e){msg(e.message)}finally{b.disabled=false;b.textContent='Login'}
 }
