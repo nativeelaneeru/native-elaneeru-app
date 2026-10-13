@@ -155,11 +155,12 @@ function neShadowInstallTriggerV1011_() {
   var c=neShadowSecretFreeStatusV1011_();
   if(!c.enabled||!c.serviceKeyConfigured)
     throw new Error('Enable mirror and configure its private server-side key first');
-  var fn='neShadowTickV1011_';
+  var fn='neShadowTickV1011';
   ScriptApp.getProjectTriggers().forEach(function(trigger) {
     if(trigger.getHandlerFunction()===fn) ScriptApp.deleteTrigger(trigger);
   });
-  ScriptApp.newTrigger(fn).timeBased().everyMinutes(5).create();
+  var created=ScriptApp.newTrigger(fn).timeBased().everyMinutes(5).create();
+  PropertiesService.getScriptProperties().setProperty('NE_SHADOW_TRIGGER_UID',String(created.getUniqueId()));
   return {installed:true,frequencyMinutes:5,source:'Sheets',destination:'Supabase shadow'};
 }
 
@@ -167,4 +168,45 @@ function neShadowInstallTriggerV1011_() {
 function neShadowPauseV1011_() {
   PropertiesService.getScriptProperties().setProperty('NE_SHADOW_ENABLED','false');
   return {enabled:false,existingDataPreserved:true};
+}
+
+/** Prevent arbitrary public HtmlService callers from managing the shadow sync.
+ * The live Apps Script Web App allows anonymous use; only a script-owner
+ * execution with a nonblank matching active user may enter these admin calls.
+ */
+function neShadowOwnerOnlyV1011_() {
+  var active=String(Session.getActiveUser().getEmail()||'').toLowerCase().trim();
+  var effective=String(Session.getEffectiveUser().getEmail()||'').toLowerCase().trim();
+  if(!active || !effective || active!==effective)
+    throw new Error('Owner-only operation. Run from the Apps Script editor.');
+}
+
+/** Trigger event entrypoint. Google Apps Script clock triggers carry a triggerUid.
+ * A manually-invoked or anonymous google.script.run call is rejected. */
+function neShadowTickV1011(e) {
+  var trusted=PropertiesService.getScriptProperties().getProperty('NE_SHADOW_TRIGGER_UID');
+  var supplied=e && e.triggerUid ? String(e.triggerUid) : '';
+  if(!trusted || supplied!==String(trusted))
+    throw new Error('Verified installable trigger required');
+  return neShadowTickV1011_();
+}
+
+/** Owner-only actions executable from Apps Script editor; require owner identity.
+ * Do not reveal the service-role key, trigger UID, or record payloads.
+ */
+function neShadowAdminStatusV1011() {
+  neShadowOwnerOnlyV1011_();
+  return neShadowSecretFreeStatusV1011_();
+}
+function neShadowAdminTestV1011() {
+  neShadowOwnerOnlyV1011_();
+  return neShadowTickV1011_();
+}
+function neShadowAdminInstallV1011() {
+  neShadowOwnerOnlyV1011_();
+  return neShadowInstallTriggerV1011_();
+}
+function neShadowAdminPauseV1011() {
+  neShadowOwnerOnlyV1011_();
+  return neShadowPauseV1011_();
 }
