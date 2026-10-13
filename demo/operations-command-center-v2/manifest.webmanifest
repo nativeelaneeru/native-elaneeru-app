@@ -1,0 +1,35 @@
+{
+  "id": "./?app=ne-ops-control-tower-v2-demo",
+  "name": "Native Elaneeru — Operations Control Tower V2 (Demo)",
+  "short_name": "NE Ops Demo",
+  "description": "Sample-only internal sales, PO, inwarding, inventory, delivery and action dashboard. No real operations data.",
+  "start_url": "./?installed=1",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7f3",
+  "theme_color": "#103f35",
+  "lang": "en-IN",
+  "categories": [
+    "business"
+  ],
+  "icons": [
+    {
+      "src": "../../b2b/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../../b2b/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../../b2b/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
