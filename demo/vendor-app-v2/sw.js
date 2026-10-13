@@ -1,5 +1,5 @@
 // Isolated Native Elaneeru Business V2 DEMO app shell — not used by production PWAs.
-const CACHE_NAME = 'ne-business-v2-demo-shell-20261013-a';
+const CACHE_NAME = 'ne-business-v2-demo-shell-20261014-b';
 const LOCAL_SHELL = ['./', './index.html', './manifest.webmanifest'];
 const BRAND_ASSETS = ['../../b2b/icons/icon-192.png', '../../b2b/icons/icon-512.png'];
 self.addEventListener('install',event => {
