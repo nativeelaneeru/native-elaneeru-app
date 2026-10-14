@@ -122,6 +122,9 @@ jobs:
       - name: Verify purchase order receiving and idempotency
         run: node scripts/purchase-order-receiving-regression.mjs
 
+      - name: Verify authenticated Live Ops V2 dashboard and financial safeguards
+        run: node scripts/admin-real-ops-v1020-regression.mjs
+
       - name: Configure clasp project
         shell: bash
         run: |
