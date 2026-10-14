@@ -14,6 +14,9 @@ function neOps1020Number_(v){const n=Number(String(v==null?'':v).replace(/[₹,]
 function neOps1020Status_(v){return neOps1020Text_(v).toUpperCase().replace(/\s+/g,' ');}
 function neOps1020Date_(v){
   if(!v)return '';
+  // Historic orders use Indian DD/MM/YYYY display values; JavaScript Date interprets these as US MM/DD/YYYY.
+  const indian=typeof v==='string'&&v.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s|$)/);
+  if(indian){const day=Number(indian[1]),month=Number(indian[2]),year=Number(indian[3]);if(day>=1&&day<=31&&month>=1&&month<=12)return year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');}
   if(typeof v964DateKey_==='function')return v964DateKey_(v);
   if(Object.prototype.toString.call(v)==='[object Date]'&&!isNaN(v.getTime()))return Utilities.formatDate(v,'Asia/Kolkata','yyyy-MM-dd');
   const s=neOps1020Text_(v),match=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
