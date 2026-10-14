@@ -1,0 +1,151 @@
+<style>
+#neLiveOpsPanel{padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;max-width:none!important;font-family:Arial,sans-serif}
+#neLiveOpsPanel *,#neLiveOpsPanel *:before,#neLiveOpsPanel *:after{box-sizing:border-box}
+#neLiveOpsPanel .neHead{border-radius:20px;background:radial-gradient(circle at 90% 30%,#76b9824a,transparent 50%),linear-gradient(112deg,#113b2f,#236a47);color:#fff;padding:25px;display:flex;justify-content:space-between;align-items:center;gap:14px;margin:0 0 15px}
+#neLiveOpsPanel .neHead h2{font-size:27px;letter-spacing:-.045em;margin:6px 0}
+#neLiveOpsPanel .neHead p{font-size:12px;color:#d1e7d3;margin:0;line-height:1.6}
+#neLiveOpsPanel .neBadge{background:#e8f3e5;color:#287347;border-radius:100px;padding:6px 10px;font-size:10px;font-weight:800;display:inline-flex;align-items:center;gap:6px}
+#neLiveOpsPanel .neBadge.warn{background:#fff1d9;color:#91661d}
+#neLiveOpsPanel .neBadge.red{background:#fbe9e4;color:#ab5048}
+#neLiveOpsPanel .neStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin-bottom:16px}
+#neLiveOpsPanel .neStat,#neLiveOpsPanel .neCard{background:#fff;border:1px solid #e0e9e0;border-radius:16px;box-shadow:0 9px 28px #12411c0b}
+#neLiveOpsPanel .neStat{padding:17px}
+#neLiveOpsPanel .neStat small{font-size:10px;text-transform:uppercase;font-weight:800;letter-spacing:.04em;color:#8c9c90}
+#neLiveOpsPanel .neStat strong{display:block;font-size:26px;font-weight:900;letter-spacing:-.055em;margin:10px 0 3px;color:#213f2e}
+#neLiveOpsPanel .neStat span{font-size:10px;color:#81968a;line-height:1.5}
+#neLiveOpsPanel .neWarn{padding:13px 16px;background:#fff5e4;border:1px solid #eddec3;border-radius:13px;color:#846525;font-size:12px;line-height:1.7;margin:13px 0}
+#neLiveOpsPanel .neTabs{display:flex;gap:8px;flex-wrap:wrap;padding:1px 0 14px}
+#neLiveOpsPanel .neTabs button{background:#fff!important;color:#4f725a!important;border:1px solid #e0e9df!important;padding:10px 12px;border-radius:10px;font-size:12px}
+#neLiveOpsPanel .neTabs button.active{background:#176341!important;color:white!important;border-color:#176341!important}
+#neLiveOpsPanel .neCard{padding:17px;margin-bottom:14px}
+#neLiveOpsPanel .neCard h3{font-size:16px;letter-spacing:-.03em;margin:0 0 12px}
+#neLiveOpsPanel .neTwo{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+#neLiveOpsPanel .neTableWrap{width:100%;overflow:auto}
+#neLiveOpsPanel table{width:100%;min-width:690px;border-collapse:collapse}
+#neLiveOpsPanel td,#neLiveOpsPanel th{text-align:left;border-bottom:1px solid #edf2ec;padding:11px;white-space:nowrap;font-size:12px}
+#neLiveOpsPanel th{font-size:10px;text-transform:uppercase;background:#f9fbf8;color:#8e9e90;letter-spacing:.05em}
+#neLiveOpsPanel .neText{color:#819489;font-size:12px;line-height:1.6}
+#neLiveOpsPanel .neAlerts{display:grid;gap:9px}
+#neLiveOpsPanel .neAlert{border-left:4px solid #dda74d;background:#fff;border-top:1px solid #e9efe8;border-right:1px solid #e9efe8;border-bottom:1px solid #e9efe8;border-radius:11px;padding:14px 15px}
+#neLiveOpsPanel .neAlert.CRITICAL{border-left-color:#c76c5c}
+#neLiveOpsPanel .neAlert b{font-size:12px;display:block;margin-bottom:5px}
+#neLiveOpsPanel .neAlert p{font-size:11px;color:#788b7e;line-height:1.65}
+#neLiveOpsPanel .neAlert button{margin-top:8px;padding:7px 10px;border-radius:8px;font-size:11px;background:#ebf5ed!important;color:#22653f!important}
+#neLiveOpsPanel .neInline{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+#neLiveOpsPanel .neInline h3{margin:0}
+#neLiveOpsPanel .neField{font-size:12px;background:#fff;border:1px solid #dce7d9;padding:9px 12px;border-radius:9px;color:#22452e;min-width:150px}
+#neLiveOpsPanel .neBar{height:11px;border-radius:99px;background:#e7f0e4;display:flex;overflow:hidden;margin:15px 0}
+#neLiveOpsPanel .neBar span{height:100%;display:block}
+#neLiveOpsPanel .neBreak{display:flex;justify-content:space-between;border-bottom:1px solid #ebf0ea;padding:10px 0;font-size:12px}
+#neLiveOpsPanel .neBreak span{color:#809385}
+#neLiveOpsPanel .neBreak strong{color:#244e34}
+#neLiveOpsPanel .neRowBtn{background:#f0f7ef!important;color:#286943!important;padding:7px 10px;border-radius:9px;font-size:11px}
+#neLiveOpsPanel .neNote{color:#8a9b8d;font-size:11px;line-height:1.6}
+#neLiveOpsPanel .neError{padding:16px;border-radius:12px;background:#fff0ed;color:#a03a26;border:1px solid #f3d2c7}
+#neLiveOpsPanel .neEmpty{padding:26px;color:#839689;text-align:center;font-size:12px}
+@media(max-width:880px){#neLiveOpsPanel .neStats{grid-template-columns:repeat(2,1fr)}#neLiveOpsPanel .neTwo{grid-template-columns:1fr}}
+@media(max-width:530px){#neLiveOpsPanel .neHead{padding:18px;flex-direction:column;align-items:flex-start}#neLiveOpsPanel .neHead h2{font-size:23px}#neLiveOpsPanel .neStat{padding:12px}#neLiveOpsPanel .neStat strong{font-size:21px}}
+</style>
+<script>
+(function(){
+'use strict';
+if(window.NE_ADMIN_LIVE_OPS_V1020)return;window.NE_ADMIN_LIVE_OPS_V1020=true;
+var state=null,view='overview',orderFilter='ALL',bootAttempt=0;
+function $(id){return document.getElementById(id)}
+function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function fmt(x){return Number(x||0).toLocaleString('en-IN',{maximumFractionDigits:0})}
+function money(x){return '₹'+fmt(x)}
+function badge(value){var s=String(value||'').toUpperCase(),cl=/CRITICAL|DUPLICATE|REVIEW|MISMATCH/.test(s)?'red':/ISSUED|PARTIALLY|PENDING|UNKNOWN|UNVERIFIED|ACTION/.test(s)?'warn':'';return '<span class="neBadge '+cl+'">'+esc(value)+'</span>'}
+function stat(label,value,desc){return '<div class="neStat"><small>'+esc(label)+'</small><strong>'+esc(value)+'</strong><span>'+esc(desc)+'</span></div>'}
+function row(label,value){return '<div class="neBreak"><span>'+esc(label)+'</span><strong>'+esc(value)+'</strong></div>'}
+function auth(){try{return typeof E!=='undefined'&&typeof P!=='undefined'&&!!E&&!!P}catch(e){return false}}
+function rpc(){return new Promise(function(resolve,reject){if(!auth())return reject(new Error('Sign in to Admin before viewing real data.'));if(!window.google||!google.script||!google.script.run)return reject(new Error('This view requires the Admin Apps Script app.'));google.script.run.withSuccessHandler(resolve).withFailureHandler(function(e){reject(new Error(e&&e.message?e.message:String(e)))}).getNEOpsLiveSnapshotV1020(E,P)})}
+function renderOverview(d){
+ var m=d.metrics,po=d.procurement||{},inv=d.inventory||{},issues=d.issues||[];
+ var total=m.recordedBatchOriginal||1,av=m.recordedAvailable||0,rs=m.recordedReserved||0,dl=m.recordedDelivered||0;
+ return '<div class="neStats">'+
+ stat('Booked GMV · provisional',money(m.bookedGmv),'Excludes duplicates, demo and high-value anomalies')+
+ stat('Delivered GMV',money(m.deliveredGmv),'Fulfillment only · not cash collected')+
+ stat('Recorded available',fmt(av)+' pcs','UNVERIFIED until stock ledger reconciles')+
+ stat('PO units outstanding',fmt(m.poPending)+' pcs','PO items ordered less recorded receipts')+'</div>'+
+ '<div class="neTwo"><div class="neCard"><h3>Purchase order → inwarding → stock</h3>'+
+ row('PO quantities ordered',fmt(m.poOrdered)+' pcs')+
+ row('Received against PO items',fmt(m.poReceived)+' pcs')+
+ row('Inventory ledger entries',fmt(m.ledgerMovements))+
+ row('Batch available · recorded',fmt(av)+' pcs')+
+ row('Reserved · recorded',fmt(rs)+' pcs')+
+ row('Delivered · recorded',fmt(dl)+' pcs')+
+ '<div class="neBar"><span style="width:'+(av/total*100)+'%;background:#57a874"></span><span style="width:'+(rs/total*100)+'%;background:#e5b167"></span><span style="width:'+(dl/total*100)+'%;background:#8ea8c3"></span></div>'+
+ '<p class="neNote">No physical stock confirmation is inferred. Recorded batches and PO receipts may not reconcile.</p></div>'+
+ '<div class="neCard"><h3>Priority actions</h3><div class="neAlerts">'+issues.slice(0,6).map(function(x){return '<div class="neAlert '+esc(x.severity)+'"><b>'+esc(x.title)+'</b><p>'+esc(x.detail)+'</p><button data-live-page="'+esc(x.target)+'">Investigate →</button></div>'}).join('')+'</div></div></div>';
+}
+function renderSales(d){
+ var m=d.metrics,orders=(d.sales.orders||[]).filter(function(x){return orderFilter==='ALL'||x.channel===orderFilter});
+ return '<div class="neStats">'+stat('Provisional booked',money(m.bookedGmv),'Recorded non-cancelled eligible orders')+stat('Delivered',money(m.deliveredGmv),'Delivery != paid receipt')+stat('B2B bookings',money(m.bookedB2B),'Excludes suspicious orders')+stat('B2C bookings',money(m.bookedB2C),'Excludes duplicate order IDs')+'</div>'+
+ '<div class="neTwo"><div class="neCard"><h3>Data quality</h3>'+row('Duplicate order rows',fmt(m.duplicateRows))+row('Duplicated IDs',fmt(m.duplicateIds))+row('High-value orders under review',fmt(m.highValueOrders))+row('Test/demo orders excluded',fmt(m.demoRowsExcluded))+row('Missing/zero value rows',fmt(m.invalidValues))+'</div>'+
+ '<div class="neCard"><h3>Collections verification</h3>'+row('Orders pending payment',fmt(m.pendingPaymentCount))+row('Orders marked paid',fmt(m.paidStatusCount))+row('B2B collection ledger rows',fmt(m.collectionsCount))+row('Payment ledger rows',fmt(m.paymentLedgerCount))+'<p class="neNote">Payment flags, not cash reconciliation. Investigate ledger gaps.</p></div></div>'+
+ '<div class="neCard"><div class="neInline"><h3>Latest order records</h3><select class="neField" id="neLiveChannel"><option value="ALL"'+(orderFilter==='ALL'?' selected':'')+'>B2B + B2C</option><option value="B2B"'+(orderFilter==='B2B'?' selected':'')+'>B2B only</option><option value="B2C"'+(orderFilter==='B2C'?' selected':'')+'>B2C only</option></select></div>'+
+ '<div class="neTableWrap"><table><thead><tr><th>Order ID</th><th>Channel</th><th>Date</th><th>Status</th><th>GMV</th><th>Payment</th><th>Verification</th></tr></thead><tbody>'+
+ (orders.length?orders.map(function(o){return '<tr><td>'+esc(o.id)+'</td><td>'+esc(o.channel)+'</td><td>'+esc(o.date)+'</td><td>'+badge(o.status)+'</td><td>'+money(o.amount)+'</td><td>'+badge(o.paymentStatus)+'</td><td>'+badge(o.flag||'Provisional')+'</td></tr>'}).join(''):'<tr><td colspan="7" class="neEmpty">No records.</td></tr>')+'</tbody></table></div></div>';
+}
+function renderPO(d){
+ var m=d.metrics,pos=d.procurement.orders||[];
+ return '<div class="neStats">'+stat('Total purchase orders',fmt(m.poCount),'Recorded PO headers')+stat('PO gross value',money(m.poValue),'Supplier agreement total · not received')+stat('Units awaiting receipt',fmt(m.poPending)+' pcs','Outstanding against items')+stat('Missing expected dates',fmt(m.poMissingExpected),'Overdue check unavailable')+'</div>'+
+ '<div class="neCard"><div class="neInline"><h3>PO status & receiving</h3><span class="neBadge warn">READ ONLY</span></div><div class="neTableWrap"><table><thead><tr><th>Purchase order</th><th>Supplier</th><th>Expected date</th><th>Status</th><th>Ordered</th><th>Received</th><th>Outstanding</th><th>Value</th></tr></thead><tbody>'+
+ (pos.length?pos.map(function(p){return '<tr><td>'+esc(p.id)+'</td><td>'+esc(p.supplier)+'</td><td>'+esc(p.expected||'Missing')+'</td><td>'+badge(p.status)+'</td><td>'+fmt(p.ordered)+'</td><td>'+fmt(p.received)+'</td><td>'+fmt(p.pending)+'</td><td>'+money(p.value)+'</td></tr>'}).join(''):'<tr><td colspan="8" class="neEmpty">No purchase orders recorded.</td></tr>')+'</tbody></table></div></div><div class="neWarn">Received quantities are read from PO item records. No batch quantity is counted as a PO receipt without a matching receiving event.</div>';
+}
+function renderInward(d){
+ var m=d.metrics,ins=d.inward||{},events=ins.events||[];
+ return '<div class="neStats">'+stat('Recorded inbound movements',fmt(m.ledgerInEvents),'Only events in Inventory_Ledger')+stat('Ledger qty in',fmt(m.ledgerQtyIn)+' pcs','Recorded movement quantity')+stat('Ledger qty out',fmt(m.ledgerQtyOut)+' pcs','Recorded movement quantity')+stat('PO items received',fmt(m.poReceived)+' pcs','Separate PO record; no auto-match')+'</div>'+
+ '<div class="neWarn"><strong>Verification:</strong> '+esc(d.verification.inward)+' — recorded PO receipts alone do not prove physical inwarding or quality sign-off.</div>'+
+ '<div class="neCard"><h3>Inventory inwarding and movement events</h3><div class="neTableWrap"><table><thead><tr><th>Movement</th><th>Date</th><th>Type</th><th>Product</th><th>Batch</th><th>Qty in</th><th>Qty out</th><th>Reference</th></tr></thead><tbody>'+
+ (events.length?events.map(function(e){return '<tr><td>'+esc(e.id)+'</td><td>'+esc(e.date)+'</td><td>'+badge(e.type)+'</td><td>'+esc(e.product)+'</td><td>'+esc(e.batch)+'</td><td>'+fmt(e.inQty)+'</td><td>'+fmt(e.outQty)+'</td><td>'+esc(e.reference)+'</td></tr>'}).join(''):'<tr><td colspan="8" class="neEmpty">No movements in Inventory_Ledger. Inwarding cannot currently be verified from this source.</td></tr>')+'</tbody></table></div></div>';
+}
+function renderStock(d){
+ var m=d.metrics,batches=(d.inventory&&d.inventory.batches)||[],total=m.recordedBatchOriginal||1;
+ return '<div class="neStats">'+stat('Original · recorded',fmt(m.recordedBatchOriginal)+' pcs','Batch history')+stat('Available · recorded',fmt(m.recordedAvailable)+' pcs','NOT physically reconciled')+stat('Reserved · recorded',fmt(m.recordedReserved)+' pcs','Committed stock')+stat('Delivered · recorded',fmt(m.recordedDelivered)+' pcs','Posted on batches')+'</div>'+
+ '<div class="neCard"><h3>Batch stock distribution</h3><div class="neBar"><span style="width:'+(m.recordedAvailable/total*100)+'%;background:#5ba976"></span><span style="width:'+(m.recordedReserved/total*100)+'%;background:#e3b16a"></span><span style="width:'+(m.recordedDelivered/total*100)+'%;background:#8aaac4"></span></div>'+row('Batch quantity variance',fmt(m.batchMismatch)+' batches')+row('Demo batches excluded',fmt(m.demoBatchesExcluded))+row('Stock ledger movements',fmt(m.ledgerMovements))+'</div>'+
+ '<div class="neWarn"><strong>Stock quality gate:</strong> '+esc(d.verification.stock)+'. Displayed quantities are as recorded in the batch sheet, not physically verified available-to-sell inventory.</div>'+
+ '<div class="neCard"><h3>Recorded barcode batches</h3><div class="neTableWrap"><table><thead><tr><th>Batch</th><th>Product</th><th>Created</th><th>Original</th><th>Available</th><th>Reserved</th><th>Delivered</th><th>Variance</th><th>Status</th></tr></thead><tbody>'+
+ (batches.length?batches.map(function(b){return '<tr><td>'+esc(b.id)+'</td><td>'+esc(b.product||b.productId)+'</td><td>'+esc(b.created)+'</td><td>'+fmt(b.original)+'</td><td>'+fmt(b.available)+'</td><td>'+fmt(b.reserved)+'</td><td>'+fmt(b.delivered)+'</td><td>'+badge(b.variance===0?'Balanced':'Mismatch '+fmt(b.variance))+'</td><td>'+badge(b.status)+'</td></tr>'}).join(''):'<tr><td colspan="9" class="neEmpty">No batches recorded.</td></tr>')+'</tbody></table></div></div>';
+}
+function renderDelivery(d){
+ var x=d.delivery||{};return '<div class="neStats">'+stat('Routes',fmt(x.routeCount),'Existing Delivery_Routes')+stat('Active routes',fmt(x.activeRoutes),'Recorded ACTIVE status')+stat('Stops',fmt(x.stopCount),'Route_Stops rows')+stat('Stops still pending',fmt(x.pendingStops),'PENDING/ASSIGNED/CHECKED_IN')+'</div><div class="neCard"><h3>Delivery verification</h3><p class="neText">This first live connection shows verified route counts and pending stop counts only. Real driver status, scan-completed quantity, GPS proof, requested delivery slots and COD settlement must be reconciled against actual operational events before building ETA promises.</p><button class="neRowBtn" id="neLiveGotoOrders">View order status →</button></div>';
+}
+function renderAlerts(d){
+ return '<div class="neCard"><h3>Operational exceptions</h3><div class="neAlerts">'+((d.issues||[]).map(function(i){return '<div class="neAlert '+esc(i.severity)+'"><b>'+esc(i.title)+' '+badge(i.severity)+'</b><p>'+esc(i.detail)+'</p><button data-live-page="'+esc(i.target)+'">Open '+esc(i.target)+' →</button></div>'}).join('')||'<p class="neText">No warnings returned. Reconciliation verification still required.</p>')+'</div></div>';
+}
+function render(){
+ var p=$('neLiveOpsPanel');if(!p||!state)return;
+ var d=state,m=d.metrics||{};
+ var labels={overview:'Overview',sales:'Sales',po:'Purchase orders',inward:'Inwarding',stock:'Stock',delivery:'Fulfillment',alerts:'Alerts'};
+ var panels={overview:renderOverview,sales:renderSales,po:renderPO,inward:renderInward,stock:renderStock,delivery:renderDelivery,alerts:renderAlerts};
+ p.innerHTML='<div class="neHead"><div><span style="font-size:10px;letter-spacing:.14em;color:#d8efc7;font-weight:800">REAL OPERATIONS · ADMIN ONLY</span><h2>NE Operations Control Tower</h2><p>Read-only sales, PO, inwarding, recorded stock and fulfillment status</p><p style="margin-top:6px">Snapshot '+esc(d.generatedAt)+' · V'+esc(d.version)+'</p></div><button class="neRowBtn" id="neLiveRefresh">↻ Refresh live data</button></div>'+
+ '<div class="neWarn"><strong>Data confidence:</strong> Sales figures are provisional. Stock is '+esc(d.verification.stock)+'. Payment verification is '+esc(d.verification.finance)+'.</div>'+
+ '<div class="neTabs">'+Object.keys(labels).map(function(k){return '<button data-live-page="'+k+'" class="'+(view===k?'active':'')+'">'+labels[k]+(k==='alerts'?' ('+(d.issues||[]).length+')':'')+'</button>'}).join('')+'</div>'+
+ (panels[view]||renderOverview)(d);
+ var channel=$('neLiveChannel');if(channel)channel.onchange=function(){orderFilter=this.value;render()};
+ var rf=$('neLiveRefresh');if(rf)rf.onclick=function(){load(true)};
+ var orders=$('neLiveGotoOrders');if(orders)orders.onclick=function(){view='sales';render()};
+}
+function load(force){
+ var p=$('neLiveOpsPanel');if(!p)return;
+ if(!auth()){p.innerHTML='<div class="neError">Sign in to Admin to view live operational records.</div>';return;}
+ if(state&&!force){render();return;}
+ p.innerHTML='<div class="neCard"><h3>Loading authenticated operations snapshot…</h3><p class="neText">Reading the live operations workbook. No edits are being made.</p></div>';
+ rpc().then(function(d){if(!d||d.success!==true||d.live!==true||d.readOnly!==true)throw new Error('Dashboard did not return a verified read-only payload.');state=d;render();}).catch(function(err){p.innerHTML='<div class="neError"><b>Live dashboard could not load.</b><p>'+esc(err&&err.message||err)+'</p></div>';});
+}
+function init(){
+ var dash=$('dash'),tabs=dash&&dash.querySelector('.tabs');if(!tabs){if(bootAttempt++<100)setTimeout(init,100);return;}
+ if($('tNERealOps'))return;
+ var btn=document.createElement('button');btn.id='tNERealOps';btn.textContent='📊 Live Ops V2';btn.onclick=function(){var p=$('neLiveOpsPanel');if(p)p.classList.remove('hidden');load(false)};
+ tabs.insertBefore(btn,tabs.firstChild);
+ var p=document.createElement('div');p.id='neLiveOpsPanel';p.className='card hidden';p.innerHTML='<div class="neCard"><p class="neText">Sign in and open Live Ops V2 to load your operational records.</p></div>';
+ tabs.insertAdjacentElement('afterend',p);
+ p.addEventListener('click',function(e){var b=e.target&&e.target.closest&&e.target.closest('[data-live-page]');if(!b||!p.contains(b))return;view=b.dataset.livePage||'overview';if(!['overview','sales','po','inward','stock','delivery','alerts'].includes(view))view='overview';render()});
+}
+window.loadNEOpsLiveV1020=load;
+window.neOpsLiveUiHealthV1020=function(){return {ok:true,version:'10.2.0',adminOnly:true,readOnly:true}};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+</script>
