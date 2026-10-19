@@ -41,14 +41,14 @@ function placeB2BOrderV904Core_(token,p){
     req.forEach(i=>{
       const x=products.find(z=>z.productId===s_(i.productId));
       if(!x)throw new Error('Product unavailable.');
-      const q=Math.floor(n_(i.quantity));
-      if(q<x.moq)throw new Error(x.productName+' MOQ is '+x.moq);
+      const q=Number(i.quantity);
+      if(!Number.isSafeInteger(q)||q<Math.max(200,Number(x.moq)||0))throw new Error(x.productName+' minimum order is '+Math.max(200,Number(x.moq)||0));
       if(x.qtyStep>1&&q%x.qtyStep)throw new Error(x.productName+' quantity must be in steps of '+x.qtyStep);
       const line=q*x.price;subtotal+=line;lines.push({x,q,line});
     });
 
     const pay=s_(p.paymentType||v['Payment Type']).toUpperCase();
-    if(!['COD','CREDIT'].includes(pay))throw new Error('Unsupported payment type.');
+    if(pay!=='COD')throw new Error('Select Cash on Delivery for new orders.');
     if(pay==='CREDIT'&&s_(v['Payment Type']).toUpperCase()!=='CREDIT')throw new Error('Credit payment is not enabled for this account.');
 
     const deliveryCharge=0,total=subtotal+deliveryCharge,credit=pay==='CREDIT'?total:0;
