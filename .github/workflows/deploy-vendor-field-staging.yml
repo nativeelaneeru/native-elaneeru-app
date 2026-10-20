@@ -1,9 +1,5 @@
 name: Deploy Vendor Field Visits Test URL
 on:
-  push:
-    branches: [feature/vendor-field-gps-orders-staging-20261020]
-    paths:
-      - '.github/workflows/deploy-vendor-field-staging.yml'
   workflow_dispatch:
 
 permissions:
@@ -48,6 +44,7 @@ jobs:
       - name: Create separate versioned staging web-app deployment
         shell: bash
         run: |
+          set -o pipefail
           npx clasp deploy -d "Field Visits staging $GITHUB_SHA" | tee /tmp/field-staging-deploy.txt
           cat /tmp/field-staging-deploy.txt >> "$GITHUB_STEP_SUMMARY"
           echo "Production deployment ID was not modified." >> "$GITHUB_STEP_SUMMARY"
