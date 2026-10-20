@@ -1,0 +1,53 @@
+name: Deploy Vendor Field Visits Test URL
+on:
+  push:
+    branches: [feature/vendor-field-gps-orders-staging-20261020]
+    paths:
+      - '.github/workflows/deploy-vendor-field-staging.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-elaneeru-apps-script-production
+  cancel-in-progress: false
+
+jobs:
+  staging-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: npm install
+      - name: Run field order safety tests
+        run: node --test scripts/field-orders-auth-regression.mjs
+      - name: Verify target Apps Script project
+        shell: bash
+        env:
+          SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+        run: |
+          if [ "$SCRIPT_ID" != "11pbzSvFXH7pvZxyn2My26w3l6UwETdYtUaeuTrZZZYsjPyI8x1suSQeP" ]; then
+            echo "The configured script ID does not match the owner-provided project. Stopping." >&2
+            exit 1
+          fi
+          printf '{"scriptId":"%s","rootDir":"src"}\n' "$SCRIPT_ID" > .clasp.json
+      - name: Configure Google authorization
+        shell: bash
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          test -n "$CLASPRC_JSON"
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+      - name: Push project development source (not production deployment)
+        run: npx clasp push -f
+      - name: Create separate versioned staging web-app deployment
+        shell: bash
+        run: |
+          npx clasp deploy -d "Field Visits staging $GITHUB_SHA" | tee /tmp/field-staging-deploy.txt
+          cat /tmp/field-staging-deploy.txt >> "$GITHUB_STEP_SUMMARY"
+          echo "Production deployment ID was not modified." >> "$GITHUB_STEP_SUMMARY"
