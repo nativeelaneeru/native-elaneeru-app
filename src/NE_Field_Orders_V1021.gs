@@ -14,10 +14,10 @@ function getFieldOrderOptionsV1021(token,onboardingId){
   if(!v||!active_(v.Status))throw new Error('Active B2B vendor required.');
   const products=b2bProducts_(s_(v['Vendor ID']));
   const now=Date.now();
-  const slots=neAutoContext_().slots.filter(function(r){
+  const slots=rows_(NE_AUTO.slots).filter(function(r){
     return neAutoEnabled_(r.Enabled)&&s_(r.Area).toLowerCase()===s_(v.Area).toLowerCase()&&neAutoTime_(r['Cutoff At'])>now&&neAutoTime_(neAutoDate_(r['Delivery Date'])+'T00:00:00+05:30')>now;
   }).map(function(r){return {date:neAutoDate_(r['Delivery Date']),slot:s_(r.Slot)};});
-  return {vendorId:s_(v['Vendor ID']),products:products.map(function(p){return {productId:p.productId,productName:p.productName,price:p.price,moq:Math.max(200,Number(p.moq)||0),qtyStep:p.qtyStep||1};}),slots:slots};
+  return {vendorId:s_(v['Vendor ID']),products:products.map(function(p){return {productId:p.productId,productName:p.productName,price:p.price,moq:Math.max(200,Number(p.moq)||0),qtyStep:p.qtyStep||1};}),slots:slots,deliverySchedulingReady:slots.length>0};
 }
 function submitFieldOrderV1021(token,p){
   const actor=v949VendorSessionStaff_(token,true).user;
@@ -28,6 +28,7 @@ function submitFieldOrderV1021(token,p){
   if(!v||!active_(v.Status))throw new Error('Vendor B2B account is not active.');
   if(!/^[A-Za-z0-9._:-]{12,80}$/.test(s_(p.clientRequestId)))throw new Error('Unique order request ID required.');
   const qty=Number(p.quantity);if(!Number.isSafeInteger(qty)||qty<=0)throw new Error('Invalid quantity.');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s_(p.deliveryDate))||!s_(p.deliverySlot))throw new Error('Select an available delivery date and slot.');
   if(s_(p.paymentType||'COD').toUpperCase()!=='COD')throw new Error('Field orders are COD only.');
   // Do not trust client-provided vendor identity, pricing, address or payment changes.
   const order={items:[{productId:s_(p.productId),quantity:qty}],deliveryDate:s_(p.deliveryDate),
