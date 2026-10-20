@@ -1,0 +1,35 @@
+name: Verify Apps Script HEAD Readback
+on:
+  push:
+    branches: [feature/vendor-field-gps-orders-staging-20261020]
+    paths:
+      - '.github/workflows/verify-field-head-readback.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  readback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - run: npm install
+      - name: Verify project and authenticate
+        env:
+          SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          test "$SCRIPT_ID" = "11pbzSvFXH7pvZxyn2My26w3l6UwETdYtUaeuTrZZZYsjPyI8x1suSQeP"
+          printf '{"scriptId":"%s","rootDir":"src"}\n' "$SCRIPT_ID" > .clasp.json
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+      - name: Pull and inspect Google Apps Script project HEAD (read only)
+        run: |
+          npx clasp pull
+          grep -q 'function submitFieldOrderV1021' src/NE_Field_Orders_V1021.gs
+          grep -q 'function getFieldVendorsV1021' src/NE_Field_Orders_V1021.gs
+          grep -q 'VendorFieldVisitsV1020' src/ZZZZZZZZZZZZZZZZZZZZZZZ_V912_FinalRoutes.gs
+          grep -q 'let VENDORS=\[\]' src/VendorFieldVisitsV1020.html
+          echo "PASS: Apps Script HEAD has authenticated field orders and no embedded vendor snapshot."
