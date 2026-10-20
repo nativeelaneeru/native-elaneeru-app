@@ -18,7 +18,7 @@ function getB2BWorkspaceV5(token){
     data.deliverySlots=ctx.slots.filter(r=>neAutoEnabled_(r.Enabled)&&s_(r.Area).toLowerCase()===area&&neAutoTime_(r['Cutoff At'])>now&&neAutoTime_(neAutoDate_(r['Delivery Date'])+'T00:00:00+05:30')>now).map(r=>{
       const date=neAutoDate_(r['Delivery Date']),slot=s_(r.Slot);
       const booked=ctx.orders.filter(o=>neAutoDate_(o['Delivery Date'])===date&&s_(o['Delivery Slot'])===slot&&s_(o.Area).toLowerCase()===area&&!['CANCELLED','REJECTED'].includes(s_(o.Status).toUpperCase())).reduce((a,o)=>a+ctx.items.filter(i=>s_(i['Order ID'])===s_(o['Order ID'])).reduce((n,i)=>n+n_(i.Quantity),0),0);
-      return {date,slot,availableQty:Math.max(0,n_(r['Capacity Qty'])-booked),cutoffAt:fmtDT_(r['Cutoff At'])};
+      return {date,slot,availableQty:Math.max(0,n_(r['Capacity Qty'])-booked),cutoffAt:new Date(neAutoTime_(r['Cutoff At'])).toISOString()};
     }).filter(r=>r.availableQty>0).sort((a,b)=>a.date.localeCompare(b.date)||a.slot.localeCompare(b.slot));
   }catch(e){data.schedulePending=true;}
   data.vendor.pincode=s_(v.Pincode);data.version='5-live-1600';return data;
