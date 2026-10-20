@@ -125,6 +125,9 @@ jobs:
       - name: Verify authenticated Live Ops V2 dashboard and financial safeguards
         run: node scripts/admin-real-ops-v1020-regression.mjs
 
+      - name: Verify authenticated field orders before publishing
+        run: node --test scripts/field-orders-auth-regression.mjs
+
       - name: Configure clasp project
         shell: bash
         run: |

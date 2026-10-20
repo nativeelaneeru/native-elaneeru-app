@@ -1,0 +1,27 @@
+name: Field Order Staging Safety Checks
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/VendorFieldVisitsV1020.html'
+      - 'src/NE_Field_Orders_V1021.gs'
+      - 'src/ZZZZZZZZZZZZZ_V904_B2BOrder.gs'
+      - 'scripts/field-orders-auth-regression.mjs'
+      - '.github/workflows/field-orders-staging-check.yml'
+  push:
+    branches: [feature/vendor-field-gps-orders-staging-20261020]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate authenticated field orders (synthetic in-memory data)
+        run: node --test scripts/field-orders-auth-regression.mjs

@@ -1,0 +1,33 @@
+name: Inspect Apps Script Deployment Slots
+on:
+  push:
+    branches: [feature/vendor-field-gps-orders-staging-20261020]
+    paths:
+      - '.github/workflows/inspect-appsscript-deployments.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: npm install
+      - name: Ensure correct project
+        env:
+          SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+        run: |
+          test "$SCRIPT_ID" = "11pbzSvFXH7pvZxyn2My26w3l6UwETdYtUaeuTrZZZYsjPyI8x1suSQeP"
+          printf '{"scriptId":"%s","rootDir":"src"}\n' "$SCRIPT_ID" > .clasp.json
+      - name: Configure Google authorization
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+      - name: List versioned deployments (read only)
+        run: npx clasp deployments

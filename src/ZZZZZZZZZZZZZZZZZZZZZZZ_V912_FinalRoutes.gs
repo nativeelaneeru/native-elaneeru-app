@@ -63,6 +63,8 @@ function doGetV912_(e){
     try{out.append(HtmlService.createTemplateFromFile('VendorOnboardingFixV918').evaluate().getContent());}catch(err){}
     try{out.append(HtmlService.createTemplateFromFile('VendorOnboardingCaptureV952').evaluate().getContent());}catch(err){}
     try{out.append(HtmlService.createTemplateFromFile('VendorProspectsV965').evaluate().getContent());}catch(err){}
+    // Staging-only field visits and local order-draft tools.
+    try{out.append(HtmlService.createTemplateFromFile('VendorFieldVisitsV1020').evaluate().getContent());}catch(err){}
   }
   if(page==='Delivery'){
     try{out.append(HtmlService.createTemplateFromFile('DeliveryFixV918').evaluate().getContent());}catch(err){}
