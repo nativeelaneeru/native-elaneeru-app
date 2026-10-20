@@ -7,4 +7,16 @@ const data=ctx.getB2BWorkspaceV5('V1');assert.equal(data.orders.length,1);assert
 ctx.saveB2BProfileV5('V1',{ownerName:'Updated',mobile:'wrong',creditLimit:99999,vendorId:'V2'});assert.equal(tables.vendors[0]['Owner Name'],'Updated');assert.equal(tables.vendors[0].Mobile,undefined);assert.equal(tables.vendors[0]['Credit Limit'],undefined);assert.equal(tables.vendors[1]['Owner Name'],undefined);
 assert.throws(()=>ctx.saveB2BProfileV5('V1',{mobile:'wrong'}),/No profile/);assert.throws(()=>ctx.saveB2BProfileV5('V1',{address:'x'.repeat(501)}),/maximum/);assert.equal(ctx.neV5SheetText_('=IMPORTXML("x")',100),'\'=IMPORTXML("x")');
 const p={clientRequestId:'request-1234567890',category:'Delivery Issue',title:'Late delivery',details:'Please help'};const a=ctx.createB2BTicketV5('V1',p),b=ctx.createB2BTicketV5('V1',p);assert.equal(a.ticketId,b.ticketId);assert.equal(tables.support.length,1);assert.equal(ctx.getB2BTicketsV5('V2').length,0);assert.equal(ctx.getB2BTicketsV5('V1').length,1);ctx.createB2BTicketV5('V2',p);assert.equal(tables.support.length,2);assert.throws(()=>ctx.createB2BTicketV5('V1',{...p,clientRequestId:'another-1234567890',category:'admin'}),/valid category/);
+// A published slot must expose an unambiguous ISO cutoff, never a locale-only display date.
+const later=new Date(Date.now()+4*86400000),cutoff=new Date(Date.now()+2*86400000);
+tables.vendors[0].Area='Koramangala';
+ctx.neAutoDate_=v=>v instanceof Date?v.toISOString().slice(0,10):String(v||'');
+ctx.neAutoTime_=v=>v instanceof Date?v.getTime():Date.parse(v);
+ctx.neAutoEnabled_=v=>v===true||String(v).toUpperCase()==='TRUE';
+ctx.neAutoContext_=()=>({slots:[{'Delivery Date':later,'Cutoff At':cutoff,Slot:'AM',Area:'Koramangala','Capacity Qty':400,Enabled:true}],orders:[],items:[]});
+const available=ctx.getB2BWorkspaceV5('V1').deliverySlots;
+assert.equal(available.length,1);
+assert.equal(available[0].availableQty,400);
+assert.match(available[0].cutoffAt,/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/);
+assert.equal(Date.parse(available[0].cutoffAt),cutoff.getTime());
 console.log('PASS: vendor ownership, historical item prices, private payment filtering, profile field restrictions, input bounds, formula escaping, support persistence and idempotent retries');
