@@ -25,10 +25,10 @@ function findExistingB2BRequestV904_(vendorId,requestId){
   return null;
 }
 
-function placeB2BOrderV904Core_(token,p){
+function placeB2BOrderV904Core_(token,p,staffResolvedVendor){
   p=p||{};
   return lockRun_(()=>{
-    const v=vendor_(token),vid=s_(v['Vendor ID']),requestId=b2bRequestIdV904_(p);
+    const v=staffResolvedVendor||vendor_(token),vid=s_(v['Vendor ID']),requestId=b2bRequestIdV904_(p);
     if(requestId){
       const prior=findExistingB2BRequestV904_(vid,requestId);
       if(prior)return {success:true,orderId:prior.orderId,amount:prior.amount,status:prior.status,duplicatePrevented:true,clientRequestId:requestId};
@@ -72,7 +72,7 @@ function placeB2BOrderV904Core_(token,p){
       Latitude:v.Latitude,Longitude:v.Longitude,'Payment Type':pay,'Payment Status':pay==='CREDIT'?'DUE':'PENDING',
       Subtotal:subtotal,Discount:0,'Total Amount':total,'Outstanding Before':n_(v.Outstanding),'Outstanding After':after,
       Status:'Order Received','Delivery OTP Hash':hashV8_(otp),'Delivery Slot':s_(p.deliverySlot),'Priority':'NORMAL',
-      'Delivery Date':s_(p.deliveryDate),'Source':requestId?'B2B WEB|REQ:'+requestId:'B2B WEB','Created At':now_(),'Updated At':now_()
+      'Delivery Date':s_(p.deliveryDate),'Source':(staffResolvedVendor?'FIELD STAFF':'B2B WEB')+(requestId?'|REQ:'+requestId:''),'Created At':now_(),'Updated At':now_()
     });
 
     lines.forEach(z=>append_(V8.SHEETS.B2B_ORDER_ITEMS,{
