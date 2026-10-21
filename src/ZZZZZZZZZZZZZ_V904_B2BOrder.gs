@@ -88,6 +88,6 @@ function getB2BOrderEngineHealthV904(){
   const canonical=src.indexOf('placeB2BOrderV904Core_')>=0;
   const idempotent=src.indexOf('findExistingB2BRequestV904_')>=0;
   const serverCharge=src.indexOf('const deliveryCharge=0')>=0;
-  return {ok:canonical&&idempotent&&serverCharge,version:'9.0.4',canonicalOrderHandler:canonical,idempotency:idempotent,serverControlledDeliveryCharge:serverCharge,autoAcceptanceHook:src.indexOf('neAutoPrepare_')>=0&&src.indexOf('neAutoCommit_')>=0};
+  return {ok:canonical&&idempotent&&serverCharge,version:'9.0.4',canonicalOrderHandler:canonical,idempotency:idempotent,serverControlledDeliveryCharge:serverCharge,manualDeliveryScheduling:src.indexOf('const accepted={autoAccepted:false')>=0};
 }
 
