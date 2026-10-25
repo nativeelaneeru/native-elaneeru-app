@@ -125,6 +125,9 @@ jobs:
       - name: Verify authenticated Live Ops V2 dashboard and financial safeguards
         run: node scripts/admin-real-ops-v1020-regression.mjs
 
+      - name: Verify admin credential guard (security)
+        run: node scripts/admin-credential-guard-regression.mjs
+
       - name: Configure clasp project
         shell: bash
         run: |

@@ -130,6 +130,23 @@ jobs:
           console.log('Live public page availability passed. No login/order/payment action was performed.');
           NODE
 
+      # The same gates the deploy workflows run, so a PR cannot look green while main's deploy is blocked.
+      - name: Admin credential guard (security)
+        run: node scripts/admin-credential-guard-regression.mjs
+
+      - name: B2B v5 frontend rules (MOQ 200, COD only, no slot selection)
+        env:
+          NE_V5_APP: b2b/app-v5.js
+        run: |
+          node scripts/b2b-v5-frontend-regression.cjs
+          node scripts/b2b-v5-browser-fixture.mjs
+
+      - name: B2B auto-acceptance (system-assigned slot)
+        env:
+          NE_AUTO_SOURCE: src/NE_B2B_Auto_Accept_V967.gs
+          NE_AUTO_CORE: src/ZZZZZZZZZZZZZ_V904_B2BOrder.gs
+        run: node scripts/b2b-auto-accept-regression.cjs
+
       - name: Safety summary
         run: |
           echo 'SAFE ALL-APP AUDIT PASSED'

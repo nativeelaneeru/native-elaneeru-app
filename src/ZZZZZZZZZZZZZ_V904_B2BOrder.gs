@@ -54,16 +54,9 @@ function placeB2BOrderV904Core_(token,p){
     const deliveryCharge=0,total=subtotal+deliveryCharge,credit=pay==='CREDIT'?total:0;
     if(credit>Math.max(0,n_(v['Credit Limit'])-n_(v.Outstanding)))throw new Error('Available credit is insufficient.');
 
-    // Validate the requested slot under the same order lock before writing any order rows.
-    const date=s_(p.deliveryDate),slot=s_(p.deliverySlot),area=s_(v.Area).toLowerCase();
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!slot||!area)throw new Error('Select a valid delivery date and slot.');
-    const deliveryCtx=neAutoContext_(),now=Date.now();
-    const matching=deliveryCtx.slots.filter(r=>neAutoEnabled_(r.Enabled)&&neAutoDate_(r['Delivery Date'])===date&&s_(r.Slot)===slot&&s_(r.Area).toLowerCase()===area);
-    if(matching.length!==1)throw new Error('Selected delivery slot is unavailable.');
-    const selected=matching[0],capacity=Number(selected['Capacity Qty']);
-    if(!Number.isSafeInteger(capacity)||capacity<=0||!(neAutoTime_(selected['Cutoff At'])>now)||!(neAutoTime_(date+'T00:00:00+05:30')>now))throw new Error('Selected delivery slot has closed.');
-    const booked=deliveryCtx.orders.filter(o=>neAutoDate_(o['Delivery Date'])===date&&s_(o['Delivery Slot'])===slot&&s_(o.Area).toLowerCase()===area&&!['CANCELLED','REJECTED'].includes(s_(o.Status).toUpperCase())).reduce((sum,o)=>sum+deliveryCtx.items.filter(i=>s_(i['Order ID'])===s_(o['Order ID'])).reduce((n,i)=>n+Number(i.Quantity||0),0),0);
-    if(booked+lines.reduce((n,i)=>n+i.q,0)>capacity)throw new Error('Selected slot is full. Refresh and choose another.');
+    // No customer slot selection (owner decision). Auto-accept still runs: when no slot is sent,
+    // the planner assigns the earliest open published slot with capacity, or leaves the order
+    // as 'Order Received' for operations to schedule manually.
     const acceptance=neAutoPrepare_(v,lines,p);
     const id=id_('NEB2B-'),otp=String(Math.floor(1000+Math.random()*9000)),after=n_(v.Outstanding)+credit;
     append_(V8.SHEETS.B2B_ORDERS,{
