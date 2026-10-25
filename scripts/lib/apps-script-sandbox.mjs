@@ -61,6 +61,7 @@ class Spreadsheet {
 export function createSandbox({ files, root }) {
   const ss = new Spreadsheet();
   const props = new Map();
+  const cache = new Map(); // CacheService (TTL not simulated)
   const templates = [];
   const htmlOut = name => {
     const o = { name, content: '', setTitle() { return o; }, setXFrameOptionsMode() { return o; }, addMetaTag() { return o; },
@@ -84,7 +85,10 @@ export function createSandbox({ files, root }) {
       setProperties: o => { Object.entries(o).forEach(([k, v]) => props.set(k, String(v))); },
       getProperties: () => Object.fromEntries(props), deleteProperty: k => props.delete(k)
     }) },
-    CacheService: { getScriptCache: () => ({ get: () => null, put() {}, remove() {}, getAll: () => ({}), putAll() {} }) },
+    CacheService: { getScriptCache: () => ({
+      get: k => (cache.has(k) ? cache.get(k) : null), put: (k, v) => { cache.set(k, String(v)); }, remove: k => { cache.delete(k); },
+      getAll: ks => Object.fromEntries(ks.filter(k => cache.has(k)).map(k => [k, cache.get(k)])), putAll: o => Object.entries(o).forEach(([k, v]) => cache.set(k, String(v))), removeAll: ks => ks.forEach(k => cache.delete(k))
+    }) },
     HtmlService: {
       createTemplateFromFile: name => ({ evaluate: () => { templates.push(name); return htmlOut(name); } }),
       createHtmlOutput: c => htmlOut(String(c || '')), createHtmlOutputFromFile: name => htmlOut(name),
@@ -102,5 +106,5 @@ export function createSandbox({ files, root }) {
   // in project file order. Separate vm scripts in one context reproduce that, including
   // the repo's "later file reassigns an earlier function" override pattern.
   for (const f of files) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
-  return { ctx, ss, props, templates, call: (fn, ...args) => vm.runInContext(fn, ctx)(...args) };
+  return { ctx, ss, props, cache, templates, call: (fn, ...args) => vm.runInContext(fn, ctx)(...args) };
 }

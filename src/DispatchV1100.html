@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Native Elaneeru Route Dispatcher</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--g:#073d2b;--g2:#0b6b45;--mint:#e9f6ee;--ink:#14231b;--mute:#5f7268;--line:#dfe9e3;--bg:#f4f7f5;--amber:#b86e00;--amberbg:#fff4e0;--red:#b3261e;--redbg:#fdeceb;--blue:#1f5fbf}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+header{position:sticky;top:0;z-index:1000;background:var(--g);color:#fff;padding:11px 18px;display:flex;align-items:center;gap:14px}
+header b{font-size:16px}header small{display:block;color:#bfe0cd;font-size:11px}.grow{flex:1}
+nav button{background:transparent;color:#d8eee2;border:0;font:inherit;font-weight:700;padding:8px 10px;border-radius:9px;cursor:pointer}nav button.on{background:#ffffff22;color:#fff}
+main{max-width:1180px;margin:0 auto;padding:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin:0 0 14px}
+h2{font-size:17px;margin:0 0 10px}h3{font-size:14px;margin:0 0 8px}
+label{display:block;font-size:12px;font-weight:600;color:var(--mute);margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;padding:10px;border:1px solid #c9d8cf;border-radius:10px;background:#fff}
+input[type=checkbox]{width:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:42px;border-radius:10px;font:inherit;font-weight:700;padding:0 14px;cursor:pointer;border:1px solid #b9d3c3;background:#fff;color:var(--g)}
+.btn.p{background:var(--g2);color:#fff;border:0}.btn:disabled{opacity:.45;cursor:not-allowed}.btn.sm{min-height:32px;padding:0 10px;font-size:12px}
+.grid{display:grid;gap:14px}.g2{grid-template-columns:1fr 1fr}.g4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:860px){.g2,.g4{grid-template-columns:1fr}}
+.kpi{background:var(--mint);border-radius:11px;padding:10px}.kpi b{display:block;font-size:18px}.kpi span{font-size:11px;color:var(--mute)}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.03em}
+.scroll{overflow:auto;max-height:420px}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:#eef2f0;color:var(--mute);white-space:nowrap}
+.pill.IN_PROGRESS,.pill.CLOSED,.pill.DELIVERED,.pill.VALIDATED{background:var(--mint);color:var(--g2)}.pill.LOADED,.pill.PARTIAL,.pill.CLOSED_PENDING_REVIEW,.pill.PROOF_SUBMITTED,.pill.DRIVER_ENTERED{background:var(--amberbg);color:var(--amber)}.pill.FAILED,.pill.CANCELLED,.pill.REJECTED{background:var(--redbg);color:var(--red)}.pill.ARRIVED{background:#e6eefb;color:var(--blue)}
+.err{background:var(--redbg);color:var(--red);border-radius:10px;padding:10px;margin:8px 0}.warn{background:var(--amberbg);color:#6b4100;border-radius:10px;padding:10px;margin:8px 0}.ok{background:var(--mint);color:var(--g);border-radius:10px;padding:10px;margin:8px 0}
+.mute{color:var(--mute);font-size:12px}
+#map{height:380px;border-radius:12px;border:1px solid var(--line)}
+.bar{height:7px;background:#e3ece6;border-radius:9px;overflow:hidden;margin:6px 0}.bar i{display:block;height:100%;background:var(--g2)}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#14231b;color:#fff;padding:11px 16px;border-radius:11px;max-width:92%;display:none;z-index:2000}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<header><div><b>Route Dispatcher</b><small>Native Elaneeru operations</small></div><nav id="nav" class="hidden"><button id="t-import" class="on" onclick="tab('import')">Import &amp; assign</button><button id="t-board" onclick="tab('board')">Live board</button></nav><span class="grow"></span><span id="who" class="mute" style="color:#bfe0cd"></span></header>
+<main id="app"></main>
+<div id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const S={auth:null,drivers:[],hub:null,today:'',rows:[],fileName:'',preview:null,map:null,layer:null,board:null};
+const $=id=>document.getElementById(id);
+const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const inr=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2});const num=n=>Number(n||0).toLocaleString('en-IN');
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',4500)}
+function api(fn,...a){return new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(e=>{const m=String(e&&e.message||e);if(/Session expired/.test(m)&&S.auth){S.auth=null;$('nav').classList.add('hidden');renderLogin();toast('Session expired. Sign in again.')}rej(new Error(m))})[fn](...a))}
+async function busy(btn,work){if(btn){btn.disabled=true;btn.dataset.t=btn.textContent;btn.textContent='Working…'}try{return await work()}catch(e){toast(e.message);throw e}finally{if(btn&&btn.isConnected){btn.disabled=false;btn.textContent=btn.dataset.t}}}
+
+function renderLogin(){
+  $('app').innerHTML=`<div class="card" style="max-width:440px;margin:30px auto"><h2>Dispatcher sign in</h2>
+  <label for="mode">Sign in as</label><select id="mode" onchange="$('ae').classList.toggle('hidden',this.value!=='admin');$('am').classList.toggle('hidden',this.value==='admin')"><option value="ops">Operations staff (mobile + PIN)</option><option value="admin">Admin (email + PIN)</option></select>
+  <div id="am"><label for="lm">Mobile</label><input id="lm" inputmode="numeric" maxlength="10" autocomplete="username"></div>
+  <div id="ae" class="hidden"><label for="le">Admin email</label><input id="le" type="email" autocomplete="username"></div>
+  <label for="lp">PIN</label><input id="lp" type="password" inputmode="numeric" autocomplete="current-password">
+  <div style="height:14px"></div><button class="btn p" style="width:100%" onclick="login(this)">Sign in</button></div>`;
+}
+async function login(btn){
+  const admin=$('mode').value==='admin',auth=admin?{email:$('le').value.trim(),pin:$('lp').value.trim()}:{mobile:$('lm').value.trim(),pin:$('lp').value.trim()};
+  const r=await busy(btn,()=>api('d1DispatcherLoginV1100',auth)).catch(()=>null);if(!r)return;
+  S.auth=r.token;S.hub=r.hub;S.today=r.today;S.drivers=await api('d1ListDriversV1100',S.auth).catch(()=>[]);// PIN is not kept; calls use the session token
+  $('nav').classList.remove('hidden');$('who').textContent=r.role==='ADMIN'?'Admin':'Operations';tab('import');
+}
+function tab(t){$('t-import').classList.toggle('on',t==='import');$('t-board').classList.toggle('on',t==='board');t==='import'?renderImport():renderBoard()}
+
+/* ---------------- import ---------------- */
+function tomorrow(){const d=new Date(S.today+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10)} // UTC arithmetic: correct in IST browsers
+function renderImport(){
+  S.map=null;
+  $('app').innerHTML=`<div class="grid g2"><div class="card"><h2>1 · Upload customers</h2>
+  <p class="mute">Excel (.xlsx/.xls) or CSV. Required columns: <b>Customer Name | Phone Number | Lat | Long</b>. Optional: Quantity, Amount, Address, Order ID, Delivery Date, Time Window, Priority, Remarks. Format the phone column as <b>Text</b>.</p>
+  <input type="file" id="file" accept=".xlsx,.xls,.csv" onchange="readFile(this.files[0])"><div style="height:8px"></div><button class="btn sm" onclick="template()">Download template</button><div id="fileMsg"></div></div>
+  <div class="card"><h2>2 · Assign</h2><div class="grid g2" style="gap:10px">
+  <div><label for="drv">Driver</label><select id="drv" onchange="preview()"><option value="">Select driver…</option>${S.drivers.map(d=>`<option value="${esc(d.driverId)}">${esc(d.name)} · ${esc(d.vehicle)} · cap ${num(d.capacity)}</option>`).join('')}</select></div>
+  <div><label for="date">Delivery date</label><input id="date" type="date" min="${S.today}" value="${tomorrow()}" onchange="preview()"></div></div>
+  <label for="seq">Stop order</label><select id="seq"><option value="FILE">Keep file order (manual)</option><option value="NEAREST">Nearest next stop from hub (straight line, not road-optimised)</option></select>
+  <label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" id="partial"> Import only valid rows and skip rows with errors</label>
+  <div style="height:10px"></div><button class="btn p" id="createBtn" style="width:100%" disabled onclick="createRoute(this)">Create route &amp; publish to driver</button>
+  <p class="mute">Distance and ETA are not shown: no road-routing service is connected yet.</p></div></div>
+  <div id="pv"></div>`;
+}
+function template(){const csv='Customer Name,Phone Number,Lat,Long,Quantity,Amount,Address,Order ID,Time Window,Priority,Remarks\nSample Shop,9876543210,12.9000,77.6000,200,8600,Sample area,,Morning,,\n';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='driver-one-route-template.csv';a.click()}
+function readFile(f){
+  if(!f)return;if(f.size>2*1024*1024)return toast('File is larger than 2 MB.');
+  const rd=new FileReader();rd.onload=e=>{try{
+    const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellFormula:true,cellDates:false});
+    const ws=wb.Sheets[wb.SheetNames[0]];if(!ws||!ws['!ref'])throw new Error('The first sheet is empty.');
+    const rg=XLSX.utils.decode_range(ws['!ref']),headers=[];
+    for(let c=rg.s.c;c<=rg.e.c;c++){const cell=ws[XLSX.utils.encode_cell({r:rg.s.r,c})];headers.push(cell?String(cell.v).trim():'')}
+    const rows=[];
+    for(let r=rg.s.r+1;r<=rg.e.r;r++){const o={__row:r+1,__formulaFields:[]};let any=false;
+      headers.forEach((h,i)=>{if(!h)return;const cell=ws[XLSX.utils.encode_cell({r,c:rg.s.c+i})];if(!cell)return;o[h]=cell.v;if(cell.f)o.__formulaFields.push(h);if(String(cell.v).trim())any=true});
+      if(any)rows.push(o)}
+    if(rows.length>200)throw new Error('Maximum 200 rows per import. This file has '+rows.length+'.');
+    S.rows=rows;S.fileName=f.name;$('fileMsg').innerHTML=`<div class="ok">${esc(f.name)}: ${rows.length} row(s) read. Validating…</div>`;preview();
+  }catch(err){S.rows=[];$('fileMsg').innerHTML=`<div class="err">${esc(err.message)}</div>`}};
+  rd.readAsArrayBuffer(f);
+}
+async function preview(){
+  if(!S.rows.length)return;$('createBtn').disabled=true;
+  const p=await api('d1PreviewImportV1100',S.auth,{rows:S.rows,routeDate:$('date').value,driverId:$('drv').value}).catch(e=>{toast(e.message);return null});if(!p)return;
+  S.preview=p;const t=p.totals,fileErr=p.errors.filter(e=>!e.row);
+  $('fileMsg').innerHTML=`<div class="${t.rejected||fileErr.length?'warn':'ok'}">${t.accepted} valid · ${t.rejected} with errors · ${p.warnings.length} warning(s)</div>`;
+  const byRow={};p.errors.forEach(e=>(byRow[e.row]=byRow[e.row]||[]).push(e.field+': '+e.message));
+  const warnRow={};p.warnings.forEach(w=>(warnRow[w.row]=warnRow[w.row]||[]).push(w.message));
+  $('pv').innerHTML=`<div class="card"><div class="grid g4"><div class="kpi"><b>${t.accepted}</b><span>Valid stops</span></div><div class="kpi"><b>${num(t.qty)}</b><span>Coconuts</span></div><div class="kpi"><b>${inr(t.amount)}</b><span>Order value</span></div><div class="kpi"><b>${p.driver?num(p.driver.capacity):'—'}</b><span>Vehicle capacity (recorded)</span></div></div>
+  ${fileErr.map(e=>`<div class="err">${esc(e.message)}</div>`).join('')}</div>
+  <div class="grid g2"><div class="card"><h3>Map preview</h3><div id="map"></div><p class="mute">Green = valid · square = hub. Straight-line view only.</p></div>
+  <div class="card"><h3>Rows</h3><div class="scroll"><table><thead><tr><th>Row</th><th>Customer</th><th>Qty</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+  ${p.accepted.map(a=>`<tr><td>${a.row}</td><td><b>${esc(a.name)}</b><div class="mute">${esc(a.phone)} · ${a.lat.toFixed(5)}, ${a.lng.toFixed(5)}</div></td><td>${num(a.qty)}</td><td>${inr(a.amount)}</td><td>${warnRow[a.row]?`<span class="pill CLOSED_PENDING_REVIEW">check</span><div class="mute">${warnRow[a.row].map(esc).join('<br>')}</div>`:'<span class="pill VALIDATED">ok</span>'}</td></tr>`).join('')}
+  ${Object.keys(byRow).filter(r=>r!=='0').map(r=>`<tr><td>${r}</td><td colspan="3" style="color:var(--red)">${byRow[r].map(esc).join('<br>')}</td><td><span class="pill REJECTED">error</span></td></tr>`).join('')}
+  </tbody></table></div></div></div>`;
+  drawMap(p.accepted);
+  const canCreate=t.accepted>0&&$('drv').value&&!fileErr.length&&(!t.rejected||$('partial').checked);
+  $('createBtn').disabled=!canCreate;$('partial').onchange=()=>preview();
+}
+function drawMap(points){
+  if(typeof L==='undefined'){$('map').innerHTML='<p class="mute" style="padding:12px">Map library unavailable.</p>';return}
+  const m=L.map('map');L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(m);
+  const pts=[[S.hub.lat,S.hub.lng]];L.rectangle([[S.hub.lat-.0015,S.hub.lng-.0015],[S.hub.lat+.0015,S.hub.lng+.0015]],{color:'#073d2b',weight:2}).addTo(m).bindTooltip('Hub');
+  points.forEach((a,i)=>{pts.push([a.lat,a.lng]);L.circleMarker([a.lat,a.lng],{radius:8,color:'#0b6b45',fillColor:'#2fa36b',fillOpacity:.85}).addTo(m).bindTooltip((i+1)+'. '+a.name+' · '+a.qty)});
+  m.fitBounds(pts,{padding:[30,30]});
+}
+async function createRoute(btn){
+  const p=S.preview;if(!p)return;
+  if(!confirm(`Create route for ${p.totals.accepted} stops (${num(p.totals.qty)} coconuts) and publish it to the driver?`))return;
+  const r=await busy(btn,()=>api('d1CreateRouteV1100',S.auth,{rows:S.rows,routeDate:$('date').value,driverId:$('drv').value,sequenceMode:$('seq').value,acceptPartial:$('partial').checked,fileName:S.fileName})).catch(()=>null);if(!r)return;
+  $('pv').innerHTML=`<div class="card"><div class="ok"><b>${r.duplicate?'This file was already imported':'Route created'}: ${esc(r.routeId)}</b><br>${r.duplicate?'No duplicate stops were created.':`${r.stops} stops · ${num(r.totalQty)} coconuts · ${inr(r.totalAmount)} · order: ${esc(r.sequenceSource.replace(/_/g,' ').toLowerCase())}${r.skippedRows.length?' · skipped rows '+r.skippedRows.join(', '):''}`}</div><p class="mute">The driver sees this trip after signing in to Driver One on their phone.</p><button class="btn" onclick="tab('board')">Open live board</button></div>`;
+  S.rows=[];S.preview=null;$('createBtn').disabled=true;$('file').value='';
+}
+
+/* ---------------- board ---------------- */
+async function renderBoard(day){
+  day=day||($('bd')&&$('bd').value)||S.today;
+  $('app').innerHTML=`<div class="card"><div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap"><div><label for="bd">Date</label><input id="bd" type="date" value="${esc(day)}" onchange="renderBoard(this.value)"></div><button class="btn" onclick="renderBoard()">Refresh</button></div></div><div id="routes"><div class="card mute">Loading…</div></div><div id="detail"></div>`;
+  const b=await api('d1GetDispatchBoardV1100',S.auth,day).catch(e=>{toast(e.message);return null});if(!b)return;S.board=b;
+  if(!b.routes.length){$('routes').innerHTML='<div class="card mute">No Driver One routes for this date.</div>';return}
+  const sum=k=>b.routes.reduce((a,r)=>a+Number(r.totals[k]||0),0);
+  $('routes').innerHTML=`<div class="card"><div class="grid g4"><div class="kpi"><b>${b.routes.length}</b><span>Routes</span></div><div class="kpi"><b>${num(sum('deliveredQty'))} / ${num(sum('loadedQty'))}</b><span>Delivered / loaded</span></div><div class="kpi"><b>${inr(sum('cash'))}</b><span>Cash entered (unverified)</span></div><div class="kpi"><b>${inr(sum('upi'))}</b><span>UPI submitted (unverified)</span></div></div></div>`+
+  b.routes.map(r=>{const t=r.totals,pct=t.stops?Math.round(t.resolved/t.stops*100):0;return `<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap"><div><h3>${esc(r.driverName)} · ${esc(r.vehicle)}</h3><div class="mute">${esc(r.routeId)} · ${esc(r.sequenceSource.replace(/_/g,' ').toLowerCase())}</div></div><span class="pill ${esc(r.status)}">${esc(r.status.replace(/_/g,' '))}</span></div>
+  <div class="bar"><i style="width:${pct}%"></i></div><div class="mute">${t.resolved}/${t.stops} stops · ${t.failed} failed · delivered ${num(t.deliveredQty)} of ${num(t.requiredQty)} ordered · loaded ${num(t.loadedQty)} · cash ${inr(t.cash)} · UPI ${inr(t.upi)} · collectible ${inr(t.collectible)}${r.live?` · last GPS ${esc(r.live.at)} (±${num(r.live.accuracy)} m)`:''}</div>
+  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn sm" onclick="detail('${esc(r.routeId)}')">Details</button>${r.status==='PLANNED'?`<button class="btn sm" onclick="cancelRoute('${esc(r.routeId)}')">Cancel route</button>`:''}${r.ledgerPending?`<button class="btn sm p" onclick="postLedger('${esc(r.routeId)}')">Post to stock ledger</button>`:''}${r.status==='CLOSED_PENDING_REVIEW'?`<button class="btn sm p" onclick="review('${esc(r.routeId)}',true)">Approve variance</button><button class="btn sm" onclick="review('${esc(r.routeId)}',false)">Reopen</button>`:''}</div></div>`}).join('');
+}
+async function detail(id){
+  const r=await api('d1GetRouteDetailAdminV1100',S.auth,id).catch(e=>{toast(e.message);return null});if(!r)return;
+  const c=r.close;
+  $('detail').innerHTML=`<div class="card"><h2>${esc(r.routeId)}</h2>${c?`<div class="${c.stockVariance||c.cashVariance?'warn':'ok'}">Close: loaded ${num(c.loaded)} · delivered ${num(c.delivered)} · back to hub ${num(c.returnedToHub)} (expected ${num(c.expectedBackToHub)}, variance ${c.stockVariance}) · cash entered ${inr(c.cashCollected)} · handed over ${inr(c.cashHandedOver)} (variance ${inr(c.cashVariance)}) · UPI ${inr(c.upiSubmitted)}${c.remarks?'<br>Driver remarks: '+esc(c.remarks):''}</div>`:''}
+  <div class="scroll"><table><thead><tr><th>#</th><th>Customer</th><th>Ordered</th><th>Delivered</th><th>Status</th><th>Due / Cash / UPI</th></tr></thead><tbody>${r.stops.map(s=>`<tr><td>${s.sequence}</td><td><b>${esc(s.name)}</b><div class="mute">${esc(s.mobile)} · ${esc(s.address)}</div></td><td>${num(s.requiredQty)}</td><td>${num(s.deliveredQty)}${s.returnedQty?` <span class="mute">(ret ${num(s.returnedQty)})</span>`:''}</td><td><span class="pill ${esc(s.status)}">${esc(s.status)}</span>${s.failureReason?`<div class="mute">${esc(s.failureReason)}</div>`:''}</td><td>${inr(s.collectible)} / ${inr(s.collectedCash)} / ${inr(s.collectedUpi)}</td></tr>`).join('')}</tbody></table></div>
+  <h3 style="margin-top:14px">Collections</h3><div class="scroll"><table><thead><tr><th>When</th><th>Stop</th><th>Method</th><th>Amount</th><th>UPI ref</th><th>Status</th><th></th></tr></thead><tbody>${r.collections.map(x=>`<tr><td>${esc(x.enteredAt)}</td><td>${esc(x.stopId)}</td><td>${esc(x.method)}</td><td>${inr(x.amount)}</td><td>${esc(x.upiRef)}</td><td><span class="pill ${esc(x.status)}">${esc(x.status.replace(/_/g,' '))}</span></td><td>${['DRIVER_ENTERED','PROOF_SUBMITTED'].includes(x.status)?`<button class="btn sm" onclick="validate('${esc(x.collectionId)}','VALIDATED','${esc(id)}')">Verify</button> <button class="btn sm" onclick="validate('${esc(x.collectionId)}','REJECTED','${esc(id)}')">Reject</button>`:''}</td></tr>`).join('')||'<tr><td colspan="7" class="mute">None</td></tr>'}</tbody></table></div>
+  <h3 style="margin-top:14px">Event log</h3><div class="scroll"><table><thead><tr><th>When</th><th>Event</th><th>Stop</th><th>Qty</th><th>GPS</th></tr></thead><tbody>${r.events.map(e=>`<tr><td>${esc(e.at)}</td><td>${esc(e.type)}</td><td>${esc(e.stopId)}</td><td>${num(e.qty)}</td><td>${e.lat!=null?`<a href="https://www.google.com/maps?q=${e.lat},${e.lng}" target="_blank" rel="noopener">${e.lat.toFixed(5)}, ${e.lng.toFixed(5)}</a>`:'<span class="mute">—</span>'}</td></tr>`).join('')}</tbody></table></div></div>`;
+  $('detail').scrollIntoView({behavior:'smooth'});
+}
+async function review(id,approve){const notes=prompt(approve?'Approval notes (required):':'Reason for reopening (required):');if(!notes)return;await api('d1ReviewRouteV1100',S.auth,id,approve,notes).then(()=>toast('Saved.')).catch(e=>toast(e.message));renderBoard()}
+async function postLedger(id){await api('d1PostLedgerV1100',S.auth,id).then(x=>toast(x.rowsWritten+' ledger row(s) posted.')).catch(e=>toast(e.message));renderBoard()}
+async function cancelRoute(id){const reason=prompt('Cancellation reason (required):');if(!reason)return;await api('d1CancelRouteV1100',S.auth,id,reason).then(()=>toast('Route cancelled.')).catch(e=>toast(e.message));renderBoard()}
+async function validate(cid,decision,rid){const notes=decision==='REJECTED'?prompt('Reason for rejecting:'):'';if(decision==='REJECTED'&&!notes)return;await api('d1ValidateCollectionV1100',S.auth,cid,decision,notes||'').then(()=>toast('Saved.')).catch(e=>toast(e.message));detail(rid)}
+renderLogin();
+</script>
+</body>
+</html>
