@@ -1,0 +1,15 @@
+✓ Dispatcher signed in as OPERATIONS staff
+✓ Excel import: text phone, +91 phone, numeric phone accepted; missing-phone row rejected with row number; formula flagged
+✓ Route created and published: 3 stops, 450 coconuts, labelled straight-line (no KM/ETA)
+✓ Driver signed in on phone viewport and sees only the assigned trip
+✓ Load confirmed (450) and trip started
+✓ Stop 1 (E2E Shop South): delivered and cash recorded
+✓ Stop 2 (E2E Shop East): failed — Shop closed, no payment allowed
+✓ Stop 3 (E2E Shop North): delivered and cash recorded
+✓ No OTP prompt and no invoice/print control anywhere in Driver One
+✓ Trip closed with matching stock and cash
+✓ Browser GPS (granted) stored on all 3 check-ins with accuracy note
+✓ Dispatcher board shows events, failed stop reason and unverified cash
+✓ No page errors and no unexpected network calls
+
+Driver One V1100 browser E2E passed. Screenshots in test-results/.

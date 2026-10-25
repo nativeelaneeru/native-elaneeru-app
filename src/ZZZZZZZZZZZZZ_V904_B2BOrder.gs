@@ -54,9 +54,10 @@ function placeB2BOrderV904Core_(token,p){
     const deliveryCharge=0,total=subtotal+deliveryCharge,credit=pay==='CREDIT'?total:0;
     if(credit>Math.max(0,n_(v['Credit Limit'])-n_(v.Outstanding)))throw new Error('Available credit is insufficient.');
 
-    // Delivery is scheduled by operations after placement; no customer slot required.
-    // Keep stock/pricing checks and idempotent request processing intact.
-    const acceptance={accepted:false,reason:'DELIVERY_SCHEDULING_PENDING',allocations:[]};
+    // No customer slot selection (owner decision). Auto-accept still runs: when no slot is sent,
+    // the planner assigns the earliest open published slot with capacity, or leaves the order
+    // as 'Order Received' for operations to schedule manually.
+    const acceptance=neAutoPrepare_(v,lines,p);
     const id=id_('NEB2B-'),otp=String(Math.floor(1000+Math.random()*9000)),after=n_(v.Outstanding)+credit;
     append_(V8.SHEETS.B2B_ORDERS,{
       'Order ID':id,'Ordered At':now_(),'Vendor ID':vid,'Business Name':s_(v['Business Name']),'Owner Name':s_(v['Owner Name']),
