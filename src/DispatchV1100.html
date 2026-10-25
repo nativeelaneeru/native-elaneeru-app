@@ -47,7 +47,7 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const inr=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2});const num=n=>Number(n||0).toLocaleString('en-IN');
 function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',4500)}
-function api(fn,...a){return new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(new Error(e&&e.message||e)))[fn](...a))}
+function api(fn,...a){return new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(e=>{const m=String(e&&e.message||e);if(/Session expired/.test(m)&&S.auth){S.auth=null;$('nav').classList.add('hidden');renderLogin();toast('Session expired. Sign in again.')}rej(new Error(m))})[fn](...a))}
 async function busy(btn,work){if(btn){btn.disabled=true;btn.dataset.t=btn.textContent;btn.textContent='Working…'}try{return await work()}catch(e){toast(e.message);throw e}finally{if(btn&&btn.isConnected){btn.disabled=false;btn.textContent=btn.dataset.t}}}
 
 function renderLogin(){
@@ -61,7 +61,7 @@ function renderLogin(){
 async function login(btn){
   const admin=$('mode').value==='admin',auth=admin?{email:$('le').value.trim(),pin:$('lp').value.trim()}:{mobile:$('lm').value.trim(),pin:$('lp').value.trim()};
   const r=await busy(btn,()=>api('d1DispatcherLoginV1100',auth)).catch(()=>null);if(!r)return;
-  S.auth=auth;S.hub=r.hub;S.today=r.today;S.drivers=await api('d1ListDriversV1100',auth).catch(()=>[]);
+  S.auth=r.token;S.hub=r.hub;S.today=r.today;S.drivers=await api('d1ListDriversV1100',S.auth).catch(()=>[]);// PIN is not kept; calls use the session token
   $('nav').classList.remove('hidden');$('who').textContent=r.role==='ADMIN'?'Admin':'Operations';tab('import');
 }
 function tab(t){$('t-import').classList.toggle('on',t==='import');$('t-board').classList.toggle('on',t==='board');t==='import'?renderImport():renderBoard()}
@@ -142,7 +142,7 @@ async function renderBoard(day){
   $('routes').innerHTML=`<div class="card"><div class="grid g4"><div class="kpi"><b>${b.routes.length}</b><span>Routes</span></div><div class="kpi"><b>${num(sum('deliveredQty'))} / ${num(sum('loadedQty'))}</b><span>Delivered / loaded</span></div><div class="kpi"><b>${inr(sum('cash'))}</b><span>Cash entered (unverified)</span></div><div class="kpi"><b>${inr(sum('upi'))}</b><span>UPI submitted (unverified)</span></div></div></div>`+
   b.routes.map(r=>{const t=r.totals,pct=t.stops?Math.round(t.resolved/t.stops*100):0;return `<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap"><div><h3>${esc(r.driverName)} · ${esc(r.vehicle)}</h3><div class="mute">${esc(r.routeId)} · ${esc(r.sequenceSource.replace(/_/g,' ').toLowerCase())}</div></div><span class="pill ${esc(r.status)}">${esc(r.status.replace(/_/g,' '))}</span></div>
   <div class="bar"><i style="width:${pct}%"></i></div><div class="mute">${t.resolved}/${t.stops} stops · ${t.failed} failed · delivered ${num(t.deliveredQty)} of ${num(t.requiredQty)} ordered · loaded ${num(t.loadedQty)} · cash ${inr(t.cash)} · UPI ${inr(t.upi)} · collectible ${inr(t.collectible)}${r.live?` · last GPS ${esc(r.live.at)} (±${num(r.live.accuracy)} m)`:''}</div>
-  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn sm" onclick="detail('${esc(r.routeId)}')">Details</button>${r.status==='PLANNED'?`<button class="btn sm" onclick="cancelRoute('${esc(r.routeId)}')">Cancel route</button>`:''}${r.status==='CLOSED_PENDING_REVIEW'?`<button class="btn sm p" onclick="review('${esc(r.routeId)}',true)">Approve variance</button><button class="btn sm" onclick="review('${esc(r.routeId)}',false)">Reopen</button>`:''}</div></div>`}).join('');
+  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn sm" onclick="detail('${esc(r.routeId)}')">Details</button>${r.status==='PLANNED'?`<button class="btn sm" onclick="cancelRoute('${esc(r.routeId)}')">Cancel route</button>`:''}${r.ledgerPending?`<button class="btn sm p" onclick="postLedger('${esc(r.routeId)}')">Post to stock ledger</button>`:''}${r.status==='CLOSED_PENDING_REVIEW'?`<button class="btn sm p" onclick="review('${esc(r.routeId)}',true)">Approve variance</button><button class="btn sm" onclick="review('${esc(r.routeId)}',false)">Reopen</button>`:''}</div></div>`}).join('');
 }
 async function detail(id){
   const r=await api('d1GetRouteDetailAdminV1100',S.auth,id).catch(e=>{toast(e.message);return null});if(!r)return;
@@ -154,6 +154,7 @@ async function detail(id){
   $('detail').scrollIntoView({behavior:'smooth'});
 }
 async function review(id,approve){const notes=prompt(approve?'Approval notes (required):':'Reason for reopening (required):');if(!notes)return;await api('d1ReviewRouteV1100',S.auth,id,approve,notes).then(()=>toast('Saved.')).catch(e=>toast(e.message));renderBoard()}
+async function postLedger(id){await api('d1PostLedgerV1100',S.auth,id).then(x=>toast(x.rowsWritten+' ledger row(s) posted.')).catch(e=>toast(e.message));renderBoard()}
 async function cancelRoute(id){const reason=prompt('Cancellation reason (required):');if(!reason)return;await api('d1CancelRouteV1100',S.auth,id,reason).then(()=>toast('Route cancelled.')).catch(e=>toast(e.message));renderBoard()}
 async function validate(cid,decision,rid){const notes=decision==='REJECTED'?prompt('Reason for rejecting:'):'';if(decision==='REJECTED'&&!notes)return;await api('d1ValidateCollectionV1100',S.auth,cid,decision,notes||'').then(()=>toast('Saved.')).catch(e=>toast(e.message));detail(rid)}
 renderLogin();

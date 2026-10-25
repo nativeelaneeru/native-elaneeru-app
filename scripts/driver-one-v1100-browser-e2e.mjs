@@ -36,7 +36,8 @@ const H = {
   Delivery_Events: ['Event ID','Event At','Route ID','Stop ID','Order Type','Order ID','Driver ID','Event Type','Latitude','Longitude','Barcode','Quantity','Remarks'],
   Driver_Live: ['Live ID','Driver ID','Route ID','Stop ID','Order Type','Order ID','Latitude','Longitude','Accuracy M','Heading','Updated At','Status'],
   Staff_Users: ['Staff ID','Name','Mobile','PIN Hash','Role','Allowed App','Status','Last Login','Created At','Updated At'],
-  Audit_Log: ['Audit ID','Created At','Module','Action','Reference Type','Reference ID','User ID','Old Value','New Value']
+  Audit_Log: ['Audit ID','Created At','Module','Action','Reference Type','Reference ID','User ID','Old Value','New Value'],
+  Inventory_Ledger: ['Movement ID','Created At','Product ID','Product Name','Location','Movement Type','Qty In','Qty Out','Reference Type','Reference ID','Batch ID','Reason','User ID']
 };
 for (const [n, h] of Object.entries(H)) sb.ss.add(n, h);
 const hash = v => sb.call('hashV8_', v);
@@ -63,8 +64,11 @@ XLSX.writeFile(wb, xlsxPath);
 const pages = { 'dispatch.html': 'src/DispatchV1100.html', 'driver.html': 'src/DriverOneV1100.html' };
 const browser = await chromium.launch();
 const context = await browser.newContext({ timezoneId: 'Asia/Kolkata', locale: 'en-IN', geolocation: { latitude: 12.9009, longitude: 77.6021, accuracy: 15 }, permissions: ['geolocation'] });
+let offline = false; const serverCalls = [];
 await context.exposeBinding('__gas', (_src, fn, argsJson) => {
   if (!/^d1[A-Za-z0-9]+V1100$/.test(fn)) return { ok: false, error: 'Method not exposed in test: ' + fn };
+  if (offline) return { ok: false, error: 'NetworkError: Connection failure due to HTTP 0' };
+  serverCalls.push(fn);
   try { return { ok: true, result: JSON.parse(JSON.stringify(sb.call(fn, ...JSON.parse(argsJson)) ?? null)) }; }
   catch (e) { return { ok: false, error: String(e && e.message || e) }; }
 });
@@ -142,6 +146,7 @@ try {
   await m.waitForSelector('text=I have arrived');
   step('Load confirmed (450) and trip started');
   for (let i = 0; i < 3; i++) {
+    if (i === 2) offline = true; // third stop: phone loses network
     await m.locator('button:has-text("I have arrived")').first().click();
     await m.waitForSelector('text=Save delivery');
     const stopCard = m.locator('.stop.ARRIVED');
@@ -152,6 +157,20 @@ try {
     }
     await stopCard.locator('button:has-text("Save delivery")').click();
     await m.waitForFunction(() => !document.querySelector('.stop.ARRIVED'));
+    if (i === 2) {
+      await m.waitForSelector('text=2 update(s) saved on this phone');
+      const before = sb.call('rows_', 'Route_Stops').filter(r => r['Display Name'] === name.trim())[0].Status;
+      assert.equal(before, 'PENDING', 'nothing reached the server while offline');
+      await m.screenshot({ path: path.join(out, 'driver-one-mobile-offline.png'), fullPage: true });
+      offline = false;
+      await m.click('text=Retry now');
+      await m.waitForSelector('text=All updates synced');
+      assert.equal(sb.call('rows_', 'Route_Stops').filter(r => r['Display Name'] === name.trim())[0].Status, 'DELIVERED');
+      step('Offline: check-in + delivery queued on the phone, synced in order when network returned');
+      await m.reload();
+      await m.waitForSelector('text=Record payment');
+      step('Page reload resumes the session from the token (PIN not stored)');
+    }
     if (i !== 1) {
       await m.locator('button:has-text("Record payment")').first().click();
       await m.waitForFunction(n => [...document.querySelectorAll('.stop')].some(s => s.textContent.includes(n) && !s.querySelector('button')), name);
@@ -162,13 +181,18 @@ try {
   assert.doesNotMatch(html, /\botp\b/i);
   assert.doesNotMatch(html, /invoice|print/i);
   step('No OTP prompt and no invoice/print control anywhere in Driver One');
+  const deliveryCalls = serverCalls.filter(f => f === 'd1RecordDeliveryV1100').length;
+  assert.equal(deliveryCalls, 3, 'each delivery reached the server exactly once');
   await m.screenshot({ path: path.join(out, 'driver-one-mobile-stops.png'), fullPage: true });
   await m.click('button:has-text("Close trip")');
-  await m.waitForSelector('text=Trip summary');
+  await m.waitForSelector('text=Trip summary').catch(async e => { console.log('CLOSE DEBUG toast:', await m.textContent('#toast'), '| cb:', await m.inputValue('#cb').catch(()=>'?'), '| cc:', await m.inputValue('#cc').catch(()=>'?')); throw e; });
   const summary = await m.textContent('main');
   assert.match(summary, /CLOSED/);
   await m.screenshot({ path: path.join(out, 'driver-one-mobile-closed.png'), fullPage: true });
   step('Trip closed with matching stock and cash');
+  const ledger = sb.call('rows_', 'Inventory_Ledger');
+  assert.equal(ledger.length, 1); assert.equal(ledger[0]['Qty Out'], 300); assert.equal(ledger[0]['Reference Type'], 'D1_ROUTE');
+  step('Stock ledger: DELIVERY OUT 300 posted once on close');
   const checkIns = sb.call('rows_', 'Delivery_Events').filter(e => e['Event Type'] === 'CHECK_IN');
   assert.equal(checkIns.length, 3);
   assert.ok(checkIns.every(e => typeof e.Latitude === 'number' && Math.abs(e.Latitude - 12.9009) < 1e-6), 'browser GPS stored on every check-in');

@@ -25,6 +25,12 @@
  *  - Stop Order Type is 'MANUAL' (or the supplied order reference). No B2B_Orders
  *    row is created or modified by this file.
  *  - New tabs (additive only): D1_Imports, D1_Stop_Terms, D1_Collections.
+ *  - Stock: when a trip is finally CLOSED (directly, or after supervisor approval) the
+ *    delivered quantity and any approved transit variance are posted once to
+ *    Inventory_Ledger (Reference Type D1_ROUTE). Coconut_Batches are not changed here;
+ *    batch/bunch allocation arrives with bunch-barcode loading.
+ *  - Sign-in once with PIN, then a 6-hour sliding session token (14-hour cap);
+ *    5 wrong PINs lock that account for 15 minutes.
  *
  * All helpers end in '_' so anonymous HtmlService visitors cannot call them via
  * google.script.run. Every public function authenticates first.
@@ -57,18 +63,38 @@ const V1100_ALIASES=Object.freeze({
 
 /* ------------------------------------------------------------------ security */
 
-// Critical fix: setV8AdminCredentials() was a public, unguarded function on an
-// anonymous web app that executes as the owner. Anyone could call it through
-// google.script.run and replace the admin login. Once credentials exist, the
-// current admin email + PIN are now required to change them.
-const V1100_PREVIOUS_SET_ADMIN_CREDENTIALS=setV8AdminCredentials;
-setV8AdminCredentials=function(email,pin,currentEmail,currentPin){
-  const p=PropertiesService.getScriptProperties();
-  if(s_(p.getProperty('ADMIN_EMAIL'))&&s_(p.getProperty('ADMIN_PIN_HASH'))){
-    requireAdmin_(currentEmail,currentPin);
-  }
-  return V1100_PREVIOUS_SET_ADMIN_CREDENTIALS(email,pin);
-};
+// The admin-credential guard ships separately in V1050_AdminCredentialGuard.gs (PR #42).
+// Sessions: PINs are sent once at sign-in; later calls carry a short-lived random token.
+// Five wrong PINs for the same mobile/email lock that account for 15 minutes.
+const V1100_SESSION_TTL_S=6*3600;          // sliding: renewed on each use (CacheService maximum)
+const V1100_SESSION_MAX_MS=14*3600*1000;   // absolute cap for one shift
+const V1100_MAX_FAILS=5,V1100_LOCK_S=900;
+function v1100Cache_(){return CacheService.getScriptCache();}
+function v1100Guard_(key,fn){
+  const c=v1100Cache_(),fk='d1fail:'+key,fails=Number(c.get(fk)||0);
+  if(fails>=V1100_MAX_FAILS)throw new Error('Too many wrong PINs. Try again in 15 minutes or ask operations to reset your PIN.');
+  try{const out=fn();c.remove(fk);return out;}
+  catch(e){if(/Invalid/i.test(String(e&&e.message)))c.put(fk,String(fails+1),V1100_LOCK_S);throw e;}
+}
+function v1100NewSession_(role,id,actor){
+  const token=(Utilities.getUuid()+Utilities.getUuid()).replace(/-/g,'');
+  const rec={role,id:s_(id),actor:s_(actor),exp:Date.now()+V1100_SESSION_MAX_MS};
+  v1100Cache_().put('d1s:'+hashV8_(token),JSON.stringify(rec),V1100_SESSION_TTL_S);
+  return token;
+}
+function v1100Session_(token,role){
+  const t=s_(token);
+  if(!/^[a-f0-9]{64}$/.test(t))throw new Error('Session expired. Sign in again.');
+  const k='d1s:'+hashV8_(t),raw=v1100Cache_().get(k);
+  let rec=null;try{rec=raw?JSON.parse(raw):null}catch(e){rec=null}
+  if(!rec||rec.role!==role||!(rec.exp>Date.now()))throw new Error('Session expired. Sign in again.');
+  v1100Cache_().put(k,raw,V1100_SESSION_TTL_S);
+  return rec;
+}
+function d1SignOutV1100(token){
+  const t=s_(token);if(/^[a-f0-9]{64}$/.test(t))v1100Cache_().remove('d1s:'+hashV8_(t));
+  return {success:true};
+}
 
 /* ------------------------------------------------------------------ helpers */
 
@@ -136,20 +162,26 @@ function v1100Update_(name,row,obj){updateObj_(name,row,v1100SafeObj_(obj));}
 /* ------------------------------------------------------------------ auth */
 
 function v1100Dispatcher_(auth){
+  if(typeof auth==='string'){const r=v1100Session_(auth,'DISPATCHER');return {actor:r.actor,role:r.id};}
   auth=auth||{};
   if(s_(auth.email)){
-    requireAdmin_(auth.email,auth.pin);
+    v1100Guard_('admin:'+s_(auth.email).toLowerCase(),()=>requireAdmin_(auth.email,auth.pin));
     return {actor:'ADMIN:'+s_(auth.email).toLowerCase(),role:'ADMIN'};
   }
   if(s_(auth.mobile)){
-    const u=staffLoginV81_(auth.mobile,auth.pin,'OPERATIONS');
+    const u=v1100Guard_('staff:'+digits_(auth.mobile),()=>staffLoginV81_(auth.mobile,auth.pin,'OPERATIONS'));
     return {actor:'STAFF:'+s_(u.staffId),role:'OPERATIONS'};
   }
   throw new Error('Dispatcher sign-in required.');
 }
-function v1100Driver_(mobile,pin){
+function v1100DriverLogin_(mobile,pin){
   // Existing Drivers sheet + PIN hash. Driver must be enabled for B2B (or BOTH).
-  return driverAuth_(mobile,pin,'B2B');
+  return v1100Guard_('driver:'+digits_(mobile),()=>driverAuth_(mobile,pin,'B2B'));
+}
+function v1100Driver_(token){
+  const r=v1100Session_(token,'DRIVER'),d=find_(V8.SHEETS.DRIVERS,'Driver ID',r.id);
+  if(!d||!active_(d.Status)||['B2B','BOTH'].indexOf(s_(d['Delivery Type']).toUpperCase())<0){d1SignOutV1100(token);throw new Error('Driver access is no longer active.');}
+  return d;
 }
 function v1100DriverPublic_(d){
   return {driverId:s_(d['Driver ID']),name:s_(d['Driver Name']),vehicle:s_(d['Vehicle Number']),vehicleType:s_(d['Vehicle Type']),capacity:n_(d['Capacity Qty'])};
@@ -300,11 +332,47 @@ function v1100ActiveOrderIds_(){
   return set;
 }
 
+
+/* ------------------------------------------------------------------ stock ledger */
+
+const V1100_PRODUCT_ID='TC';
+/** Posts a closed trip to Inventory_Ledger exactly once. Returns the rows written (0 on repeat). */
+function v1100PostLedger_(r,actor){
+  const routeId=s_(r['Route ID']);
+  if(rows_(V8.SHEETS.INVENTORY).some(x=>s_(x['Reference Type'])==='D1_ROUTE'&&s_(x['Reference ID'])===routeId))return 0;
+  const closeEv=v1100RouteEvents_(routeId).filter(e=>s_(e['Event Type'])==='TRIP_CLOSED').pop();
+  let sum=null;try{sum=closeEv?JSON.parse(s_(closeEv.Remarks)):null}catch(e){sum=null}
+  if(!sum)throw new Error('Trip close summary missing; ledger not posted.');
+  let product=null;try{product=find_(V8.SHEETS.PRODUCTS,'Product ID',V1100_PRODUCT_ID)}catch(e){product=null}
+  const name=product?s_(product['Product Name']):'Tender Coconut',at=now_(),rows=[];
+  const base={'Created At':at,'Product ID':V1100_PRODUCT_ID,'Product Name':name,Location:'HUB','Reference Type':'D1_ROUTE','Reference ID':routeId,'Batch ID':'','User ID':s_(actor)};
+  if(n_(sum.delivered)>0)rows.push(Object.assign({'Movement ID':id_('MOV-'),'Movement Type':'DELIVERY OUT','Qty In':0,'Qty Out':n_(sum.delivered),Reason:'Driver One route delivered'},base));
+  if(n_(sum.stockVariance)<0)rows.push(Object.assign({'Movement ID':id_('MOV-'),'Movement Type':'TRANSIT LOSS OUT','Qty In':0,'Qty Out':-n_(sum.stockVariance),Reason:'Approved trip variance: '+s_(sum.remarks).slice(0,150)},base));
+  if(n_(sum.stockVariance)>0)rows.push(Object.assign({'Movement ID':id_('MOV-'),'Movement Type':'COUNT ADJUSTMENT IN','Qty In':n_(sum.stockVariance),'Qty Out':0,Reason:'Approved trip variance: '+s_(sum.remarks).slice(0,150)},base));
+  if(rows.length)v1100AppendMany_(V8.SHEETS.INVENTORY,rows);
+  return rows.length;
+}
+
+/** A ledger failure must not strand a driver at the hub: the trip still closes and ops is told. */
+function v1100TryLedger_(r,actor,driverId){
+  try{v1100PostLedger_(r,actor);return true;}
+  catch(e){v1100Event_('LEDGER-FAIL-'+s_(r['Route ID']).replace(/[^A-Za-z0-9_-]/g,'')+'-'+Date.now(),r,null,driverId,'LEDGER_POST_FAILED',0,'','',String(e&&e.message||e).slice(0,300));return false;}
+}
+function d1PostLedgerV1100(auth,routeId){
+  return lockRun_(()=>{
+    const who=v1100Dispatcher_(auth),r=find_(V8.SHEETS.ROUTES,'Route ID',routeId);
+    if(!v1100IsD1Route_(r))throw new Error('Route not found.');
+    if(s_(r.Status)!=='CLOSED')throw new Error('Only a closed route can be posted to the stock ledger.');
+    return {success:true,rowsWritten:v1100PostLedger_(r,who.actor)};
+  });
+}
+
 /* ------------------------------------------------------------------ dispatcher API */
 
 function d1DispatcherLoginV1100(auth){
+  if(typeof auth==='string')throw new Error('Sign in with your mobile or email and PIN.');
   const who=v1100Dispatcher_(auth);
-  return {success:true,role:who.role,version:V1100_VERSION,hub:V8.HUB,today:v1100Today_()};
+  return {success:true,role:who.role,token:v1100NewSession_('DISPATCHER',who.role,who.actor),version:V1100_VERSION,hub:V8.HUB,today:v1100Today_()};
 }
 function d1ListDriversV1100(auth){
   v1100Dispatcher_(auth);
@@ -442,7 +510,8 @@ function v1100RouteView_(r,includeEvents){
       failed:stopViews.filter(s=>s.status==='FAILED').length,requiredQty:sum('requiredQty'),loadedQty:loaded,deliveredQty:sum('deliveredQty'),
       customerReturnedQty:sum('returnedQty'),amountDue:safeRound_(sum('amountDue'),2),collectible:safeRound_(sum('collectible'),2),
       cash:safeRound_(sum('collectedCash'),2),upi:safeRound_(sum('collectedUpi'),2)},
-    close:closeSummary,stops:stopViews};
+    close:closeSummary,stops:stopViews,
+    ledgerPending:s_(r.Status)==='CLOSED'&&!(function(){try{return rows_(V8.SHEETS.INVENTORY).some(x=>s_(x['Reference Type'])==='D1_ROUTE'&&s_(x['Reference ID'])===routeId)}catch(e){return false}})()};
   if(includeEvents){
     view.events=events.map(e=>({at:fmtDT_(e['Event At']),type:s_(e['Event Type']),stopId:s_(e['Stop ID']),qty:n_(e.Quantity),lat:e.Latitude===''?null:n_(e.Latitude),lng:e.Longitude===''?null:n_(e.Longitude),remarks:s_(e.Remarks)}));
     view.collections=v1100Rows_(V1100_SHEETS.COLLECTIONS).filter(c=>s_(c['Route ID'])===routeId).map(c=>({collectionId:s_(c['Collection ID']),stopId:s_(c['Stop ID']),method:s_(c.Method),amount:n_(c.Amount),upiRef:s_(c['UPI Reference']),status:s_(c.Status),enteredAt:fmtDT_(c['Entered At']),validatedBy:s_(c['Validated By'])}));
@@ -473,6 +542,7 @@ function d1ReviewRouteV1100(auth,routeId,approve,notes){
     if(!s_(notes))throw new Error('Enter review notes.');
     const status=approve===true?'CLOSED':'IN_PROGRESS';
     v1100Update_(V8.SHEETS.ROUTES,r._row,{Status:status,'Updated At':now_()});
+    if(status==='CLOSED')v1100TryLedger_(r,who.actor,'');
     audit_('DISPATCH',approve===true?'APPROVE_VARIANCE':'REOPEN_ROUTE','Delivery_Routes',routeId,who.actor,'CLOSED_PENDING_REVIEW',status+': '+s_(notes).slice(0,300));
     return {success:true,status};
   });
@@ -495,21 +565,26 @@ function d1ValidateCollectionV1100(auth,collectionId,decision,notes){
 /* ------------------------------------------------------------------ driver API (no OTP, no invoices) */
 
 function d1DriverLoginV1100(mobile,pin){
-  const d=v1100Driver_(mobile,pin),driverId=s_(d['Driver ID']),today=v1100Today_();
+  const d=v1100DriverLogin_(mobile,pin);
+  const out=d1GetMyTripsV1100(v1100NewSession_('DRIVER',s_(d['Driver ID']),'DRIVER:'+s_(d['Driver ID'])));
+  return out;
+}
+function d1GetMyTripsV1100(token){
+  const d=v1100Driver_(token),driverId=s_(d['Driver ID']),today=v1100Today_();
   const routes=rows_(V8.SHEETS.ROUTES).filter(r=>v1100IsD1Route_(r)&&s_(r['Driver ID'])===driverId)
     .filter(r=>{const day=v1100DateKey_(r['Route Date']),st=s_(r.Status);return st!=='CANCELLED'&&(day>=today||['LOADED','IN_PROGRESS','CLOSED_PENDING_REVIEW'].indexOf(st)>=0);})
     .sort((a,b)=>v1100DateKey_(a['Route Date']).localeCompare(v1100DateKey_(b['Route Date']))||new Date(a['Created At'])-new Date(b['Created At']))
     .map(r=>({routeId:s_(r['Route ID']),date:v1100DateKey_(r['Route Date']),status:s_(r.Status),stops:n_(r['Total Stops']),completed:n_(r['Completed Stops']),sequenceSource:s_(r['Optimization Source'])}));
-  return {success:true,version:V1100_VERSION,driver:v1100DriverPublic_(d),routes,otpRequired:false,invoices:false};
+  return {success:true,token,version:V1100_VERSION,driver:v1100DriverPublic_(d),routes,otpRequired:false,invoices:false};
 }
-function d1GetRouteV1100(mobile,pin,routeId){
-  const d=v1100Driver_(mobile,pin),r=v1100OwnRoute_(d,routeId);
+function d1GetRouteV1100(token,routeId){
+  const d=v1100Driver_(token),r=v1100OwnRoute_(d,routeId);
   return v1100RouteView_(r,false);
 }
-function d1ConfirmLoadV1100(mobile,pin,routeId,loadedQty,requestId){
+function d1ConfirmLoadV1100(token,routeId,loadedQty,requestId){
   return lockRun_(()=>{
     requestId=v1100ReqId_(requestId);
-    const d=v1100Driver_(mobile,pin),r=v1100OwnRoute_(d,routeId);
+    const d=v1100Driver_(token),r=v1100OwnRoute_(d,routeId);
     if(v1100FindEvent_(requestId))return {success:true,duplicate:true};
     if(['PLANNED','LOADED'].indexOf(s_(r.Status))<0)throw new Error('Load can only be confirmed before the trip starts.');
     const q=v1100Int_(loadedQty),cap=n_(d['Capacity Qty']);
@@ -521,10 +596,10 @@ function d1ConfirmLoadV1100(mobile,pin,routeId,loadedQty,requestId){
     return {success:true,loadedQty:q,requiredQty:required,shortBy:Math.max(0,required-q)};
   });
 }
-function d1StartTripV1100(mobile,pin,routeId,gps,requestId){
+function d1StartTripV1100(token,routeId,gps,requestId){
   return lockRun_(()=>{
     requestId=v1100ReqId_(requestId);
-    const d=v1100Driver_(mobile,pin),r=v1100OwnRoute_(d,routeId);
+    const d=v1100Driver_(token),r=v1100OwnRoute_(d,routeId);
     if(v1100FindEvent_(requestId))return {success:true,duplicate:true};
     if(s_(r.Status)!=='LOADED')throw new Error('Confirm vehicle loading before starting the trip.');
     const g=v1100GpsArgs_(gps);
@@ -533,10 +608,10 @@ function d1StartTripV1100(mobile,pin,routeId,gps,requestId){
     return {success:true,status:'IN_PROGRESS'};
   });
 }
-function d1CheckInV1100(mobile,pin,stopId,gps,requestId){
+function d1CheckInV1100(token,stopId,gps,requestId){
   return lockRun_(()=>{
     requestId=v1100ReqId_(requestId);
-    const d=v1100Driver_(mobile,pin),o=v1100OwnStop_(d,stopId);
+    const d=v1100Driver_(token),o=v1100OwnStop_(d,stopId);
     if(v1100FindEvent_(requestId))return {success:true,duplicate:true};
     if(s_(o.r.Status)!=='IN_PROGRESS')throw new Error('Start the trip before checking in at a stop.');
     if(s_(o.st.Status)!=='PENDING')throw new Error('This stop is already '+s_(o.st.Status).toLowerCase()+'.');
@@ -548,10 +623,10 @@ function d1CheckInV1100(mobile,pin,stopId,gps,requestId){
     return {success:true,status:'ARRIVED',gpsCaptured:g.lat!==''};
   });
 }
-function d1RecordDeliveryV1100(mobile,pin,stopId,p){
+function d1RecordDeliveryV1100(token,stopId,p){
   return lockRun_(()=>{
     p=p||{};const requestId=v1100ReqId_(p.requestId);
-    const d=v1100Driver_(mobile,pin),o=v1100OwnStop_(d,stopId),st=o.st,r=o.r;
+    const d=v1100Driver_(token),o=v1100OwnStop_(d,stopId),st=o.st,r=o.r;
     if(v1100FindEvent_(requestId))return {success:true,duplicate:true};
     if(s_(r.Status)!=='IN_PROGRESS')throw new Error('Trip is not in progress.');
     if(s_(st.Status)!=='ARRIVED')throw new Error(V1100_RESOLVED.indexOf(s_(st.Status))>=0?'This stop is already recorded.':'Check in at the stop first.');
@@ -588,10 +663,10 @@ function d1RecordDeliveryV1100(mobile,pin,stopId,p){
     return {success:true,status:outcome,deliveredQty:delivered,returnedQty:returned,remainingOnVehicle:loaded-alreadyDelivered-delivered};
   });
 }
-function d1RecordCollectionV1100(mobile,pin,stopId,p){
+function d1RecordCollectionV1100(token,stopId,p){
   return lockRun_(()=>{
     p=p||{};const requestId=v1100ReqId_(p.requestId);
-    const d=v1100Driver_(mobile,pin),o=v1100OwnStop_(d,stopId),st=o.st,r=o.r;
+    const d=v1100Driver_(token),o=v1100OwnStop_(d,stopId),st=o.st,r=o.r;
     v1100EnsureSheet_(V1100_SHEETS.COLLECTIONS);
     const dup=v1100Rows_(V1100_SHEETS.COLLECTIONS).find(c=>s_(c['Request ID'])===requestId);
     if(dup)return {success:true,duplicate:true,collectionId:s_(dup['Collection ID'])};
@@ -617,8 +692,8 @@ function d1RecordCollectionV1100(mobile,pin,stopId,p){
     return {success:true,collectionId:id,status:method==='UPI'?'PROOF_SUBMITTED':'DRIVER_ENTERED',balance:safeRound_(collectible-prior-amount,2)};
   });
 }
-function d1PingLocationV1100(mobile,pin,routeId,gps){
-  const d=v1100Driver_(mobile,pin),r=v1100OwnRoute_(d,routeId);
+function d1PingLocationV1100(token,routeId,gps){
+  const d=v1100Driver_(token),r=v1100OwnRoute_(d,routeId);
   if(s_(r.Status)!=='IN_PROGRESS')return {success:false,reason:'Trip not in progress.'};
   const g=v1100GpsArgs_(gps);if(g.lat==='')return {success:false,reason:'No GPS fix.'};
   const live=rows_(V8.SHEETS.DRIVER_LIVE).filter(x=>s_(x['Driver ID'])===s_(d['Driver ID'])&&s_(x['Route ID'])===s_(routeId)&&s_(x.Status)==='ACTIVE')[0];
@@ -626,10 +701,10 @@ function d1PingLocationV1100(mobile,pin,routeId,gps){
   if(live)updateObj_(V8.SHEETS.DRIVER_LIVE,live._row,obj);else append_(V8.SHEETS.DRIVER_LIVE,Object.assign({'Live ID':id_('LIVE-')},obj));
   return {success:true};
 }
-function d1CloseTripV1100(mobile,pin,routeId,p){
+function d1CloseTripV1100(token,routeId,p){
   return lockRun_(()=>{
     p=p||{};const requestId=v1100ReqId_(p.requestId);
-    const d=v1100Driver_(mobile,pin),r=v1100OwnRoute_(d,routeId);
+    const d=v1100Driver_(token),r=v1100OwnRoute_(d,routeId);
     if(v1100FindEvent_(requestId))return {success:true,duplicate:true};
     if(s_(r.Status)!=='IN_PROGRESS')throw new Error('Trip is not in progress.');
     const view=v1100RouteView_(r,false);
@@ -647,8 +722,9 @@ function d1CloseTripV1100(mobile,pin,routeId,p){
     const status=needsReview?'CLOSED_PENDING_REVIEW':'CLOSED';
     v1100Event_(requestId,r,null,d['Driver ID'],'TRIP_CLOSED',back,'','',JSON.stringify(summary));
     v1100Update_(V8.SHEETS.ROUTES,r._row,{Status:status,'Updated At':now_()});
+    const ledgerPosted=status==='CLOSED'?v1100TryLedger_(r,'DRIVER:'+s_(d['Driver ID']),d['Driver ID']):false;
     stopLive_(s_(d['Driver ID']),s_(routeId),'');
-    return {success:true,status,reconciliation:summary};
+    return {success:true,status,reconciliation:summary,ledgerPosted};
   });
 }
 
@@ -656,7 +732,7 @@ function d1CloseTripV1100(mobile,pin,routeId,p){
 
 function getDriverOneHealthV1100(){
   return {ok:true,version:V1100_VERSION,otpRequired:false,invoicesInDriverApp:false,routeType:V1100_ROUTE_TYPE,
-    sequenceSources:['MANUAL_FILE_ORDER','STRAIGHT_LINE_NEAREST_NEIGHBOUR'],roadOptimisation:false,adminCredentialGuard:true};
+    sequenceSources:['MANUAL_FILE_ORDER','STRAIGHT_LINE_NEAREST_NEIGHBOUR'],roadOptimisation:false,sessionTokens:true,pinLockout:true,ledgerPostingOnClose:true};
 }
 const V1100_PREVIOUS_DO_GET=doGet;
 doGet=function(e){

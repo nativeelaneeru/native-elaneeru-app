@@ -20,7 +20,8 @@ const H = {
   Staff_Users: ['Staff ID','Name','Mobile','PIN Hash','Role','Allowed App','Status','Last Login','Created At','Updated At'],
   Audit_Log: ['Audit ID','Created At','Module','Action','Reference Type','Reference ID','User ID','Old Value','New Value'],
   B2B_Orders: ['Order ID','Vendor ID','Business Name','Status','Ordered At','Latitude','Longitude','Assigned Route ID'],
-  Products: ['Product ID','Product Name']
+  Products: ['Product ID','Product Name'],
+  Inventory_Ledger: ['Movement ID','Created At','Product ID','Product Name','Location','Movement Type','Qty In','Qty Out','Reference Type','Reference ID','Batch ID','Reason','User ID']
 };
 
 let passed = 0;
@@ -52,6 +53,7 @@ ss.getSheetByName('Staff_Users').data.push(
   ['STF-OPS-T','Test Ops','9000055555',hash('5555'),'OPERATIONS','OPERATIONS','ACTIVE','','',''],
   ['STF-PICK-T','Test Picker','9000066666',hash('6666'),'PICKER','PICKER','ACTIVE','','','']
 );
+ss.getSheetByName('Products').data.push(['TC', 'Tender Coconut']);
 ss.getSheetByName('B2B_Orders').data.push(['NEB2B-T1','V-T1','Test Shop','Confirmed',now,12.9,77.6,'']);
 props.set('ADMIN_EMAIL', 'admin@example.test');
 props.set('ADMIN_PIN_HASH', hash('9090'));
@@ -176,21 +178,24 @@ await test('Legacy V8 driver app never sees Driver One routes', () => {
   assert.equal(legacy.route, null);
 });
 
-await test('Driver sees only own routes; other driver is refused', () => {
+let A, TB;
+await test('Driver sees only own routes; other driver is refused; PIN sent once, then a session token', () => {
   const a = call('d1DriverLoginV1100', '9000011111', '4321');
+  assert.match(a.token, /^[a-f0-9]{64}$/);
+  A = [a.token];
   assert.equal(a.otpRequired, false);
   assert.equal(JSON.stringify(a.routes.map(r => r.routeId)), JSON.stringify([routeId]));
   assert.equal(JSON.stringify(a).includes('PIN Hash'), false);
   throws(() => call('d1DriverLoginV1100', '9000011111', '0000'), /Invalid driver/);
   const b = call('d1DriverLoginV1100', '9000022222', '8765');
+  TB = b.token;
   assert.equal(b.routes.length, 0);
-  throws(() => call('d1GetRouteV1100', '9000022222', '8765', routeId), /not assigned to you/);
-  const stop = call('d1GetRouteV1100', '9000011111', '4321', routeId).stops[0];
-  throws(() => call('d1CheckInV1100', '9000022222', '8765', stop.stopId, {}, rid()), /not assigned to you/);
+  throws(() => call('d1GetRouteV1100', TB, routeId), /not assigned to you/);
+  const stop = call('d1GetRouteV1100', ...A, routeId).stops[0];
+  throws(() => call('d1CheckInV1100', TB, stop.stopId, {}, rid()), /not assigned to you/);
 });
 
 let view;
-const A = ['9000011111', '4321'];
 await test('Loading: cannot start before load, cannot exceed capacity, retry-safe', () => {
   throws(() => call('d1StartTripV1100', ...A, routeId, {}, rid()), /Confirm vehicle loading/);
   throws(() => call('d1ConfirmLoadV1100', ...A, routeId, 1801, rid()), /exceeds recorded vehicle capacity 1800/);
@@ -287,7 +292,7 @@ await test('Close trip: requires reconciliation; variance goes to supervisor rev
 
 await test('Unresolved stops block closing; planned route can be cancelled by dispatch only', () => {
   const r2 = call('d1CreateRouteV1100', ADMIN, { rows: aliasRows, routeDate: today, driverId: 'DRV-TEST-B' });
-  const B = ['9000022222', '8765'];
+  const B = [TB];
   call('d1ConfirmLoadV1100', ...B, r2.routeId, 150, rid());
   call('d1StartTripV1100', ...B, r2.routeId, {}, rid());
   throws(() => call('d1CloseTripV1100', ...B, r2.routeId, { returnedToHubQty: 150, cashHandedOver: 0, requestId: rid() }), /not resolved/);
@@ -295,7 +300,70 @@ await test('Unresolved stops block closing; planned route can be cancelled by di
   const r3 = call('d1CreateRouteV1100', ADMIN, { rows: [{ ...aliasRows[0], mobile: '9876522222' }], routeDate: tomorrow, driverId: 'DRV-TEST-B' });
   throws(() => call('d1CancelRouteV1100', OPS, r3.routeId, ''), /reason/);
   assert.equal(call('d1CancelRouteV1100', OPS, r3.routeId, 'Customer postponed').success, true);
-  assert.equal(call('d1DriverLoginV1100', ...B).routes.some(r => r.routeId === r3.routeId), false);
+  assert.equal(call('d1GetMyTripsV1100', ...B).routes.some(r => r.routeId === r3.routeId), false);
+});
+
+await test('Stock ledger: closed trip posts delivered + approved variance once', () => {
+  const led = call('rows_', 'Inventory_Ledger').filter(r => r['Reference ID'] === routeId);
+  assert.equal(led.length, 2);
+  const out = led.find(r => r['Movement Type'] === 'DELIVERY OUT');
+  assert.equal(out['Qty Out'], 350);
+  assert.equal(out['Product ID'], 'TC');
+  assert.equal(led.find(r => r['Movement Type'] === 'TRANSIT LOSS OUT')['Qty Out'], 2);
+  assert.equal(call('v1100PostLedger_', call('find_', 'Delivery_Routes', 'Route ID', routeId), 'retry'), 0, 'idempotent');
+  assert.equal(call('rows_', 'Inventory_Ledger').filter(r => r['Reference ID'] === routeId).length, 2);
+});
+
+await test('Stock ledger: a clean close posts immediately without review', () => {
+  const r = call('d1CreateRouteV1100', ADMIN, { rows: [{ __row: 2, name: 'Ledger Shop', mobile: '9876533333', lat: 12.9, lng: 77.6, qty: 200, amount: 8600 }], routeDate: today, driverId: 'DRV-TEST-A' });
+  call('d1ConfirmLoadV1100', ...A, r.routeId, 200, rid());
+  call('d1StartTripV1100', ...A, r.routeId, {}, rid());
+  const st = call('d1GetRouteV1100', ...A, r.routeId).stops[0];
+  call('d1CheckInV1100', ...A, st.stopId, {}, rid());
+  call('d1RecordDeliveryV1100', ...A, st.stopId, { outcome: 'DELIVERED', deliveredQty: 200, requestId: rid() });
+  const c = call('d1CloseTripV1100', ...A, r.routeId, { returnedToHubQty: 0, cashHandedOver: 0, requestId: rid() });
+  assert.equal(c.status, 'CLOSED');
+  const led = call('rows_', 'Inventory_Ledger').filter(x => x['Reference ID'] === r.routeId);
+  assert.equal(led.length, 1);
+  assert.equal(led[0]['Qty Out'], 200);
+});
+
+await test('Stock ledger failure never blocks a driver; ops is told and can retry', () => {
+  const ledgerSheet = ss.sheets.get('Inventory_Ledger'); ss.sheets.delete('Inventory_Ledger');
+  const r = call('d1CreateRouteV1100', ADMIN, { rows: [{ __row: 2, name: 'Ledger Fail Shop', mobile: '9876544444', lat: 12.9, lng: 77.6, qty: 100, amount: 4300 }], routeDate: today, driverId: 'DRV-TEST-A' });
+  call('d1ConfirmLoadV1100', ...A, r.routeId, 100, rid()); call('d1StartTripV1100', ...A, r.routeId, {}, rid());
+  const st = call('d1GetRouteV1100', ...A, r.routeId).stops[0];
+  call('d1CheckInV1100', ...A, st.stopId, {}, rid());
+  call('d1RecordDeliveryV1100', ...A, st.stopId, { outcome: 'DELIVERED', deliveredQty: 100, requestId: rid() });
+  const c = call('d1CloseTripV1100', ...A, r.routeId, { returnedToHubQty: 0, cashHandedOver: 0, requestId: rid() });
+  assert.equal(c.status, 'CLOSED'); assert.equal(c.ledgerPosted, false);
+  assert.ok(call('d1GetRouteDetailAdminV1100', ADMIN, r.routeId).events.some(e => e.type === 'LEDGER_POST_FAILED'));
+  ss.sheets.set('Inventory_Ledger', ledgerSheet);
+  assert.equal(call('d1PostLedgerV1100', ADMIN, r.routeId).rowsWritten, 1);
+  assert.equal(call('d1PostLedgerV1100', ADMIN, r.routeId).rowsWritten, 0);
+});
+
+await test('SECURITY: 5 wrong PINs lock the account; tokens expire on sign-out and driver deactivation', () => {
+  for (let i = 0; i < 5; i++) throws(() => call('d1DriverLoginV1100', '9000022222', '0000'), /Invalid driver/);
+  throws(() => call('d1DriverLoginV1100', '9000022222', '8765'), /Too many wrong PINs/);
+  sb.cache.clear();
+  const t = call('d1DriverLoginV1100', '9000022222', '8765').token;
+  assert.equal(call('d1GetMyTripsV1100', t).success, true);
+  throws(() => call('d1GetMyTripsV1100', 'f'.repeat(64)), /Session expired/);
+  throws(() => call('d1GetMyTripsV1100', '9000022222'), /Session expired/);
+  call('d1SignOutV1100', t);
+  throws(() => call('d1GetMyTripsV1100', t), /Session expired/);
+  const t2 = call('d1DriverLoginV1100', '9000022222', '8765').token;
+  const drv = call('find_', 'Drivers', 'Driver ID', 'DRV-TEST-B');
+  call('updateObj_', 'Drivers', drv._row, { Status: 'INACTIVE' });
+  throws(() => call('d1GetMyTripsV1100', t2), /no longer active/);
+  call('updateObj_', 'Drivers', drv._row, { Status: 'ACTIVE' });
+  const dispatcherToken = call('d1DispatcherLoginV1100', OPS).token;
+  assert.ok(call('d1GetDispatchBoardV1100', dispatcherToken, tomorrow).routes.some(r => r.routeId === routeId));
+  throws(() => call('d1GetDispatchBoardV1100', t2), /Session expired/, 'driver token is not a dispatcher token');
+  for (let i = 0; i < 5; i++) throws(() => call('d1DispatcherLoginV1100', { email: 'admin@example.test', pin: '1' }), /Invalid admin/);
+  throws(() => call('d1DispatcherLoginV1100', ADMIN), /Too many wrong PINs/);
+  sb.cache.clear();
 });
 
 await test('Pages: dispatch/driverone routes resolve; legacy routes unchanged', () => {
