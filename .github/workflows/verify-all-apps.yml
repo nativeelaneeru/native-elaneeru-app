@@ -131,6 +131,9 @@ jobs:
           NODE
 
       # The same gates the deploy workflows run, so a PR cannot look green while main's deploy is blocked.
+      - name: Committed stock + 2-hour stock cycle
+        run: node scripts/stock-commitments-regression.mjs
+
       - name: Admin credential guard (security)
         run: node scripts/admin-credential-guard-regression.mjs
 
