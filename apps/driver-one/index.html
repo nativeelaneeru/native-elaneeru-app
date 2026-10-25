@@ -13,9 +13,9 @@ let stops=[
 {name:"Manjunath",area:"BTM 1st Stage",qty:300,amount:12900,phone:"9844441204",lat:12.9172285,lng:77.6103711},
 {name:"Bagyamma",area:"Banashankari 2nd Stage",qty:200,amount:8600,phone:"9900621028",lat:12.922504,lng:77.5658129}
 ];
-let route="RB-MANUAL-261025-ARVIND-01";const key="nel_driver_one_v2_demo";let imported=false;try{const x=JSON.parse(localStorage.getItem("nel_driver_one_imported_route")||"null");if(x&&Array.isArray(x.stops)&&x.stops.length>0&&x.stops.length<=200){stops=x.stops;route="DEMO-IMPORTED-ROUTE";imported=true}}catch(e){}
+let route="RB-MANUAL-261025-ARVIND-01";let key="nel_driver_one_v2_demo";let imported=false;try{const x=JSON.parse(localStorage.getItem("nel_driver_one_imported_route")||"null");if(x&&Array.isArray(x.stops)&&x.stops.length>0&&x.stops.length<=200){stops=x.stops;route="DEMO-IMPORTED-ROUTE";key="nel_driver_import_demo_"+x.created;imported=true}}catch(e){}
 const fresh=()=>({loaded:false,started:false,closed:false,items:stops.map(()=>({status:"PENDING",delivered:0,paid:0,method:"Cash",note:""}))});
-let state=fresh();try{const saved=JSON.parse(localStorage.getItem(key)||"null");if(saved&&Array.isArray(saved.items)&&saved.items.length===stops.length&&!imported)state=saved}catch(e){}
+let state=fresh();try{const saved=JSON.parse(localStorage.getItem(key)||"null");if(saved&&Array.isArray(saved.items)&&saved.items.length===stops.length)state=saved}catch(e){}
 const el=id=>document.getElementById(id),fmt=n=>Number(n).toLocaleString("en-IN");
 const escapeHtml=v=>String(v??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 const persist=()=>{localStorage.setItem(key,JSON.stringify(state));render()};
