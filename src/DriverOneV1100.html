@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#073d2b">
+<title>Native Elaneeru Driver One</title>
+<style>
+:root{--g:#073d2b;--g2:#0b6b45;--mint:#e9f6ee;--ink:#14231b;--mute:#5f7268;--line:#dfe9e3;--bg:#f4f7f5;--amber:#b86e00;--amberbg:#fff4e0;--red:#b3261e;--redbg:#fdeceb;--blue:#1f5fbf}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--g);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px}
+header b{font-size:16px}header small{display:block;color:#bfe0cd;font-size:11px}header .grow{flex:1}
+header button{background:transparent;border:1px solid #ffffff55;color:#fff;border-radius:10px;padding:7px 10px;font-weight:600}
+main{max-width:640px;margin:0 auto;padding:14px 16px 90px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 12px}
+h2{font-size:17px;margin:4px 0 10px}h3{font-size:15px;margin:0 0 6px}
+label{display:block;font-size:12px;font-weight:600;color:var(--mute);margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;padding:12px;border:1px solid #c9d8cf;border-radius:10px;background:#fff}
+button.p,button.s,a.s{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:46px;border-radius:11px;font:inherit;font-weight:700;padding:0 14px;text-decoration:none;cursor:pointer}
+button.p{background:var(--g2);color:#fff;border:0;width:100%}button.p:disabled{opacity:.45}
+button.s,a.s{background:#fff;color:var(--g);border:1px solid #b9d3c3}
+.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.kpi{background:var(--mint);border-radius:11px;padding:9px}.kpi b{display:block;font-size:18px}.kpi span{font-size:11px;color:var(--mute)}
+.bar{height:8px;background:#e3ece6;border-radius:9px;overflow:hidden;margin:10px 0 2px}.bar i{display:block;height:100%;background:var(--g2)}
+.stop{border-left:5px solid #c9d8cf}.stop.ARRIVED{border-left-color:var(--blue)}.stop.DELIVERED{border-left-color:var(--g2)}.stop.PARTIAL{border-left-color:var(--amber)}.stop.FAILED,.stop.CANCELLED{border-left-color:var(--red)}
+.seq{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--g);color:#fff;font-weight:700;font-size:13px;margin-right:8px;flex:none}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;background:#eef2f0;color:var(--mute)}
+.pill.ARRIVED{background:#e6eefb;color:var(--blue)}.pill.DELIVERED,.pill.CLOSED,.pill.IN_PROGRESS{background:var(--mint);color:var(--g2)}.pill.PARTIAL,.pill.CLOSED_PENDING_REVIEW,.pill.LOADED{background:var(--amberbg);color:var(--amber)}.pill.FAILED{background:var(--redbg);color:var(--red)}
+.mute{color:var(--mute);font-size:13px}.warn{background:var(--amberbg);color:#6b4100;border-radius:10px;padding:10px;font-size:13px;margin:8px 0}
+.err{background:var(--redbg);color:var(--red);border-radius:10px;padding:10px;font-size:13px;margin:8px 0}
+.seg{display:flex;border:1px solid #b9d3c3;border-radius:11px;overflow:hidden}.seg label{flex:1;margin:0;text-align:center;padding:11px 4px;font-size:13px;color:var(--g);cursor:pointer}.seg input{display:none}.seg input:checked+span{font-weight:800}.seg label:has(input:checked){background:var(--mint)}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#14231b;color:#fff;padding:11px 16px;border-radius:11px;font-size:14px;max-width:92%;display:none;z-index:9}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<header><div><b>Driver One</b><small>Native Elaneeru · deliveries</small></div><span class="grow"></span><button id="refreshBtn" class="hidden" onclick="refresh()">Refresh</button><button id="logoutBtn" class="hidden" onclick="logout()">Sign out</button></header>
+<main id="app"></main>
+<div id="toast"></div>
+<script>
+const S={mobile:'',pin:'',driver:null,routes:[],route:null,watch:null,lastPing:0};
+const $=id=>document.getElementById(id);
+const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const inr=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2});
+const num=n=>Number(n||0).toLocaleString('en-IN');
+const reqId=()=>'d1-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);
+function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3500)}
+function api(fn,...args){return new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(new Error(e&&e.message||e)))[fn](...args))}
+function gps(){return new Promise(res=>{if(!navigator.geolocation)return res({});navigator.geolocation.getCurrentPosition(p=>res({lat:p.coords.latitude,lng:p.coords.longitude,accuracy:p.coords.accuracy}),()=>res({}),{enableHighAccuracy:true,timeout:12000,maximumAge:30000})})}
+async function busy(btn,work){if(btn){btn.disabled=true;btn.dataset.t=btn.textContent;btn.textContent='Saving…'}try{return await work()}catch(e){toast(e.message);throw e}finally{if(btn&&btn.isConnected){btn.disabled=false;btn.textContent=btn.dataset.t}}}
+
+function renderLogin(){
+  $('logoutBtn').classList.add('hidden');$('refreshBtn').classList.add('hidden');
+  let m='';try{m=localStorage.getItem('ne_d1_mobile')||''}catch(e){}
+  $('app').innerHTML=`<div class="card"><h2>Sign in</h2><p class="mute">Use the mobile number and PIN issued by Native Elaneeru operations.</p>
+  <label for="m">Mobile number</label><input id="m" inputmode="numeric" maxlength="10" autocomplete="username" value="${esc(m)}">
+  <label for="p">PIN</label><input id="p" type="password" inputmode="numeric" maxlength="8" autocomplete="current-password">
+  <div style="height:14px"></div><button class="p" id="lb" onclick="login(this)">Sign in</button></div>`;
+}
+async function login(btn){
+  const mobile=$('m').value.trim(),pin=$('p').value.trim();
+  if(!/^\d{10}$/.test(mobile)||!/^\d{4,8}$/.test(pin))return toast('Enter your 10-digit mobile and PIN.');
+  const r=await busy(btn,()=>api('d1DriverLoginV1100',mobile,pin)).catch(()=>null);if(!r)return;
+  S.mobile=mobile;S.pin=pin;S.driver=r.driver;S.routes=r.routes;try{localStorage.setItem('ne_d1_mobile',mobile)}catch(e){}
+  $('logoutBtn').classList.remove('hidden');$('refreshBtn').classList.remove('hidden');
+  if(r.routes.length===1)return openRoute(r.routes[0].routeId);renderRoutes();
+}
+function logout(){stopWatch();S.pin='';S.route=null;S.driver=null;renderLogin()}
+async function refresh(){if(S.route)return openRoute(S.route.routeId);const r=await api('d1DriverLoginV1100',S.mobile,S.pin).catch(e=>toast(e.message));if(r){S.routes=r.routes;renderRoutes()}}
+function renderRoutes(){
+  stopWatch();S.route=null;const d=S.driver;
+  $('app').innerHTML=`<div class="card"><h2>Hi ${esc(d.name)}</h2><p class="mute">${esc(d.vehicle)} · capacity ${num(d.capacity)} coconuts (recorded)</p></div>`+
+  (S.routes.length?S.routes.map(r=>`<div class="card"><div class="row"><div><h3>${esc(r.date)}</h3><span class="mute">${r.completed}/${r.stops} stops</span></div><div style="flex:none"><span class="pill ${esc(r.status)}">${esc(r.status.replace(/_/g,' '))}</span></div></div><div style="height:10px"></div><button class="p" onclick="openRoute('${esc(r.routeId)}')">Open trip</button></div>`).join('')
+  :`<div class="card"><h3>No trips assigned</h3><p class="mute">Dispatch has not assigned you a route yet. Pull to refresh later.</p></div>`);
+}
+async function openRoute(id){
+  const r=await api('d1GetRouteV1100',S.mobile,S.pin,id).catch(e=>{toast(e.message);return null});if(!r)return;
+  S.route=r;renderRoute();if(r.status==='IN_PROGRESS')startWatch();else stopWatch();
+}
+function mapsDir(lat,lng){return 'https://www.google.com/maps/dir/?api=1&destination='+lat+','+lng+'&travelmode=driving'}
+function renderRoute(){
+  const r=S.route,t=r.totals,pct=t.stops?Math.round(t.resolved/t.stops*100):0,next=r.stops.find(s=>['PENDING','ARRIVED'].includes(s.status));
+  let top=`<div class="card"><div class="row"><div><h2 style="margin:0">Trip ${esc(r.date)}</h2><span class="mute">${esc(r.vehicle)}</span></div><div style="flex:none"><span class="pill ${esc(r.status)}">${esc(r.status.replace(/_/g,' '))}</span></div></div>
+  <div class="bar"><i style="width:${pct}%"></i></div><div class="mute">${t.resolved} of ${t.stops} stops done${t.failed?' · '+t.failed+' failed':''}</div><div style="height:10px"></div>
+  <div class="kpis"><div class="kpi"><b>${num(t.loadedQty)}</b><span>Loaded</span></div><div class="kpi"><b>${num(t.deliveredQty)}</b><span>Delivered</span></div><div class="kpi"><b>${num(Math.max(0,t.loadedQty-t.deliveredQty))}</b><span>On vehicle</span></div>
+  <div class="kpi"><b>${inr(t.cash)}</b><span>Cash entered</span></div><div class="kpi"><b>${inr(t.upi)}</b><span>UPI entered</span></div><div class="kpi"><b>${inr(Math.max(0,t.collectible-t.cash-t.upi))}</b><span>To collect</span></div></div>
+  ${r.sequenceSource!=='ROAD'?`<p class="mute" style="margin:10px 0 0">Stop order: ${r.sequenceSource==='MANUAL_FILE_ORDER'?'as uploaded by dispatch':'nearest straight-line'}. Not road-optimised; follow Maps for the route.</p>`:''}</div>`;
+  if(r.status==='PLANNED'||r.status==='LOADED'){
+    top+=`<div class="card"><h3>1 · Load vehicle</h3><p class="mute">Count coconuts on the vehicle before leaving the hub. Required for this trip: <b>${num(t.requiredQty)}</b>.</p>
+    <label for="lq">Loaded quantity</label><input id="lq" inputmode="numeric" value="${t.loadedQty||t.requiredQty||''}">
+    <div style="height:10px"></div><button class="${r.status==='LOADED'?'s':'p'}" style="width:100%" onclick="confirmLoad(this)">${r.status==='LOADED'?'Update loaded quantity':'Confirm loaded'}</button>
+    ${r.status==='LOADED'?`<div style="height:10px"></div><button class="p" onclick="startTrip(this)">2 · Start trip</button>`:''}</div>`;
+  }
+  const stops=r.stops.map(s=>stopCard(s,next&&next.stopId===s.stopId)).join('');
+  let close='';
+  if(r.status==='IN_PROGRESS'){
+    const open=r.stops.filter(s=>['PENDING','ARRIVED'].includes(s.status)).length;
+    close=`<div class="card"><h3>Close trip</h3>${open?`<p class="mute">${open} stop(s) still open. Record every stop before closing.</p>`:`
+    <p class="mute">Expected back at hub: <b>${num(t.loadedQty-t.deliveredQty)}</b> coconuts · Cash entered: <b>${inr(t.cash)}</b></p>
+    <label for="cb">Coconuts returned to hub</label><input id="cb" inputmode="numeric" value="${t.loadedQty-t.deliveredQty}">
+    <label for="cc">Cash handed over (₹)</label><input id="cc" inputmode="decimal" value="${t.cash}">
+    <label for="cr">Remarks (required if anything does not match)</label><textarea id="cr" rows="2"></textarea>
+    <div style="height:10px"></div><button class="p" onclick="closeTrip(this)">Close trip</button>`}</div>`;
+  }
+  if(r.close){close+=`<div class="card"><h3>Trip summary</h3><p class="mute">Loaded ${num(r.close.loaded)} · Delivered ${num(r.close.delivered)} · Back to hub ${num(r.close.returnedToHub)} (variance ${r.close.stockVariance})<br>Cash ${inr(r.close.cashCollected)} entered · ${inr(r.close.cashHandedOver)} handed over (variance ${inr(r.close.cashVariance)}) · UPI ${inr(r.close.upiSubmitted)}</p>${r.status==='CLOSED_PENDING_REVIEW'?'<div class="warn">Waiting for supervisor review.</div>':''}</div>`}
+  $('app').innerHTML=`<button class="s" style="margin-bottom:12px" onclick="renderRoutes()">← All trips</button>`+top+stops+close;
+}
+function stopCard(s,isNext){
+  const live=S.route.status==='IN_PROGRESS',due=s.collectible-s.collectedCash-s.collectedUpi;
+  let body=`<div class="row" style="align-items:flex-start"><span class="seq">${s.sequence}</span><div style="flex:1;min-width:0"><h3>${esc(s.name)}</h3><div class="mute">${esc(s.address||'')}${s.timeWindow?' · '+esc(s.timeWindow):''}${s.priority?' · '+esc(s.priority):''}</div>
+  <div class="mute">Order ${num(s.requiredQty)} · ${inr(s.amountDue)}${s.orderId&&!/^MAN-/.test(s.orderId)?' · '+esc(s.orderId):''}</div>${s.remarks?`<div class="mute">Note: ${esc(s.remarks)}</div>`:''}</div><span class="pill ${esc(s.status)}" style="flex:none">${esc(s.status)}</span></div>`;
+  body+=`<div class="row" style="margin-top:10px"><a class="s" href="tel:+91${esc(s.mobile)}">📞 Call</a><a class="s" href="${mapsDir(s.lat,s.lng)}" target="_blank" rel="noopener">🧭 Navigate</a></div>`;
+  if(live&&s.status==='PENDING')body+=`<div style="height:10px"></div><button class="${isNext?'p':'s'}" style="width:100%" onclick="checkIn('${s.stopId}',this)">I have arrived</button>`;
+  if(live&&s.status==='ARRIVED')body+=deliveryForm(s);
+  if(['DELIVERED','PARTIAL'].includes(s.status)){
+    body+=`<p class="mute" style="margin:10px 0 0">Delivered ${num(s.deliveredQty)}${s.returnedQty?' · returned '+num(s.returnedQty):''}${s.failureReason?' · '+esc(s.failureReason):''}<br>Collected: cash ${inr(s.collectedCash)} · UPI ${inr(s.collectedUpi)} of ${inr(s.collectible)}</p>`;
+    if(live&&due>0.009)body+=collectForm(s,due);
+  }
+  if(s.status==='FAILED')body+=`<p class="mute" style="margin:10px 0 0">Failed: ${esc(s.failureReason)}</p>`;
+  return `<div class="card stop ${esc(s.status)}" id="stop-${esc(s.stopId)}">${body}</div>`;
+}
+function deliveryForm(s){
+  const id=s.stopId;
+  return `<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:4px">
+  <label>Outcome</label><div class="seg"><label><input type="radio" name="o-${id}" value="DELIVERED" checked onchange="outcome('${id}',${s.requiredQty})"><span>Delivered</span></label><label><input type="radio" name="o-${id}" value="PARTIAL" onchange="outcome('${id}',${s.requiredQty})"><span>Partial</span></label><label><input type="radio" name="o-${id}" value="FAILED" onchange="outcome('${id}',${s.requiredQty})"><span>Failed</span></label></div>
+  <div class="row"><div><label for="dq-${id}">Delivered qty</label><input id="dq-${id}" inputmode="numeric" value="${s.requiredQty||''}"></div><div><label for="rq-${id}">Rejected / returned</label><input id="rq-${id}" inputmode="numeric" value="0"></div></div>
+  <div id="rw-${id}" class="hidden"><label for="fr-${id}">Reason</label><select id="fr-${id}"><option value="">Select…</option><option>Shop closed</option><option>Customer not reachable</option><option>Customer refused</option><option>Damaged stock rejected</option><option>Customer wanted fewer</option><option>Payment not ready</option><option>Wrong location</option><option>Other</option></select></div>
+  <label for="nt-${id}">Remarks</label><input id="nt-${id}" maxlength="200">
+  <div style="height:10px"></div><button class="p" onclick="deliver('${id}',this)">Save delivery</button></div>`;
+}
+function outcome(id,req){const o=document.querySelector(`input[name="o-${id}"]:checked`).value;$('rw-'+id).classList.toggle('hidden',o==='DELIVERED');const q=$('dq-'+id);if(o==='FAILED'){q.value=0;q.disabled=true}else{q.disabled=false;if(o==='DELIVERED')q.value=req||q.value}}
+function collectForm(s,due){
+  const id=s.stopId;
+  return `<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:4px"><label>Payment received</label>
+  <div class="seg"><label><input type="radio" name="m-${id}" value="CASH" checked onchange="$('ur-${id}').classList.add('hidden')"><span>Cash</span></label><label><input type="radio" name="m-${id}" value="UPI" onchange="$('ur-${id}').classList.remove('hidden')"><span>UPI</span></label></div>
+  <label for="am-${id}">Amount (₹) · balance ${inr(due)}</label><input id="am-${id}" inputmode="decimal" value="${Math.round(due*100)/100}">
+  <div id="ur-${id}" class="hidden"><label for="ref-${id}">UPI reference / UTR</label><input id="ref-${id}" maxlength="40" autocapitalize="characters"></div>
+  <div style="height:10px"></div><button class="s" style="width:100%" onclick="collect('${id}',this)">Record payment</button>
+  <p class="mute" style="margin:6px 0 0">Recorded as entered by driver. Operations verifies before it counts as received.</p></div>`;
+}
+async function confirmLoad(btn){const q=Number($('lq').value);if(!Number.isInteger(q)||q<=0)return toast('Enter loaded quantity.');const r=await busy(btn,()=>api('d1ConfirmLoadV1100',S.mobile,S.pin,S.route.routeId,q,reqId())).catch(()=>null);if(!r)return;if(r.shortBy)toast('Loaded '+r.shortBy+' fewer than ordered. Dispatch will see this.');openRoute(S.route.routeId)}
+async function startTrip(btn){const g=await gps();const r=await busy(btn,()=>api('d1StartTripV1100',S.mobile,S.pin,S.route.routeId,g,reqId())).catch(()=>null);if(r)openRoute(S.route.routeId)}
+async function checkIn(id,btn){const g=await gps();const r=await busy(btn,()=>api('d1CheckInV1100',S.mobile,S.pin,id,g,reqId())).catch(()=>null);if(!r)return;if(!r.gpsCaptured)toast('Location unavailable — check-in saved without GPS.');openRoute(S.route.routeId)}
+async function deliver(id,btn){
+  const o=document.querySelector(`input[name="o-${id}"]:checked`).value,p={outcome:o,deliveredQty:Number($('dq-'+id).value||0),returnedQty:Number($('rq-'+id).value||0),failureReason:$('fr-'+id).value,remarks:$('nt-'+id).value,requestId:reqId()};
+  if(o!=='DELIVERED'&&!p.failureReason)return toast('Select a reason.');
+  p.gps=await gps();const r=await busy(btn,()=>api('d1RecordDeliveryV1100',S.mobile,S.pin,id,p)).catch(()=>null);if(r)openRoute(S.route.routeId);
+}
+async function collect(id,btn){
+  const m=document.querySelector(`input[name="m-${id}"]:checked`).value,p={method:m,amount:Number($('am-'+id).value),upiRef:m==='UPI'?$('ref-'+id).value.trim():'',requestId:reqId()};
+  if(!(p.amount>0))return toast('Enter the amount.');if(m==='UPI'&&p.upiRef.length<6)return toast('Enter the UPI reference.');
+  p.gps=await gps();const r=await busy(btn,()=>api('d1RecordCollectionV1100',S.mobile,S.pin,id,p)).catch(()=>null);if(r)openRoute(S.route.routeId);
+}
+async function closeTrip(btn){
+  const p={returnedToHubQty:Number($('cb').value),cashHandedOver:Number($('cc').value),remarks:$('cr').value.trim(),requestId:reqId()};
+  const r=await busy(btn,()=>api('d1CloseTripV1100',S.mobile,S.pin,S.route.routeId,p)).catch(()=>null);if(!r)return;stopWatch();toast(r.status==='CLOSED'?'Trip closed.':'Trip closed — sent to supervisor review.');openRoute(S.route.routeId);
+}
+function startWatch(){if(S.watch!=null||!navigator.geolocation)return;S.watch=navigator.geolocation.watchPosition(p=>{const now=Date.now();if(now-S.lastPing<60000||!S.route)return;S.lastPing=now;api('d1PingLocationV1100',S.mobile,S.pin,S.route.routeId,{lat:p.coords.latitude,lng:p.coords.longitude,accuracy:p.coords.accuracy}).catch(()=>{})},()=>{},{enableHighAccuracy:true,maximumAge:30000})}
+function stopWatch(){if(S.watch!=null&&navigator.geolocation)navigator.geolocation.clearWatch(S.watch);S.watch=null}
+renderLogin();
+</script>
+</body>
+</html>

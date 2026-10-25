@@ -1,0 +1,54 @@
+name: Verify Route Dispatcher + Driver One
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'apps/driver-one/**'
+      - 'apps/dispatch/**'
+      - 'scripts/driver-one-*.mjs'
+      - 'scripts/lib/**'
+      - '.github/workflows/verify-driver-one.yml'
+  push:
+    branches:
+      - 'staging/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  driver-one:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Backend regression (real Apps Script sources, in-memory workbook, synthetic data)
+        run: node scripts/driver-one-v1100-regression.mjs
+
+      - name: Install browser test dependencies (not committed)
+        run: |
+          mkdir -p "$RUNNER_TEMP/e2e" && cd "$RUNNER_TEMP/e2e"
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund playwright@1 xlsx@0.18.5 leaflet@1.9.4
+          npx playwright install --with-deps chromium
+
+      - name: Browser end-to-end (dispatcher desktop + driver phone viewport, IST)
+        env:
+          NE_E2E_MODULES: ${{ runner.temp }}/e2e/node_modules
+        run: node scripts/driver-one-v1100-browser-e2e.mjs
+
+      - name: Save Driver One screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: driver-one-v1100-evidence
+          path: |
+            test-results/driver-one-*.png
+          retention-days: 7
