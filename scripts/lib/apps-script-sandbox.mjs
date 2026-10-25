@@ -32,6 +32,22 @@ class Range {
     return out;
   }
   getValue() { return this.getValues()[0][0]; }
+  createTextFinder(text) {
+    const range = this; let caseSensitive = false;
+    const finder = {
+      matchCase(v = true) { caseSensitive = v; return finder; },
+      matchEntireCell() { return finder; },
+      findAll() {
+        const hits = [];
+        range.getValues().forEach((row, i) => row.forEach((v, j) => {
+          const a = String(v ?? ''), b = String(text);
+          if (caseSensitive ? a.includes(b) : a.toLowerCase().includes(b.toLowerCase())) hits.push({ getRow: () => range.r + i, getColumn: () => range.c + j });
+        }));
+        return hits;
+      }
+    };
+    return finder;
+  }
   setValues(vals) {
     if (vals.length !== this.nr || vals.some(r => r.length !== this.nc)) throw new Error('setValues dimension mismatch');
     vals.forEach((row, i) => {
