@@ -5,7 +5,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Native Elaneeru Route Dispatcher</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 :root{--g:#073d2b;--g2:#0b6b45;--mint:#e9f6ee;--ink:#14231b;--mute:#5f7268;--line:#dfe9e3;--bg:#f4f7f5;--amber:#b86e00;--amberbg:#fff4e0;--red:#b3261e;--redbg:#fdeceb;--blue:#1f5fbf}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
@@ -39,9 +38,22 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;p
 <header><div><b>Route Dispatcher</b><small>Native Elaneeru operations</small></div><nav id="nav" class="hidden"><button id="t-import" class="on" onclick="tab('import')">Import &amp; assign</button><button id="t-board" onclick="tab('board')">Live board</button></nav><span class="grow"></span><span id="who" class="mute" style="color:#bfe0cd"></span></header>
 <main id="app"></main>
 <div id="toast"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
+// Show any start-up failure on the page instead of a blank screen.
+window.addEventListener('error',e=>{const el=document.getElementById('app');if(el&&!el.innerHTML.trim())el.innerHTML='<div class="err" style="max-width:520px;margin:30px auto">Dispatcher failed to start: '+String(e.message||e.error||'unknown error').replace(/[<>&]/g,'')+'. Reload the page.</div>'});
+// Excel and map libraries load only when needed, so a slow CDN never blocks sign-in.
+const LIBS={xlsx:['https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'],map:['https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js','https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css']},LOADED={};
+function loadLib(name){
+  if(LOADED[name])return LOADED[name];
+  LOADED[name]=Promise.all(LIBS[name].map(url=>new Promise((res,rej)=>{
+    const css=url.endsWith('.css'),el=document.createElement(css?'link':'script');
+    if(css){el.rel='stylesheet';el.href=url}else{el.src=url;el.async=true}
+    const t=setTimeout(()=>rej(new Error('Timed out loading '+name+' library')),20000);
+    el.onload=()=>{clearTimeout(t);res()};el.onerror=()=>{clearTimeout(t);rej(new Error('Could not load '+name+' library'))};
+    document.head.appendChild(el);
+  }))).catch(e=>{LOADED[name]=null;throw e});
+  return LOADED[name];
+}
 const S={auth:null,drivers:[],hub:null,today:'',rows:[],fileName:'',preview:null,map:null,layer:null,board:null};
 const $=id=>document.getElementById(id);
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -83,8 +95,10 @@ function renderImport(){
   <div id="pv"></div>`;
 }
 function template(){const csv='Customer Name,Phone Number,Lat,Long,Quantity,Amount,Address,Order ID,Time Window,Priority,Remarks\nSample Shop,9876543210,12.9000,77.6000,200,8600,Sample area,,Morning,,\n';const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='driver-one-route-template.csv';a.click()}
-function readFile(f){
+async function readFile(f){
   if(!f)return;if(f.size>2*1024*1024)return toast('File is larger than 2 MB.');
+  $('fileMsg').innerHTML='<div class="ok">Reading file…</div>';
+  try{await loadLib('xlsx')}catch(e){$('fileMsg').innerHTML=`<div class="err">${esc(e.message)}. Check the internet connection and choose the file again.</div>`;return}
   const rd=new FileReader();rd.onload=e=>{try{
     const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellFormula:true,cellDates:false});
     const ws=wb.Sheets[wb.SheetNames[0]];if(!ws||!ws['!ref'])throw new Error('The first sheet is empty.');
@@ -117,7 +131,9 @@ async function preview(){
   const canCreate=t.accepted>0&&$('drv').value&&!fileErr.length&&(!t.rejected||$('partial').checked);
   $('createBtn').disabled=!canCreate;$('partial').onchange=()=>preview();
 }
-function drawMap(points){
+async function drawMap(points){
+  try{await loadLib('map')}catch(e){}
+  if(!$('map'))return;
   if(typeof L==='undefined'){$('map').innerHTML='<p class="mute" style="padding:12px">Map library unavailable.</p>';return}
   const m=L.map('map');L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(m);
   const pts=[[S.hub.lat,S.hub.lng]];L.rectangle([[S.hub.lat-.0015,S.hub.lng-.0015],[S.hub.lat+.0015,S.hub.lng+.0015]],{color:'#073d2b',weight:2}).addTo(m).bindTooltip('Hub');
@@ -157,7 +173,7 @@ async function review(id,approve){const notes=prompt(approve?'Approval notes (re
 async function postLedger(id){await api('d1PostLedgerV1100',S.auth,id).then(x=>toast(x.rowsWritten+' ledger row(s) posted.')).catch(e=>toast(e.message));renderBoard()}
 async function cancelRoute(id){const reason=prompt('Cancellation reason (required):');if(!reason)return;await api('d1CancelRouteV1100',S.auth,id,reason).then(()=>toast('Route cancelled.')).catch(e=>toast(e.message));renderBoard()}
 async function validate(cid,decision,rid){const notes=decision==='REJECTED'?prompt('Reason for rejecting:'):'';if(decision==='REJECTED'&&!notes)return;await api('d1ValidateCollectionV1100',S.auth,cid,decision,notes||'').then(()=>toast('Saved.')).catch(e=>toast(e.message));detail(rid)}
-renderLogin();
+try{renderLogin()}catch(e){document.getElementById('app').innerHTML='<div class="err">Dispatcher failed to start: '+esc(e.message)+'</div>'}
 </script>
 </body>
 </html>
