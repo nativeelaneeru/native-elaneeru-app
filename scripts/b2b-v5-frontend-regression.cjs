@@ -26,5 +26,11 @@ ctx.hits=0;run('pending.set("nonce",{resolve:()=>hits++,reject:()=>{},cleanup:()
   run('logout(false)');assert.equal(run('TOKEN'),'');assert.equal(storage.getItem('nel_b2b_token'),null);assert.equal(run('CURRENT'),'login');
   // A reply for a signed-out account cannot overwrite a new account refresh.
   let staleResolve,freshResolve;ctx.mockRpc=async(method,args)=>new Promise(resolve=>{if(args[0]==='old-session')staleResolve=resolve;else freshResolve=resolve});run('rpc=mockRpc;TOKEN="old-session";DATA=null;');const stale=run('refresh()');run('logout(false);TOKEN="new-session";');const fresh=run('refresh()');assert(freshResolve);staleResolve({...fixture,vendor:{vendorId:'OLD'}});await stale;assert.equal(run('DATA'),null);freshResolve({...fixture,vendor:{...fixture.vendor,vendorId:'NEW'}});await fresh;assert.equal(run('vendor().vendorId'),'NEW');
-  console.log('PASS: auth gates, legacy session migration, stock/MOQ/steps, live checkout schedule and methods, historical totals, reorder prices, trusted bridge replies, double taps, timeout retries and logout');
+  // A failed full-account load after Fast Home must not leave checkout stuck on "Loading checkout…".
+  ctx.setTimeout=()=>0;ctx.mockRpc=async()=>{throw Error('Request timed out.')};run('rpc=mockRpc;TOKEN="t2";DATA=fixture;workspaceReady=false;workspaceError="";workspaceRetries=0;loading=null;CURRENT="cart";cart={TC:200};');
+  await run('refresh(true)');assert.equal(run('workspaceReady'),false);assert.match(run('workspaceError'),/timed out/);run('renderCart()');
+  assert.equal(element('checkoutBtn').textContent,'Retry loading checkout');assert.equal(element('checkoutBtn').disabled,false);
+  ctx.mockRpc=async()=>fixture;run('rpc=mockRpc;loading=null;');await run('retryWorkspace()');assert.equal(run('workspaceReady'),true);run('renderCart()');
+  assert.equal(element('checkoutBtn').textContent,'Proceed to Order');assert.equal(element('checkoutBtn').disabled,false);
+  console.log('PASS: auth gates, legacy session migration, stock/MOQ/steps, live checkout schedule and methods, historical totals, reorder prices, trusted bridge replies, double taps, timeout retries, logout and checkout recovery after a failed account load');
 })().catch(e=>{console.error(e);process.exit(1)});
