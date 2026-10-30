@@ -23,7 +23,7 @@ sandbox.s_=v=>String(v??'').trim();sandbox.n_=v=>Number(v)||0;sandbox.digits_=v=
 sandbox.V8={SHEETS:{B2B_ORDERS:'orders',B2B_ORDER_ITEMS:'items',B2B_VENDORS:'vendors',BATCHES:'batches',ASSIGNMENTS:'assignments'}};
 sandbox.rows_=name=>db[name]||[];sandbox.find_=(name,key,val)=>(db[name]||[]).find(r=>r[key]===val)||null;sandbox.append_=(name,row)=>{assert.equal(lockDepth,1);if(name==='assignments'&&failAssignment&&(failAssignment===true||db.assignments.length>=failAssignment))throw Error('Injected failure');db[name]??=[];const r={...row,_row:db[name].length+2};db[name].push(r);return r._row;};sandbox.updateObj_=(name,row,change)=>{assert.equal(lockDepth,1);Object.assign(db[name].find(x=>x._row===row),change);};sandbox.lockRun_=fn=>{assert.equal(lockDepth,0);lockDepth++;try{return fn();}finally{lockDepth--;}};
 sandbox.vendor_=()=>db.vendors[0];sandbox.b2bProducts_=()=>[{productId:'TC',productName:'Coconut',price:44,moq:50,qtyStep:50,unit:'pc'}];
-vm.runInContext(fs.readFileSync(process.env.NE_AUTO_CORE||'auto-core.gs','utf8'),sandbox);sandbox.findExistingB2BRequestV904_=(vendor,id)=>db.orders.find(o=>o['Vendor ID']===vendor&&o.Source==='B2B WEB|REQ:'+id);
+vm.runInContext(fs.readFileSync(process.env.NE_AUTO_CORE||'auto-core.gs','utf8'),sandbox);sandbox.findExistingB2BRequestV904_=(vendor,id)=>{const o=db.orders.find(o=>o['Vendor ID']===vendor&&o.Source==='B2B WEB|REQ:'+id);return o?{orderId:o['Order ID'],amount:o['Total Amount'],status:o.Status}:null};
 // fixed clock for prepare; production uses Date.now inside same locked handler.
 sandbox.neAutoPrepare_=(vendor,lines,payload)=>plan({config:db.B2B_Auto_Accept.reduce((o,r)=>(o[r.Setting]=r.Value,o),{}),checks:db.B2B_Stock_Checks,slots:db.B2B_Delivery_Capacity,batches:db.batches,orders:db.orders,items:db.items},{vendor,lines,area:vendor.Area,date:payload.deliveryDate||'',slot:payload.deliverySlot||''});
 function reset(){const x=fixture();serial=0;lockDepth=0;failAssignment=false;db={vendors:[{'Vendor ID':'V1',Area:'Jayanagar',Status:'ACTIVE','Payment Type':'COD',Outstanding:0,_row:2}],orders:[],items:[],batches:x.batches,assignments:[],B2B_Auto_Accept:Object.entries(x.config).map(([Setting,Value],i)=>({Setting,Value,_row:i+2})),B2B_Stock_Checks:x.checks,B2B_Delivery_Capacity:x.slots,B2B_Acceptance_Log:[]};}
@@ -33,3 +33,19 @@ reset();failAssignment=true;order=sandbox.placeB2BOrder('token',{items:[{product
 console.log('PASS: FIFO, safety stock, duplicate lines, inactive vendors, stale verification, demo exclusion, slot cutoff/capacity, manual bookings, duplicate slots, canonical lock, retries, stock contention and rollback.');
 
 reset();failAssignment=1;order=sandbox.placeB2BOrder('token',{items:[{productId:'TC',quantity:200}]});assert.equal(order.status,'Order Received');assert.equal(db.assignments[0].Status,'CANCELLED');assert.equal(db.batches[0]['Available Qty'],150);assert.equal(db.batches[1]['Available Qty'],150);console.log('PASS: partial reservation failure rolls back both batches and cancels prior assignment.');
+
+
+reset();
+const recoveryPayload={clientRequestId:'checkout-recovery-12345678',items:[{productId:'TC',quantity:200}],paymentType:'COD'};
+const committed=sandbox.placeB2BOrder('token',recoveryPayload);
+let verified=sandbox.getB2BOrderRequestStatusV904('token',recoveryPayload);
+assert.equal(verified.found,true);assert.equal(verified.verified,true);assert.equal(verified.orderId,committed.orderId);
+assert.equal(sandbox.getB2BOrderRequestStatusV904('token',{...recoveryPayload,items:[{productId:'TC',quantity:250}]}).verified,false);
+assert.equal(sandbox.getB2BOrderRequestStatusV904('token',{...recoveryPayload,clientRequestId:'missing-request-12345678'}).found,false);
+db.items.length=0;
+verified=sandbox.getB2BOrderRequestStatusV904('token',recoveryPayload);
+assert.equal(verified.found,true);assert.equal(verified.verified,false);assert.equal(verified.success,false);
+const originalVendor=sandbox.vendor_;sandbox.vendor_=()=>({'Vendor ID':'OTHER_VENDOR'});
+assert.equal(sandbox.getB2BOrderRequestStatusV904('token',recoveryPayload).found,false);
+sandbox.vendor_=originalVendor;
+console.log('PASS: B2B recovery readback checks ownership, request ID and complete saved order items.');
