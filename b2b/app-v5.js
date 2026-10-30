@@ -47,7 +47,7 @@ function rememberedHome(token){
  const d=saved.data;if(!d?.vendor?.vendorId||!Array.isArray(d.products))return null;return d;
 }
 function cartKey(){return 'nel_b2b_v5_cart:'+vendor().vendorId}
-function saveCart(){if(!DATA)return;storageSet(cartKey(),JSON.stringify(cart));clearRequest()}
+function saveCart(){if(!DATA)return;storageSet(cartKey(),JSON.stringify(cart));clearRequest();orderNeedsManualReview=false;const notice=$('checkoutRecovery');if(notice){notice.hidden=true;notice.textContent=''}}
 function clearRequest(){try{localStorage.removeItem('nel_b2b_v5_order_request')}catch(_){}}
 async function persistSession(){storageSet('nel_b2b_token',TOKEN);storageSet('nel_b2b_token_saved_at',String(Date.now()));storageSet('nel_b2b_green_session',JSON.stringify({token:TOKEN,savedAt:Date.now()}));void window.NEL_B2B_DB?.set('sessionToken',{token:TOKEN,savedAt:Date.now()})?.catch(()=>{})}
 function isSessionError(e){return /session.*(expired|invalid)|invalid token|vendor is inactive|please (login|sign in)/i.test(e.message)}
@@ -150,12 +150,44 @@ function renderCheckout(){const t=totals(),cards=$('place').querySelectorAll('.c
   const methods=DATA.paymentConfig?.methods||['COD'];cards[2].innerHTML='<b>Payment Method</b>'+['COD'].map(m=>'<p style="font-size:11px"><label><input type="radio" name="pay" value="'+m+'" '+(m==='COD'?'checked ':'')+(!methods.includes(m)||m==='CREDIT'&&Number(vendor().availableCredit)<t.amount?'disabled ':'')+'>'+({COD:' Cash on Delivery (COD)',UPI:' UPI — submit UTR for verification',CREDIT:' Credit — '+money(vendor().availableCredit)+' available'}[m])+'</label></p>').join('');$('checkoutSummary').innerHTML='<b>Order Summary</b><div class="summary" style="margin-top:8px">'+Object.entries(cart).map(([id,n])=>'<div><span>'+esc(product(id).productName)+'<br><span class="sub">'+n+' × '+money(product(id).price)+'</span></span><b>'+money(n*product(id).price)+'</b></div>').join('')+'<div><span>Total quantity</span><b>'+t.qty+' units</b></div><div><span>Subtotal</span><b>'+money(t.amount)+'</b></div><div><span>Delivery charge</span><b>₹0</b></div><div><span>Discount</span><b>₹0</b></div><div><strong>Final amount</strong><strong>'+money(t.amount)+'</strong></div></div><p class="sub">The server validates your current price, stock and credit before placing the order.</p>'}
 function orderPayload(){return {items:Object.entries(cart).map(([productId,quantity])=>({productId,quantity})),paymentType:document.querySelector('input[name="pay"]:checked')?.value||'COD',deliveryDate:'',deliverySlot:'',deliveryAddress:vendor().address,area:vendor().area}}
 function orderRequest(payload){const fingerprint=JSON.stringify({vendorId:vendor().vendorId,...payload});let saved=parse(storageGet('nel_b2b_v5_order_request'));if(!saved||saved.fingerprint!==fingerprint){saved={fingerprint,id:uid()};try{localStorage.setItem('nel_b2b_v5_order_request',JSON.stringify(saved))}catch(_){}}return saved.id}
-let upiIntent=null;
-async function confirmOrder(){if(confirming)return;if(!cartValid())return msg('Review your cart before ordering');if(!vendor().address)return msg('Add your delivery address in Account before ordering');confirming=true;const btn=$('confirmOrderBtn');btn.disabled=true;btn.textContent='Submitting…';const token=TOKEN,epoch=sessionEpoch,p=orderPayload();p.clientRequestId=orderRequest(p);
+let upiIntent=null,orderNeedsManualReview=false;
+/** A timed-out bridge request may still have committed on Apps Script.
+ * Verify the request ID read-only before the vendor submits it again.
+ */
+async function reconcileB2BSubmission(token,epoch,p,error){
+  const reason=String(error&&error.message||error||'Order submission failed.');
+  if(!/timed out|timeout|network|connection|failed to fetch|load failed|request aborted/i.test(reason)){
+    msg(reason);return;
+  }
+  const notice=$('checkoutRecovery');
+  notice.hidden=false;
+  notice.textContent='Checking whether your order was saved. Do not submit again yet.';
+  $('confirmOrderBtn').textContent='Checking order status…';
+  try{
+    const check=await rpc('getB2BOrderRequestStatusV904',[token,p]);
+    if(TOKEN!==token||epoch!==sessionEpoch)return;
+    if(check?.found&&check.verified){
+      notice.hidden=true;notice.textContent='';
+      await orderSuccess(check,p);return;
+    }
+    if(check?.found){
+      orderNeedsManualReview=true;
+      notice.textContent='Order #'+check.orderId+' was received but its items need verification. Do not retry. Contact Native Elaneeru support with this order ID.';
+      msg('Order needs manual verification.');return;
+    }
+  }catch(lookupError){
+    if(TOKEN!==token||epoch!==sessionEpoch)return;
+    if(isSessionError(lookupError)){logout(false);msg('Session expired. Sign in and check My Orders before retrying.');return;}
+  }
+  if(TOKEN!==token||epoch!==sessionEpoch)return;
+  notice.textContent='Order status is not confirmed. Check My Orders first. If it is missing, retry with this unchanged cart; the same request ID will be used to prevent duplicates.';
+  msg('Order status unconfirmed. Check the message below.');
+}
+async function confirmOrder(){if(confirming)return;if(orderNeedsManualReview)return msg('This order needs a support review before retrying.');if(!cartValid())return msg('Review your cart before ordering');if(!vendor().address)return msg('Add your delivery address in Account before ordering');confirming=true;const btn=$('confirmOrderBtn');btn.disabled=true;btn.textContent='Submitting…';const token=TOKEN,epoch=sessionEpoch,p=orderPayload();p.clientRequestId=orderRequest(p);
   try{if(p.paymentType==='UPI'){
       const key=JSON.stringify(p);if(!upiIntent||upiIntent.key!==key){const r=await rpc('prepareB2BUpiPaymentV916',[token,p]);if(TOKEN!==token||epoch!==sessionEpoch)return;upiIntent={...r,key,payload:p};}
       $('upiInfo').textContent='Pay '+money(upiIntent.amount)+' to '+upiIntent.upiName+' ('+upiIntent.upiId+'). Payment requires verification.';const uri=String(upiIntent.upiUri||'');if(!/^upi:\/\/pay\?/i.test(uri))throw new Error('Payment link unavailable. Choose COD or contact support.');$('openUpi').href=uri;show('upi');
-    }else{const r=await rpc('placeB2BOrderV9',[token,p]);if(TOKEN!==token||epoch!==sessionEpoch)return;await orderSuccess(r,p)}}catch(e){msg(e.message)}finally{confirming=false;btn.disabled=false;btn.textContent='Confirm Order'}
+    }else{const r=await rpc('placeB2BOrderV9',[token,p]);if(TOKEN!==token||epoch!==sessionEpoch)return;await orderSuccess(r,p)}}catch(e){await reconcileB2BSubmission(token,epoch,p,e)}finally{confirming=false;btn.disabled=orderNeedsManualReview;btn.textContent=orderNeedsManualReview?'Contact support to review order':'Confirm Order'}
 }
 async function submitUpi(){if(confirming||!upiIntent)return;const utr=$('utr').value.replace(/\s/g,'');if(!/^[A-Za-z0-9]{6,40}$/.test(utr))return msg('Enter the UTR / transaction number from your payment app');confirming=true;const btn=$('submitUpiBtn');btn.disabled=true;const token=TOKEN,epoch=sessionEpoch;
   try{const r=await rpc('submitB2BUpiOrderV916',[token,upiIntent.paymentId,utr,upiIntent.payload]);if(TOKEN!==token||epoch!==sessionEpoch)return;await orderSuccess(r,upiIntent.payload);upiIntent=null;$('utr').value=''}catch(e){msg(e.message)}finally{confirming=false;btn.disabled=false}
