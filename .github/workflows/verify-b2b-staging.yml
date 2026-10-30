@@ -1,6 +1,8 @@
 name: Verify isolated NE B2B staging
 
 on:
+  push:
+    branches: ['staging/b2b-order-recovery-20261030']
   pull_request:
     branches: [main]
     paths:
