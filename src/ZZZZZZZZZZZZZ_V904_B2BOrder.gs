@@ -19,6 +19,7 @@ function findExistingB2BRequestV904_(vendorId,requestId){
   for(let i=0;i<matches.length;i++){
     const row=matches[i].getRow();
     if(s_(sh.getRange(row,m['Vendor ID']).getValue())!==vendorId)continue;
+    if(s_(sh.getRange(row,m.Source).getValue())!=='B2B WEB|REQ:'+requestId)continue;
     const val=k=>m[k]?sh.getRange(row,m[k]).getValue():'';
     return {orderId:s_(val('Order ID')),amount:n_(val('Total Amount')),status:s_(val('Status'))||'Order Received'};
   }
@@ -83,6 +84,26 @@ function placeB2BOrderV904Core_(token,p){
 placeB2BOrder=function(token,payload){
   return placeB2BOrderV904Core_(token,payload||{});
 };
+
+/** Read-only reconciliation after an uncertain customer order response. Never creates an order. */
+function getB2BOrderRequestStatusV904(token,payload){
+  const v=vendor_(token),vendorId=s_(v['Vendor ID']),p=payload||{};
+  const requestId=b2bRequestIdV904_(p);
+  if(!/^[A-Za-z0-9._:-]{16,80}$/.test(requestId))throw new Error('Invalid order request ID.');
+  const existing=findExistingB2BRequestV904_(vendorId,requestId);
+  if(!existing)return {found:false,verified:false};
+  // An order header alone is not proof that all items were saved. Do not claim
+  // success for a partial write or for a reused request ID with another cart.
+  const requested=Array.isArray(p.items)?p.items:[];
+  const expected=requested.map(i=>s_(i.productId)+'|'+Number(i.quantity)).sort();
+  const saved=rows_(V8.SHEETS.B2B_ORDER_ITEMS)
+    .filter(r=>s_(r['Order ID'])===existing.orderId)
+    .map(r=>s_(r['Product ID'])+'|'+n_(r.Quantity)).sort();
+  const verified=expected.length>0&&expected.length===saved.length&&
+    expected.every((item,i)=>item===saved[i]);
+  return {found:true,verified,success:verified,orderId:existing.orderId,
+    amount:existing.amount,status:existing.status};
+}
 
 function getB2BOrderEngineHealthV904(){
   const src=String(placeB2BOrder||'')+String(placeB2BOrderV904Core_||'');
