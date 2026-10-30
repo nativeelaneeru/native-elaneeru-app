@@ -1,0 +1,75 @@
+name: Provision and test isolated NE B2B Apps Script
+
+# One-shot staging provisioning. NEVER runs on main, a production push, or a merge.
+on:
+  push:
+    branches: ['staging/b2b-order-recovery-20261030']
+    paths: ['.github/workflows/provision-b2b-staging.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  staging-only:
+    if: github.repository == 'nativeelaneeru/native-elaneeru-app' && github.ref == 'refs/heads/staging/b2b-order-recovery-20261030'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NE_B2B_STAGING_SHEET_ID: '1HO6Mshh2wxJj7iDxTFb-eCIskbklpQwBlGd4yPs49FA'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: Verify isolated source and offline checkout tests
+        run: |
+          node scripts/build-b2b-staging.mjs
+          NE_V5_APP=staging-build/b2b/app-v5.js node scripts/b2b-v5-frontend-regression.cjs
+          NE_AUTO_SOURCE=staging-build/src/NE_B2B_Auto_Accept_V967.gs NE_AUTO_CORE=staging-build/src/ZZZZZZZZZZZZZ_V904_B2BOrder.gs node scripts/b2b-auto-accept-regression.cjs
+      - name: Install Apps Script CLI
+        run: npm install --no-save @google/clasp@3.4.0
+      - name: Create separate staging Script and temporary web deployment
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          PRODUCTION_SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$CLASPRC_JSON" ]]; then echo "::error::Apps Script authentication not configured"; exit 1; fi
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+          mv staging-build/src "$RUNNER_TEMP/ne-qa-src"
+          mkdir -p staging-build/src
+          cd staging-build
+          npx clasp create --type standalone --title "Native Elaneeru B2B V8 Isolated QA 2026-10-30" --rootDir src
+          node -e "const f=require('fs');const c=JSON.parse(f.readFileSync('.clasp.json'));if(!c.scriptId||c.scriptId===process.env.PRODUCTION_SCRIPT_ID)throw Error('Staging script ID is missing or equal to production');"
+          rm -rf src
+          mv "$RUNNER_TEMP/ne-qa-src" src
+          npx clasp push -f
+          npx clasp deploy -d "B2B QA staging only (temporary) $GITHUB_SHA" | tee deploy-output.txt
+          DEPLOYMENT_ID="$(grep -Eo 'AKfycb[a-zA-Z0-9_-]+' deploy-output.txt | tail -n 1 || true)"
+          if [[ -z "$DEPLOYMENT_ID" ]]; then echo "::error::Cannot extract staging deployment ID; check clasp output"; exit 1; fi
+          echo "STAGING_DEPLOYMENT_ID=$DEPLOYMENT_ID" >> "$GITHUB_ENV"
+          echo "NE_B2B_STAGING_API_URL=https://script.google.com/macros/s/$DEPLOYMENT_ID/exec" >> "$GITHUB_ENV"
+          echo "::notice::Created a temporary, separate Apps Script staging web app."
+      - name: Verify 200-unit COD order in staging
+        run: node scripts/verify-b2b-staging-online.mjs
+      - name: Remove temporary anonymous web deployment
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "${STAGING_DEPLOYMENT_ID:-}" && -f staging-build/.clasp.json ]]; then
+            cd staging-build
+            npx clasp undeploy "$STAGING_DEPLOYMENT_ID" || echo "::warning::Temporary deployment could not be undeployed; revoke it from Apps Script Deployments."
+          fi
+      - name: Preserve staging test evidence (not credentials)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ne-b2b-staging-provision-evidence
+          path: |
+            staging-build/STAGING-MANIFEST.json
+            staging-build/deploy-output.txt
+          retention-days: 7
+          if-no-files-found: ignore
