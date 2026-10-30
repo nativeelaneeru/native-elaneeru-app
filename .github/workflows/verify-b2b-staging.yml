@@ -1,0 +1,48 @@
+name: Verify isolated NE B2B staging
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'b2b/**'
+      - 'src/**'
+      - 'scripts/build-b2b-staging.mjs'
+      - 'scripts/b2b-*-regression.*'
+      - '.github/workflows/verify-b2b-staging.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolate-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NE_B2B_STAGING_SHEET_ID: '1HO6Mshh2wxJj7iDxTFb-eCIskbklpQwBlGd4yPs49FA'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Prepare offline-safe staging build
+        run: node scripts/build-b2b-staging.mjs
+      - name: Verify staging frontend and checkout recovery
+        env:
+          NE_V5_APP: staging-build/b2b/app-v5.js
+        run: node scripts/b2b-v5-frontend-regression.cjs
+      - name: Verify canonical stage order engine
+        env:
+          NE_AUTO_SOURCE: staging-build/src/NE_B2B_Auto_Accept_V967.gs
+          NE_AUTO_CORE: staging-build/src/ZZZZZZZZZZZZZ_V904_B2BOrder.gs
+        run: node scripts/b2b-auto-accept-regression.cjs
+      - name: Verify staged PWA in a local browser
+        run: cd staging-build && node ../scripts/b2b-v5-browser-fixture.mjs
+      - name: Package staging files (no deploy)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ne-b2b-staging-qa-build
+          path: staging-build/
+          retention-days: 7
+      - name: Safety statement
+        run: echo "B2B STAGING VERIFIED; no production deployment or live Sheet writes performed."
