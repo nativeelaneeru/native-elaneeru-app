@@ -19,6 +19,24 @@ ctx.hits=0;run('pending.set("nonce",{resolve:()=>hits++,reject:()=>{},cleanup:()
   // A timed-out order retains the request ID; two concurrent taps submit once.
   let calls=[],release;ctx.mockRpc=async(method,args)=>{calls.push({method,args});if(method==='placeB2BOrderV9')return new Promise(r=>release=r);return fixture};ctx.mockSuccess=async()=>{};run('rpc=mockRpc;orderSuccess=mockSuccess;cart={TC:200};');element('input[name="pay"]:checked').value='COD';const first=run('confirmOrder()');await run('confirmOrder()');assert.equal(calls.length,1);release({success:true,orderId:'NEW',amount:8800});await first;
   calls=[];ctx.mockRpc=async(method,args)=>{calls.push(args[1].clientRequestId);throw Error('Request timed out')};run('rpc=mockRpc;');await run('confirmOrder()');await run('confirmOrder()');assert.equal(calls[0],calls[1]);
+  // A submitted order may commit even when the browser loses the response.
+  // Reconcile by request ID, without submitting a second order.
+  calls=[];const recovered=[];ctx.recoverySuccess=async r=>recovered.push(r.orderId);
+  ctx.mockRpc=async(method,args)=>{calls.push({method,args});if(method==='placeB2BOrderV9')throw Error('Request timed out');if(method==='getB2BOrderRequestStatusV904')return {found:true,verified:true,success:true,orderId:'RECOVERED',amount:8800,status:'Order Received'};throw Error('Unexpected method')};
+  run('rpc=mockRpc;orderSuccess=recoverySuccess;orderNeedsManualReview=false;cart={TC:200};');await run('confirmOrder()');
+  assert.equal(recovered.length,1);assert.equal(recovered[0],'RECOVERED');assert.equal(calls.length,2);assert.equal(calls[0].method,'placeB2BOrderV9');assert.equal(calls[1].method,'getB2BOrderRequestStatusV904');
+  assert.equal(calls[0].args[1].clientRequestId,calls[1].args[1].clientRequestId);
+  // Unknown outcome: leave the ID in storage and keep a visible warning.
+  calls=[];ctx.mockRpc=async(method,args)=>{calls.push({method,args});if(method==='placeB2BOrderV9')throw Error('Request timed out');if(method==='getB2BOrderRequestStatusV904')return {found:false};throw Error('Unexpected method')};
+  run('rpc=mockRpc;orderNeedsManualReview=false;');await run('confirmOrder()');await run('confirmOrder()');
+  assert.equal(calls[0].args[1].clientRequestId,calls[2].args[1].clientRequestId);
+  assert.match(element('checkoutRecovery').textContent,/Check My Orders first/);
+  // Order header without matching items must never be shown as success.
+  calls=[];ctx.mockRpc=async(method,args)=>{calls.push({method,args});if(method==='placeB2BOrderV9')throw Error('Request timed out');if(method==='getB2BOrderRequestStatusV904')return {found:true,verified:false,orderId:'NE-PARTIAL'};throw Error('Unexpected method')};
+  run('rpc=mockRpc;orderNeedsManualReview=false;');await run('confirmOrder()');await run('confirmOrder()');
+  assert.equal(calls.length,2);assert.equal(run('orderNeedsManualReview'),true);assert.equal(element('confirmOrderBtn').disabled,true);
+  assert.match(element('checkoutRecovery').textContent,/NE-PARTIAL/);
+  run('orderNeedsManualReview=false;');
   // Live polling updates current prices while preserving historical amounts.
   ctx.document.visibilityState='visible';ctx.mockRpc=async()=>({ok:true,products:[{...fixture.products[0],price:46,basePrice:50}]});run('rpc=mockRpc;CURRENT="cart";');await run('pollPricing()');assert.equal(run('totals().amount'),9200);assert.equal(run('orders()[0].amount'),2000);assert.match(run('priceHtml(products()[0])'),/<s class="basePrice"/);ctx.document.visibilityState='hidden';
   // Token migration loads authenticated server data before showing Home.
