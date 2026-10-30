@@ -30,6 +30,12 @@ if(code.split(marker).length!==2)stop('expected exactly one main spreadsheet ref
 code=code.replace(marker,"SPREADSHEET_ID: '" + QA_SHEET + "'");
 fs.writeFileSync(codePath,code);
 
+// The API staging project is deliberately headless. Never publish production
+// admin/customer HTML pages through a public QA endpoint; POST bridge only.
+for(const name of fs.readdirSync(path.join(out,'src'))){
+  if(name.toLowerCase().endsWith('.html'))fs.unlinkSync(path.join(out,'src',name));
+}
+
 for(const p of ['app-v5.js','config.js']){
   const file=path.join(out,'b2b',p);
   let src=fs.readFileSync(file,'utf8');
